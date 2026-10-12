@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SHIFTLINE / Transfer Save</title>
+<style>
+*{box-sizing:border-box}html{background:#050e19;color:#e7f5fc;font-family:system-ui,-apple-system,Segoe UI,sans-serif}body{margin:0;padding:calc(env(safe-area-inset-top) + 30px) 18px 60px;max-width:700px;margin-inline:auto}h1{font-size:clamp(29px,7vw,46px);margin:8px 0;letter-spacing:-.05em}h2{font-size:18px;margin:0 0 10px}p{color:#b7ceda;line-height:1.55}small{color:#79dbe8;letter-spacing:.15em;font-weight:700}section{border:1px solid #4c7288;border-radius:15px;background:#0b1e2d;padding:18px;margin-top:18px}button,a.btn{display:inline-block;background:#7ee9f4;color:#05151a;font-size:15px;font-weight:800;padding:14px 18px;border:0;border-radius:9px;cursor:pointer;text-decoration:none}textarea{display:block;width:100%;min-height:130px;resize:vertical;padding:12px;border-radius:8px;color:#eaf7ff;background:#07131f;border:1px solid #52839b;font-family:ui-monospace,Menlo,monospace;font-size:12px;margin:15px 0}#note{margin-top:15px;min-height:25px;font-weight:700}a{color:#7ee9f4}#stats{padding:12px;background:#091927;border-radius:8px;margin-top:14px;font-size:13px}button+button{margin-left:7px}@media(max-width:400px){button{margin:4px 0}} 
+</style>
+</head>
+<body>
+<small>SHIFTLINE / CROSS-DOMAIN SAVE TOOL</small>
+<h1>Keep your progress.</h1>
+<p>This standalone tool transfers SHIFTLINE's locally saved race records, XP, unlocks, customisation and ghost replays between Hatchable and Cloudflare. No information is sent to a server.</p>
+<div id="stats">Checking this browser's save…</div>
+<section>
+<h2>1. Export on the old game domain</h2>
+<p>Open this page on <b>se6f1x.hatchable.site</b> in the same browser you normally play in, then copy the code below.</p>
+<button id="export">Copy my SHIFTLINE save</button>
+<button id="show">Show save text</button>
+<textarea id="out" aria-label="Exported save code" readonly placeholder="Your save will appear here…"></textarea>
+</section>
+<section>
+<h2>2. Import on the new Cloudflare domain</h2>
+<p>Open this same page on the new Cloudflare game address, paste the code, and select Import. This replaces any existing progress saved on that domain.</p>
+<textarea id="in" aria-label="Paste save code" placeholder="Paste the SHIFTLINE save code here"></textarea>
+<button id="paste">Paste from clipboard</button>
+<button id="import">Import this save</button>
+</section>
+<div id="note" role="status"></div>
+<p><a href="./">← Back to SHIFTLINE</a></p>
+<script>
+(()=>{'use strict';
+const key='shiftlineEclipseProgressV1',q=s=>document.querySelector(s),set=s=>q('#note').textContent=s;
+function get(){try{const s=localStorage.getItem(key);return s?JSON.parse(s):null}catch{return null}}
+function summary(){const p=get();q('#stats').textContent=p?'Existing local save: '+(p.races||0)+' races, '+(p.xp||0)+' XP, '+Object.keys(p.records||{}).length+' course records.':'No SHIFTLINE save found in this browser on this domain.'}
+function isSave(v){return !!(v&&typeof v==='object'&&!Array.isArray(v)&&Number.isFinite(v.xp)&&v.xp>=0&&Number.isFinite(v.races)&&v.races>=0&&v.records&&typeof v.records==='object'&&v.ghosts&&typeof v.ghosts==='object'&&v.medals&&typeof v.medals==='object')}
+q('#export').onclick=async()=>{const v=get();if(!v)return set('No existing game save was found. Open this page in the browser where you played SHIFTLINE.');const value=JSON.stringify({type:'SHIFTLINE_SAVE_V1',data:v});q('#out').value=value;try{await navigator.clipboard.writeText(value);set('Save copied. Open the new site’s /transfer.html and paste it there.')}catch{q('#out').focus();q('#out').select();set('Copy the selected text manually, then paste it at the new site.')}};
+q('#show').onclick=()=>{const v=get();if(!v)return set('No save found in this browser.');q('#out').value=JSON.stringify({type:'SHIFTLINE_SAVE_V1',data:v});set('Save text ready; tap and hold to copy if needed.')};
+q('#paste').onclick=async()=>{try{q('#in').value=await navigator.clipboard.readText();set('Pasted. Check and tap Import.')}catch{q('#in').focus();set('Paste manually into the box above.')}};
+q('#import').onclick=()=>{const value=q('#in').value.trim();if(!value||value.length>4000000)return set('Missing or oversized save code.');let parsed;try{parsed=JSON.parse(value)}catch{return set('This is not valid JSON. Copy the entire original save code.')}if(parsed?.type!=='SHIFTLINE_SAVE_V1'||!isSave(parsed.data))return set('Not a recognised SHIFTLINE save.');if(!confirm('Replace this browser’s SHIFTLINE progress with the imported save?'))return;try{localStorage.setItem(key,JSON.stringify(parsed.data));summary();set('Progress imported successfully. Reopen SHIFTLINE on this domain to use it.')}catch{set('Could not save progress. Browser storage may be disabled or full.')}};
+summary();
+})();
+</script>
+</body></html>
