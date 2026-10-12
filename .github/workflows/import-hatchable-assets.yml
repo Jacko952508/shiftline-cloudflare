@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f public/.shiftline-assets-complete ]; then
+          if [ -f public/.shiftline-assets-complete ] || [ -f public/music/.user-soundtracks-installed ]; then
             echo "Original assets already imported. Nothing to transfer."
             exit 0
           fi
