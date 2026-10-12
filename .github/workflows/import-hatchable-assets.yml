@@ -1,5 +1,8 @@
 name: Import original SHIFTLINE assets
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/import-hatchable-assets.yml']
   schedule:
     - cron: '27 0 * * *'
   workflow_dispatch:
@@ -11,7 +14,7 @@ concurrency:
 jobs:
   import-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 22
     steps:
       - name: Check out SHIFTLINE
         uses: actions/checkout@v4
@@ -31,10 +34,17 @@ jobs:
             fi
             remote="${file#public/}"
             echo "Downloading $remote"
-            curl --fail --location --retry 4 --retry-delay 12 --connect-timeout 15 --max-time 240 \
-              --silent --show-error --output "$file.download" "https://se6f1x.hatchable.site/$remote"
-            printf '%s  %s\n' "$sha" "$file.download" | sha256sum --check --status
-            mv "$file.download" "$file"
+            # The Hatchable site has a daily transfer cap; retry once from each
+            # documented source URL, but never accept HTML/error pages as audio.
+            ok=0
+            for origin in 'https://se6f1x.hatchable.site' 'https://shiftline-eclipse-leviathan.hatchable.site'; do
+              if curl --fail --location --retry 2 --retry-delay 8 --connect-timeout 15 --max-time 130 \
+                --silent --show-error --output "$file.download" "$origin/$remote" \
+                && printf '%s  %s\n' "$sha" "$file.download" | sha256sum --check --status; then
+                mv "$file.download" "$file"; ok=1; break
+              fi
+            done
+            if [ "$ok" -ne 1 ]; then echo "Source unavailable for $remote; no corrupt asset committed"; exit 1; fi
           done <<'SHIFTLINE_ASSETS'
           9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6|public/vendor/three.core.js
           791ce99293f6930bc029cbbde383db243cfbd1b4481f631b71ac44c056c6c5c0|public/vendor/three.module.js
