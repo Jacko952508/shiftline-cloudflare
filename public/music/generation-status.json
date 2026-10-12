@@ -1,0 +1,33 @@
+{
+  "status": "blocked_no_audio_generated",
+  "provider": "ACE-Step official Hugging Face Spaces",
+  "attempts": [
+    {
+      "space": "ACE-Step/Ace-Step-v1.5",
+      "event_id": "562e5f50ec0f43e7acea2364a431b8b8",
+      "result": "error; null detail"
+    },
+    {
+      "space": "ACE-Step/Ace-Step-v1.5",
+      "method": "official gradio_client",
+      "result": "GPU task aborted"
+    },
+    {
+      "space": "ACE-Step/ACE-Step",
+      "event_id": "d76819f94eaa4fc2b4635ba259aa9682",
+      "result": "error; null detail"
+    },
+    {
+      "space": "ACE-Step/Ace-Step-v1.5",
+      "method": "browser; instrumental menu 96 seconds; thinking on and off",
+      "result": "Error; no output file"
+    }
+  ],
+  "fallback": {
+    "provider": "RaoMusic",
+    "url": "https://www.raomusic.com/create?model=acestep",
+    "status": "generation and sign-in controls unresponsive in cloud browser; handoff needed",
+    "commercial_terms": "https://www.raomusic.com/terms"
+  },
+  "live_unchanged": true
+}

@@ -1,0 +1,84 @@
+{
+  "endpoint_id": "elevenlabs/music/v2.5",
+  "status": "blocked_balance_exhausted",
+  "estimated_usd": 7.68,
+  "tracks": [
+    {
+      "name": "menu",
+      "duration_ms": 96000,
+      "path": "public/music/menu-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 96 BPM, spacious melodic electronica in D minor. Warm analog polyphonic chords, a memorable four-note bell motif, rounded moving bass, restrained clean electronic drums tucked below the melody, shimmering stereo atmosphere. Confident futuristic anticipation, inviting rather than aggressive. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 96000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "eclipse",
+      "duration_ms": 112000,
+      "path": "public/music/eclipse-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 138 BPM, driving melodic progressive techno in D minor for a luminous orbital racing tunnel. Deep rolling bass, precise tight kick, syncopated analog arpeggios, evolving wide chord voicings and an unforgettable soaring synth hook. Energetic, sleek, fast, polished; controlled cymbals and drums below the lead. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "leviathan",
+      "duration_ms": 112000,
+      "path": "public/music/leviathan-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 128 BPM, liquid electronic breakbeat in F minor for an underwater high speed racing course. Flowing glassy arpeggios, warm sub bass with audible upper harmonics, lush submerged pads, intricate tight breakbeat drums and a beautiful fluid melodic hook. Aquatic depth and motion, no literal water effects. Clean restrained high frequencies. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "cinder",
+      "duration_ms": 112000,
+      "path": "public/music/cinder-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 144 BPM, heavy cinematic electro breakbeat in E minor for volcanic industrial combat racing. Huge rounded distorted bass, punchy tight syncopated drums, metallic tonal percussion used sparingly, ominous analog chord stabs and a powerful rising melodic theme. Aggressive but musical, no harsh white-noise wash, no clipping. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "tempest",
+      "duration_ms": 112000,
+      "path": "public/music/tempest-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 140 BPM, uplifting cinematic progressive trance in A minor for racing through enormous storm towers and cloud vistas. Luminous wide supersaw harmonies, rhythmic analog arpeggios, a memorable sweeping lead melody, rolling bass, restrained tight four-on-the-floor drums. Expansive sky, speed and wonder, controlled highs. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "verdant",
+      "duration_ms": 112000,
+      "path": "public/music/verdant-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 126 BPM, organic melodic electronica with broken beat in G minor for racing through lush alien forests. Marimba-like tuned plucks, rich flowing synth bass, layered airy pads, delicate hand-percussion accents and tight electronic drums, an emotional repeating melody that develops. Organic and futuristic, propulsive not sleepy. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    },
+    {
+      "name": "fracture",
+      "duration_ms": 112000,
+      "path": "public/music/fracture-v62.mp3",
+      "input": {
+        "prompt": "Original instrumental science fiction racing game soundtrack. 136 BPM, intricate futuristic melodic electro in C minor for racing through fractured crystalline gravity structures. Precise syncopated bass, crystalline pitched plucks and a strong lyrical synthesizer melody, unusual but coherent rhythmic accents, lush dramatic chords, tight drums with controlled transients. Elegant cosmic tension, no random glitch noise. Arrange as a coherent piece: short atmospheric opening, introduce main theme quickly, develop into full groove, a brief harmonic breakdown halfway, then return to a richer variation of the theme. Maintain steady tempo and cohesive harmony. Natural phrase transitions. Balanced stereo mix, deep clean low end, clear midrange melodies, gentle high frequencies. Drums must not dominate. No speech, vocals, chanting, crowd or sound effects. No imitation of any existing song or artist. End with a sustained atmospheric tail that can crossfade back into the opening.",
+        "music_length_ms": 112000,
+        "force_instrumental": true,
+        "output_format": "mp3_44100_192"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+name: Import original SHIFTLINE assets
+on:
+  schedule:
+    - cron: '27 0 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: shiftline-asset-import
+  cancel-in-progress: false
+jobs:
+  import-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out SHIFTLINE
+        uses: actions/checkout@v4
+      - name: Import original v92 binary assets with SHA256 validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f public/.shiftline-assets-complete ]; then
+            echo "Original assets already imported. Nothing to transfer."
+            exit 0
+          fi
+          while IFS='|' read -r sha file; do
+            mkdir -p "$(dirname "$file")"
+            remote="${file#public/}"
+            echo "Downloading $remote"
+            curl --fail --location --retry 4 --retry-delay 12 --connect-timeout 15 --max-time 240 \
+              --silent --show-error --output "$file.download" "https://se6f1x.hatchable.site/$remote"
+            printf '%s  %s\n' "$sha" "$file.download" | sha256sum --check --status
+            mv "$file.download" "$file"
+          done <<'SHIFTLINE_ASSETS'
+          9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6|public/vendor/three.core.js
+          791ce99293f6930bc029cbbde383db243cfbd1b4481f631b71ac44c056c6c5c0|public/vendor/three.module.js
+          93725e8c3abdd71831473dc1059803af4e8e0f0520dc8349c90c02a8ff63d5d5|public/music/m1.mp3
+          27f1686d99fc81ea4d6a29a68299502656ce414d69c7e2c969821746ee16c485|public/music/s1.mp3
+          79115749cbe79c6e83b324a96f19062b133fca73fb43fbbfdfaaddb57b83c502|public/music/s2.mp3
+          cdd4eca7a0a4b3d702ef52c60a7a988e12db67586537c9b1924391d313c73ecf|public/music/s3.mp3
+          9b433f70b606870c1cb4d65838e710a2d2a75ac80bccb274318511858f570824|public/music/s4.mp3
+          13972333b6d8292e119852b39c786aec03f3a2674c327ae936629a7a20b42851|public/music/s5.mp3
+          03672a62da1ed877e2980cc64a3799d11782109ec6365de9e87a37d7adf92984|public/music/s6.mp3
+          SHIFTLINE_ASSETS
+          touch public/.shiftline-assets-complete
+      - name: Save imported static assets in GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add public/
+          if git diff --cached --quiet; then
+            echo "All assets already committed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Import verified original SHIFTLINE music and Three.js"
+          git push
