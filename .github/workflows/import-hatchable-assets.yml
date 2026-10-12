@@ -37,7 +37,7 @@ jobs:
             # The Hatchable site has a daily transfer cap; retry once from each
             # documented source URL, but never accept HTML/error pages as audio.
             ok=0
-            for origin in 'https://se6f1x.hatchable.site' 'https://shiftline-eclipse-leviathan.hatchable.site'; do
+            for origin in 'https://se6f1x.hatchable.site'; do
               if curl --fail --location --retry 2 --retry-delay 8 --connect-timeout 15 --max-time 130 \
                 --silent --show-error --output "$file.download" "$origin/$remote" \
                 && printf '%s  %s\n' "$sha" "$file.download" | sha256sum --check --status; then
