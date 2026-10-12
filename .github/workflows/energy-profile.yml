@@ -1,0 +1,24 @@
+name: SHIFTLINE Battery Rendering Audit
+on:
+  push:
+    paths:
+      - 'test/energy-profile.mjs'
+      - '.github/workflows/energy-profile.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare-render-loads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Measure game GPU draw throughput and CPU load for 6 graphics profiles
+        run: node test/energy-profile.mjs
