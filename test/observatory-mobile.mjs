@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=100';
+const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=103';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await mkdir('observatory-screenshots',{recursive:true});
 const browser=await chromium.launch({
@@ -25,7 +25,7 @@ try {
   await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
   try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
   catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
-  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=100"]')}));
+  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=103"]')}));
   console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
   if(markup.button&&markup.ready&&markup.current){deployed=true;break;}
   await wait(10000);
