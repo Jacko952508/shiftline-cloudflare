@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=97';
+const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=100';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await mkdir('observatory-screenshots',{recursive:true});
 const browser=await chromium.launch({
@@ -25,7 +25,7 @@ try {
   await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
   try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
   catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
-  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=97"]')}));
+  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=100"]')}));
   console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
   if(markup.button&&markup.ready&&markup.current){deployed=true;break;}
   await wait(10000);
@@ -33,7 +33,7 @@ try {
  assert.ok(deployed,'Cloudflare has not served the new actual-map Observatory build after retries');
  console.log('PASS actual Three.js game initialises on Cloudflare with current Observatory');
  const tilt=await page.evaluate(async()=>{
-  const {steeringBank}=await import('./race-craft.js?v=97');
+  const {steeringBank}=await import('./race-craft.js?v=100');
   const simulate=(lateral,dt=1/120)=>{let bank=0;for(let i=0;i<180;i++)bank=steeringBank(bank,lateral,dt);return bank};
   return {hardLeft:simulate(-20),hardRight:simulate(20),lightLeft:simulate(-1.5),lightRight:simulate(1.5),centre:simulate(0)};
  });

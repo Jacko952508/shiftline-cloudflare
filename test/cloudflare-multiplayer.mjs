@@ -2,7 +2,7 @@
 // No credentials, player data or permanent rooms. Opens two temporary WebSocket test clients.
 import assert from 'node:assert/strict';
 
-const site='https://shiftline-game.beyondthebox.workers.dev';
+const site=process.env.SHIFTLINE_SITE||'https://shiftline-game.beyondthebox.workers.dev';
 const relay='https://tuber-racers-relay.onrender.com';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const timeout=(ms)=>AbortSignal.timeout(ms);
@@ -24,11 +24,11 @@ async function checkStatic() {
   const r=await get(site+'/?smoke='+Date.now());
   const t=await r.text();
   assert.match(r.headers.get('content-type')||'',/text\/html/i);
-  assert.match(t,/race-engine\.js\?v=97/);
+  assert.match(t,/race-engine\.js\?v=100/);
   return t;
  });
  assert.match(html,/type="importmap"/);
- for(const file of ['race-engine.js?v=97','vendor/three.module.js','vendor/three.core.js']){
+ for(const file of ['race-engine.js?v=100','vendor/three.module.js','vendor/three.core.js']){
   await retry('Cloudflare '+file,async()=>{
    const r=await get(site+'/'+file);
    const t=await r.text();

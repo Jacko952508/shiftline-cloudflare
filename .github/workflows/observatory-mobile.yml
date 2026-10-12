@@ -1,6 +1,7 @@
 name: SHIFTLINE 3D Observatory Mobile Test
 on:
   push:
+    branches: [main]
     paths:
       - 'public/live-track-explorer.js'
       - 'public/race-engine.js'

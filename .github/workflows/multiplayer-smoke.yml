@@ -1,6 +1,7 @@
 name: SHIFTLINE Cloudflare Multiplayer Smoke
 on:
   push:
+    branches: [main]
     paths:
       - '.github/workflows/multiplayer-smoke.yml'
       - 'test/cloudflare-multiplayer.mjs'
