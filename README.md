@@ -4,9 +4,9 @@ Static browser game migration prepared from the original [SHIFTLINE on Hatchable
 
 ## Cloudflare Workers deployment (current site)
 
-Cloudflare project: **shiftline-game** — https://shiftline-game.jackbowerman.workers.dev/
+Cloudflare project: **shiftline-game** — https://shiftline-game.beyondthebox.workers.dev/
 
-The live address ends in `workers.dev`, meaning this deployment uses **Cloudflare Workers static assets**, not Cloudflare Pages. The root `wrangler.jsonc` declares the matching Worker name and the exact `./public` static assets directory; the repository intentionally has no separate build step.
+The live address ends in `workers.dev`, meaning this deployment uses **Cloudflare Workers static assets**, not Cloudflare Workers. The root `wrangler.jsonc` declares the matching Worker name and the exact `./public` static assets directory; the repository intentionally has no separate build step.
 
 Open **Cloudflare → Workers & Pages → shiftline-game → Settings → Builds** and check:
 
@@ -34,4 +34,4 @@ Once the original Hatchable site is accessible, open [SHIFTLINE save export](htt
 
 ## Troubleshooting
 
-Open [/diagnostics.html](https://shiftline-game.jackbowerman.workers.dev/diagnostics.html) on the deployed site to check whether Cloudflare actually serves HTML, JS modules, the Three.js engine, and MP3 assets with correct MIME types. If a file returns a 200 HTML page instead of JavaScript, check Workers Builds **Deploy command** is `npx wrangler deploy`, root is repo root, and `wrangler.jsonc` contains `assets.directory: "./public"`. The main page displays a module-load error with a link to diagnostics if startup fails. The origin cannot be live-tested from the current GitHub tool connection.
+Open [/diagnostics.html](https://shiftline-game.beyondthebox.workers.dev/diagnostics.html) on the deployed site to check whether Cloudflare actually serves HTML, JS modules, the Three.js engine, and MP3 assets with correct MIME types. If a file returns a 200 HTML page instead of JavaScript, check Workers Builds **Deploy command** is `npx wrangler deploy`, root is repo root, and `wrangler.jsonc` contains `assets.directory: "./public"`. The main page displays a module-load error with a link to diagnostics if startup fails. The origin cannot be live-tested from the current GitHub tool connection.

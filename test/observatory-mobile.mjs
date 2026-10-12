@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const url='https://shiftline-game.jackbowerman.workers.dev/?observatory-test=96';
+const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=96';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await mkdir('observatory-screenshots',{recursive:true});
 const browser=await chromium.launch({
