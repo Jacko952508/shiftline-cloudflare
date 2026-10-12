@@ -1,4 +1,4 @@
-# SHIFTLINE — Cloudflare Pages
+# SHIFTLINE — Cloudflare Workers
 
 Static browser game migration prepared from the original [SHIFTLINE on Hatchable](https://se6f1x.hatchable.site/) v92 game source. Hatchable v93 adds only a standalone progress transfer helper; its game code remains unchanged. This repository contains the actual six-course racing game, cockpit, Track Observatory and source. The original Hatchable site is preserved.
 
@@ -22,12 +22,16 @@ Cloudflare should deploy on each push. Its Worker static asset serving uses `wra
 
 ## Transfer your existing progress
 
-Once the original Hatchable site is accessible, open [SHIFTLINE save export](https://se6f1x.hatchable.site/transfer.html) **in the same browser** where you previously played. Choose **Copy my SHIFTLINE save**. On the final Cloudflare Pages address, open **/transfer.html**, paste the save, and choose **Import this save**. The tool reads only the `shiftlineEclipseProgressV1` localStorage key and never sends the contents to a server. Import requires explicit confirmation and replaces any save already present on the new domain. Some browsers/webviews keep separate localStorage even on the same website, so use the browser profile where you normally play.
+Once the original Hatchable site is accessible, open [SHIFTLINE save export](https://se6f1x.hatchable.site/transfer.html) **in the same browser** where you previously played. Choose **Copy my SHIFTLINE save**. On the Cloudflare Workers address, open **/transfer.html**, paste the save, and choose **Import this save**. The tool reads only the `shiftlineEclipseProgressV1` localStorage key and never sends the contents to a server. Import requires explicit confirmation and replaces any save already present on the new domain. Some browsers/webviews keep separate localStorage even on the same website, so use the browser profile where you normally play.
 
 ## Notes
 
-- Multiplayer connects to the external `tuber-racers-relay.onrender.com` service; confirm WebSocket access from the new Cloudflare Pages domain.
+- Multiplayer connects to the external `tuber-racers-relay.onrender.com` service; confirm WebSocket access from the Cloudflare Workers domain.
 - Saved records/customisations use origin-specific browser localStorage. They **do not automatically carry** from the Hatchable domain to a new Pages domain. Keep the old site available during migration.
-- Built-in music is streamed from local `public/music/*.mp3`, not an external third party.
+- Built-in recorded music loads from local `public/music/*.mp3`. While those files remain unavailable, the existing Web Audio synthesis worker provides a fallback.
 - The app is static, with no Hatchable API functions or database required.
 - `public/_headers` adds Cloudflare caching and security headers.
+
+## Troubleshooting
+
+Open [/diagnostics.html](https://shiftline-game.jackbowerman.workers.dev/diagnostics.html) on the deployed site to check whether Cloudflare actually serves HTML, JS modules, the Three.js engine, and MP3 assets with correct MIME types. If a file returns a 200 HTML page instead of JavaScript, check Workers Builds **Deploy command** is `npx wrangler deploy`, root is repo root, and `wrangler.jsonc` contains `assets.directory: "./public"`. The main page displays a module-load error with a link to diagnostics if startup fails. The origin cannot be live-tested from the current GitHub tool connection.
