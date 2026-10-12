@@ -24,7 +24,7 @@ async function checkStatic() {
   const r=await get(site+'/?smoke='+Date.now());
   const t=await r.text();
   assert.match(r.headers.get('content-type')||'',/text\/html/i);
-  assert.match(t,/race-engine\.js\?v=96/);
+  assert.match(t,/race-engine\.js\?v=97/);
   return t;
  });
  assert.match(html,/type="importmap"/);
