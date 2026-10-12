@@ -25,6 +25,10 @@ jobs:
           fi
           while IFS='|' read -r sha file; do
             mkdir -p "$(dirname "$file")"
+            if [ -f "$file" ] && printf '%s  %s\n' "$sha" "$file" | sha256sum --check --status; then
+              echo "Already verified: $file"
+              continue
+            fi
             remote="${file#public/}"
             echo "Downloading $remote"
             curl --fail --location --retry 4 --retry-delay 12 --connect-timeout 15 --max-time 240 \
