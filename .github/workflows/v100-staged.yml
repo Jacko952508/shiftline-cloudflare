@@ -1,0 +1,50 @@
+name: SHIFTLINE v100 Staged Full Upgrade Test
+on:
+  push:
+    branches:
+      - upgrade-v100-staged
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'public/**'
+      - 'test/**'
+      - '.github/workflows/v100-staged.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  branch-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate all local game modules before running
+        run: |
+          find public -maxdepth 2 -type f \\( -name '*.js' -o -name '*.mjs' \\) -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          node --check test/upgrade-v100.mjs
+      - name: Install Chromium for isolated candidate testing
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Launch local staging origin
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-http.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/index.html >/dev/null
+      - name: Regression — menu, six maps, cockpit, save, low-power and diagnostics
+        run: node test/upgrade-v100.mjs
+      - name: Regression — real two-player relay and battle handshake against branch client files
+        env:
+          SHIFTLINE_SITE: http://127.0.0.1:8765
+        run: node test/cloudflare-multiplayer.mjs
+      - name: Upload staging browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v100-staged-browser-captures
+          path: upgrade-screenshots
+          if-no-files-found: ignore
