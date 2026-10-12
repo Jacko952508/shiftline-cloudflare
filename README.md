@@ -2,14 +2,23 @@
 
 Static browser game migration prepared from the original [SHIFTLINE on Hatchable](https://se6f1x.hatchable.site/) v92 game source. Hatchable v93 adds only a standalone progress transfer helper; its game code remains unchanged. This repository contains the actual six-course racing game, cockpit, Track Observatory and source. The original Hatchable site is preserved.
 
-## Cloudflare Pages setup
+## Cloudflare Workers deployment (current site)
 
-1. Open [Cloudflare Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select **Create > Pages > Connect to Git**.
-2. Select **Jacko952508/shiftline-cloudflare**, production branch **main**.
-3. Framework preset: **None**. Build command: **leave blank**. Build output directory: **public**. Root directory: **/**.
-4. Deploy and test all six courses, Track Observatory, sound, and multiplayer.
+Cloudflare project: **shiftline-game** — https://shiftline-game.jackbowerman.workers.dev/
 
-**Important:** Wait until **public/.shiftline-assets-complete** appears in GitHub before the first Cloudflare production deploy. The nine original MP3 and Three.js vendor files total about 19 MB and cannot be downloaded from Hatchable during its daily bandwidth suspension. The [Import original SHIFTLINE assets](.github/workflows/import-hatchable-assets.yml) GitHub Action automatically tries after the next UTC midnight (00:27 UTC daily) and may also be launched through Actions > Run workflow. It checks every file's original SHA256 hash and commits the original binary assets. After successful import, subsequent scheduled runs do nothing. The site does not need Hatchable bandwidth once the assets are imported.
+The live address ends in `workers.dev`, meaning this deployment uses **Cloudflare Workers static assets**, not Cloudflare Pages. The root `wrangler.jsonc` declares the matching Worker name and the exact `./public` static assets directory; the repository intentionally has no separate build step.
+
+Open **Cloudflare → Workers & Pages → shiftline-game → Settings → Builds** and check:
+
+- Git repository: `Jacko952508/shiftline-cloudflare`
+- Production branch: `main`
+- Root directory: repo root (blank or `/`)
+- **Build command: empty** (or `exit 0`)
+- **Deploy command: `npx wrangler deploy`**
+
+Cloudflare should deploy on each push. Its Worker static asset serving uses `wrangler.jsonc` to upload the files in `public` and expose `index.html` at the root URL. Do not configure a second Pages app unless you intend to migrate hosting types.
+
+**Asset migration status:** The exact original Three.js r186 assets have been restored to `public/vendor/`. The seven original MP3 tracks remain queued for the GitHub [verified asset importer](.github/workflows/import-hatchable-assets.yml), which is scheduled after UTC midnight and can be manually started from GitHub Actions. Until they are imported, 3D gameplay should initialise but recorded soundtracks may be unavailable. The asset importer checks original SHA-256 hashes, then commits the missing assets and lets Cloudflare redeploy automatically.
 
 ## Transfer your existing progress
 
