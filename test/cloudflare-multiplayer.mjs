@@ -28,7 +28,7 @@ async function checkStatic() {
   return t;
  });
  assert.match(html,/type="importmap"/);
- for(const file of ['race-engine.js?v=96','vendor/three.module.js','vendor/three.core.js']){
+ for(const file of ['race-engine.js?v=97','vendor/three.module.js','vendor/three.core.js']){
   await retry('Cloudflare '+file,async()=>{
    const r=await get(site+'/'+file);
    const t=await r.text();

@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=96';
+const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=97';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await mkdir('observatory-screenshots',{recursive:true});
 const browser=await chromium.launch({
@@ -25,13 +25,24 @@ try {
   await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
   try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
   catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
-  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=96"]')}));
+  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=97"]')}));
   console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
   if(markup.button&&markup.ready&&markup.current){deployed=true;break;}
   await wait(10000);
  }
  assert.ok(deployed,'Cloudflare has not served the new actual-map Observatory build after retries');
  console.log('PASS actual Three.js game initialises on Cloudflare with current Observatory');
+ const tilt=await page.evaluate(async()=>{
+  const {steeringBank}=await import('./race-craft.js?v=97');
+  const simulate=(lateral,dt=1/120)=>{let bank=0;for(let i=0;i<180;i++)bank=steeringBank(bank,lateral,dt);return bank};
+  return {hardLeft:simulate(-20),hardRight:simulate(20),lightLeft:simulate(-1.5),lightRight:simulate(1.5),centre:simulate(0)};
+ });
+ console.log('BANKING TELEMETRY '+JSON.stringify(tilt));
+ assert.ok(Math.abs(tilt.hardLeft)<=.441&&Math.abs(tilt.hardRight)<=.441,'Ship banking too strong');
+ assert.ok(Math.abs(tilt.hardLeft+tilt.hardRight)<.001,'Banking is not symmetrical');
+ assert.ok(Math.abs(tilt.lightLeft)<Math.abs(tilt.hardLeft),'Small steering should bank less');
+ assert.ok(Math.abs(tilt.centre)<.001,'Centre input should recover level attitude');
+ console.log('PASS bank capped at 25 degrees, proportional and symmetric');
  let passed=0;
  for(const [course,label] of [[1,'ECLIPSE'],[2,'LEVIATHAN'],[3,'CINDER'],[4,'TEMPEST'],[5,'VERDANT'],[6,'FRACTURE']]){
   if(course!==1){
