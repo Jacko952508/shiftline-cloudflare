@@ -1,0 +1,48 @@
+name: SHIFTLINE v104 Cinematic Menu Staging
+on:
+  push:
+    branches: [menu-cinematic-v104-staging]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax-check the complete application and tests
+        run: |
+          find public -maxdepth 2 -type f -name '*.js' -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          node --check test/menu-cinematic-v104.mjs
+      - name: Install headless mobile browser
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Serve exact candidate files without a Cloudflare deployment
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v104-stage.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/menu-camera.js >/dev/null
+      - name: Validate six bright course cinematics and mobile presentation
+        run: node test/menu-cinematic-v104.mjs
+      - name: Regression — six worlds, cockpit and saved progress
+        run: node test/upgrade-v100.mjs
+      - name: Regression — physics, obstacle positions and textures
+        run: node test/obstacle-v101.mjs
+      - name: Regression — live two-player multiplayer relay through local client
+        env:
+          SHIFTLINE_SITE: http://127.0.0.1:8765
+        run: node test/cloudflare-multiplayer.mjs
+      - name: Save screenshots from staging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shiftline-v104-cinematic-menu-screenshots
+          path: |
+            menu-v104-screenshots
+            upgrade-screenshots
+          if-no-files-found: ignore
