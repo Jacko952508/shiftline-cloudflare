@@ -1,0 +1,1 @@
+Upload BOTH files named SHIFTLINE_music_part1.zip and SHIFTLINE_music_part2.zip into this directory on the main branch using GitHub's Add file > Upload files. A workflow verifies SHA-256 hashes, extracts all seven MP3s into public/music/, removes the archives and deploys via Cloudflare Builds. Never upload unrelated files here.
