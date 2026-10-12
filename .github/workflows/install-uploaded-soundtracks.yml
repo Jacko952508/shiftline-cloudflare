@@ -1,0 +1,50 @@
+name: Install user-provided SHIFTLINE soundtracks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/music/uploads/*.zip'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: shiftline-soundtrack-upload
+  cancel-in-progress: false
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate both uploaded archives and extract seven MP3s
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir=public/music/uploads
+          test -f "$dir/SHIFTLINE_music_part1.zip"
+          test -f "$dir/SHIFTLINE_music_part2.zip"
+          mkdir -p /tmp/shiftline-audio
+          unzip -q "$dir/SHIFTLINE_music_part1.zip" -d /tmp/shiftline-audio
+          unzip -q "$dir/SHIFTLINE_music_part2.zip" -d /tmp/shiftline-audio
+          cd /tmp/shiftline-audio
+          sha256sum -c <<'HASHES'
+          4151eff033dddd870965633bb8cf2f296dc3c378fa51724da02a5ffb849f92cb  m1.mp3
+          e173b9e539b7d3243cad82bfdc5d12e2fe4a7894a551086492fea17240cf1d94  s1.mp3
+          3a2d1f46112b54fc094acc79c2eeede05fd65f8ec99b7aac21d1e93e0e42d19b  s2.mp3
+          64c4b7cc23bfee378fbfa60514499059496321e87c82050cfc2b392a00f2b10b  s3.mp3
+          b37e2951247c74c221427b2572108ebf70ad7b08029715093f8a088435771afb  s4.mp3
+          877e06b0952683090dfe063d7e162479e1b53a681f10df62193fad8cb256a2b1  s5.mp3
+          9ea1866b1f85aeb440dbc4bd5666883b7589ff6928a2282aa17797352140ff00  s6.mp3
+          HASHES
+          file *.mp3 | grep -q 'Audio'
+          cp *.mp3 "$GITHUB_WORKSPACE/public/music/"
+          cd "$GITHUB_WORKSPACE"
+          rm -f "$dir/SHIFTLINE_music_part1.zip" "$dir/SHIFTLINE_music_part2.zip"
+          git add public/music
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Install seven verified user-supplied SHIFTLINE MP3 soundtracks"
+          git pull --rebase origin main
+          git push origin HEAD:main
