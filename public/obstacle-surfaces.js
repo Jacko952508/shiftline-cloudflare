@@ -75,7 +75,7 @@ function atlas(course,organic=false){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=SIZE;
   const c=canvas.getContext('2d');const image=c.createImageData(SIZE,SIZE);image.data.set(data);c.putImageData(image,0,0);
   const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-  texture.colorSpace=name==='map'?THREE.SRGBColorSpace:THREE.NoColorSpace;
+  texture.colorSpace=(name==='map'||name==='emissiveMap')?THREE.SRGBColorSpace:THREE.NoColorSpace;
   texture.anisotropy=4;texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
   maps[name]=texture;
  }
