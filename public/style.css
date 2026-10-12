@@ -327,3 +327,51 @@ body.garageOpen.gpuReady .dashboard{background:none}body.garageOpen .mast,body.g
 #pulseSight .sightDot{fill:currentColor;stroke:none}
 #pulseSight.firing{color:#ffffff}
 #pulseSight.cooling{color:#ffb77b;opacity:.6}
+
+/* v100: Cinematic but readable interface. The 3D track is visible through the
+   menu only once the GPU is ready; no extra animated CSS backdrops. */
+body.gpuReady #menu{background:linear-gradient(105deg,rgba(2,8,17,.94) 0%,rgba(3,10,19,.90) 36%,rgba(5,13,24,.74) 72%,rgba(5,12,21,.82) 100%)}
+body.gpuReady #menuArt{display:none}
+#menu .menuShade{background:linear-gradient(90deg,rgba(3,7,14,.55),transparent 88%),linear-gradient(0deg,rgba(3,8,17,.94),transparent 85%)}
+#menu .dashboard{isolation:isolate}
+#menu .mast{padding:3px 0 15px;border-bottom:1px solid rgba(132,207,229,.22)}
+#menu .brand{filter:drop-shadow(0 1px 7px rgba(87,229,255,.12))}
+#menu .pilot{padding:9px 11px;background:linear-gradient(120deg,rgba(11,36,46,.83),rgba(11,31,43,.15));border:1px solid rgba(101,224,245,.24);border-radius:7px}
+#menu .tabs{border-bottom:1px solid rgba(122,211,230,.17)}
+#menu .tabs button{position:relative}
+#menu .tabs button.active{color:#ebfaff;text-shadow:0 0 15px rgba(114,240,255,.3)}
+#menu .featureCopy{min-width:0}
+#menu .featureCopy h1{color:#f8fdff;text-shadow:0 6px 30px rgba(3,9,19,.85),0 0 45px rgba(76,213,242,.12)}
+.heroFlag{display:flex;align-items:center;gap:9px;max-width:390px;padding:9px 12px;margin:8px 0 16px;background:linear-gradient(100deg,rgba(35,87,107,.30),rgba(6,20,33,.2));border:1px solid rgba(118,219,239,.2);border-left:3px solid #62d9f4;font:700 9px 'Barlow',sans-serif;letter-spacing:.13em;color:#d6faff}
+.heroSignal{width:7px;height:7px;border-radius:50%;background:#80ffc9;box-shadow:0 0 12px rgba(117,255,187,.5);flex:none}
+.heroFlagSide{margin-left:auto;font-size:8px;color:#8db4c4}
+.heroMeta{display:flex;gap:16px;flex-wrap:wrap;margin:13px 0 6px;font-size:9px;font-weight:700;letter-spacing:.08em;color:#89b8cc}
+#menu .trackPreview{border:1px solid rgba(113,204,225,.4);border-radius:10px;clip-path:none;box-shadow:0 22px 60px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.02)}
+#menu .trackPreview:before{content:"COURSE PREVIEW / LIVE";position:absolute;top:14px;left:14px;z-index:2;padding:7px 9px;background:rgba(4,16,26,.72);border:1px solid rgba(120,221,239,.25);font:700 8px 'Barlow',sans-serif;letter-spacing:.15em;color:#cdf6ff;pointer-events:none}
+#menu .courseSelector button{border-radius:7px;border:1px solid rgba(130,207,225,.19);border-left:3px solid rgba(98,178,203,.5);background:linear-gradient(130deg,rgba(10,34,48,.93),rgba(7,17,29,.80));transition:border-color .18s,background .18s,transform .14s;min-width:0;overflow:hidden}
+#menu .courseSelector button.selected{background:linear-gradient(140deg,rgba(30,100,121,.47),rgba(9,32,46,.86));border-color:rgba(104,226,251,.58);border-left-color:#6af1ff;box-shadow:inset 0 0 21px rgba(85,211,240,.07),0 0 18px rgba(27,127,165,.12)}
+#menu .courseSelector button:focus-visible{outline:2px solid #85e9fc;outline-offset:2px}
+#menu .launch{border-radius:9px;min-height:57px;box-shadow:0 12px 30px rgba(34,192,218,.15);letter-spacing:.035em}
+#menu .launch:active{filter:brightness(1.07)}
+#menu .courseDetails{border-radius:8px}
+#menu .modeDesc{background:rgba(5,17,28,.4);border-left:2px solid rgba(111,217,244,.42);padding:10px 12px}
+.performanceToggle{display:flex!important;align-items:center;justify-content:space-between;gap:12px}
+.performanceToggle span{margin:0!important;align-items:center;flex:1}
+.performanceToggle input{width:22px;height:22px;accent-color:#6ee8fc;flex:none}
+#perfHUD{position:fixed;z-index:8;top:max(74px,env(safe-area-inset-top));right:12px;pointer-events:none;border:1px solid rgba(119,233,249,.38);border-radius:8px;padding:9px 11px;white-space:pre;background:rgba(3,14,24,.81);color:#b8f6ff;font:700 10px/1.55 monospace;letter-spacing:.025em;box-shadow:0 6px 20px rgba(0,0,0,.28)}
+@media(max-width:700px){
+ #menu .dashboard{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+ #menu .mast{padding-bottom:11px}
+ #menu .heroFlag{font-size:8px;margin:4px 0 10px;padding:8px 10px}
+ #menu .heroMeta{gap:8px;font-size:8px;margin:7px 0}
+ #menu .feature{gap:8px}
+ #menu .trackPreview{height:170px;min-height:170px}
+ #menu .trackPreview:before{font-size:7px;top:9px;left:9px}
+ #menu .featureCopy h1{margin:7px 0 9px}
+ #menu .courseSelector button{padding:11px 7px;min-height:70px}
+ #menu .raceOptions{margin-top:12px}
+ #menu .launchRow{margin:14px 0 12px}
+ #menu .featureCopy>p:not(.eyebrow){line-height:1.45}
+ #perfHUD{top:max(72px,env(safe-area-inset-top));right:7px;font-size:9px;padding:7px}
+}
+@media (prefers-reduced-motion:reduce){#menu .menuPage{animation:none}#menu .courseSelector button{transition:none}}
