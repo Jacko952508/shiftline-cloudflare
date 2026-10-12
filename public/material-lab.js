@@ -3,7 +3,7 @@ import * as THREE from 'three';
 const pool=new Map();
 // Retain a small bounded LRU of inactive materials. Menus and repeated races no longer
 // regenerate 1024px PBR maps on every start; idle worlds never own an unbounded cache.
-const MAX_IDLE_KINDS=2;
+const MAX_IDLE_KINDS=1;
 function trimMaterialPool(){const idle=[...pool.entries()].filter(([,entry])=>entry.count===0);while(idle.length>MAX_IDLE_KINDS){const [kind,entry]=idle.shift();for(const v of Object.values(entry.maps))if(v?.isTexture)v.dispose();pool.delete(kind)}}
 const clamp=THREE.MathUtils.clamp;
 function noise(x,y){return((Math.imul(x,374761393)^Math.imul(y,668265263))>>>0)/4294967295}
@@ -22,7 +22,7 @@ for(let y=0;y<n;y++)for(let x=0;x<n;x++){const i=y*n+x,k=i*4,dx=(h[y*n+(x+n-1)%n
 return{map:tex(albedo,n,true),normalMap:tex(normal,n),roughnessMap:tex(rough,n),aoMap:tex(ao,n),normalScale:new THREE.Vector2(.5,.5),aoMapIntensity:.5};}
 const TAU=Math.PI*2;
 export function acquirePBR(kind){let item=pool.get(kind);if(!item){item={count:0,maps:make(kind)};pool.set(kind,item)}item.count++;pool.delete(kind);pool.set(kind,item);return item.maps}
-export function releasePBR(kind){const p=pool.get(kind);if(!p)return;if(p.count>0)p.count--;if(p.count===0){pool.delete(kind);pool.set(kind,p);trimMaterialPool()}}
+export function releasePBR(kind){const p=pool.get(kind);if(!p)return;if(p.count>0)p.count--;if(p.count===0){if(kind!=='metal'){for(const v of Object.values(p.maps))if(v?.isTexture)v.dispose();pool.delete(kind);return;}pool.delete(kind);pool.set(kind,p);trimMaterialPool()}}
 export function tuneTextureFiltering(root,maxAnisotropy=8){const seen=new Set();root.traverse(o=>{const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(!m)continue;for(const t of Object.values(m)){if(t?.isTexture&&!seen.has(t)){seen.add(t);const a=Math.min(8,maxAnisotropy);if(t.anisotropy!==a){t.anisotropy=a;t.needsUpdate=true}}}}})}
 // HDR studio/ambient field in linear light; Three.js prefilters it for rough metallic reflections.
 export function hdrEnvironment(underwater=false){const w=512,h=256,data=new Uint16Array(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const theta=(y+.5)/h*Math.PI,phi=(x+.5)/w*Math.PI*2,dx=Math.sin(theta)*Math.cos(phi),dy=Math.cos(theta),dz=Math.sin(theta)*Math.sin(phi),sun=Math.pow(Math.max(0,dx*-.55+dy*.75+dz*.35),100),soft=Math.pow(Math.max(0,dy),2),strip=Math.exp(-Math.pow((dy-.25)*20,2))*Math.pow(Math.max(0,Math.cos(phi*3)),12),bottom=Math.max(0,-dy),i=(y*w+x)*4;const base=underwater?[.08,.20,.23]:[.06,.09,.15],light=underwater?[.48,.9,.72]:[.72,.85,1],warm=underwater?[.15,.65,.52]:[1,.55,.22];for(let c=0;c<3;c++)data[i+c]=THREE.DataUtils.toHalfFloat(base[c]+light[c]*soft*.7+light[c]*sun*2.2+warm[c]*strip*1.25+base[c]*bottom*.3);data[i+3]=THREE.DataUtils.toHalfFloat(1)}const t=new THREE.DataTexture(data,w,h,THREE.RGBAFormat,THREE.HalfFloatType);t.mapping=THREE.EquirectangularReflectionMapping;t.colorSpace=THREE.LinearSRGBColorSpace;t.minFilter=t.magFilter=THREE.LinearFilter;t.needsUpdate=true;return t}
