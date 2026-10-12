@@ -22,7 +22,7 @@ import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-c
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=86';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=72';
-import{audioStart,installAudioActivation,audioResume,audioStop,audioSuspend,setAudioTrack,setAudioBoost,setMasterVolume,engineSound,crashSound,passSound,shiftSound,setAudioScene,countdownSound,finishSound,uiSound,weaponSound,shieldSound,hitSound}from'./audio.js?v=77';
+import{audioStart,installAudioActivation,audioResume,audioStop,audioSuspend,setAudioTrack,setAudioBoost,setMasterVolume,engineSound,crashSound,passSound,shiftSound,setAudioScene,countdownSound,finishSound,uiSound,weaponSound,shieldSound,hitSound}from'./audio.js?v=94';
 const selectors=new Map();const $=s=>{if(!selectors.has(s))selectors.set(s,document.querySelector(s));return selectors.get(s)},STEP=1/120,RELAY='wss://tuber-racers-relay.onrender.com';
 const aiPlayer={x:0,y:0,s:0,speed:0};
 const pulseSight=createPulseSight();const lockPoint=new THREE.Vector3(),lockNDC=new THREE.Vector3(),lockDirection=new THREE.Vector3();const hudNodes={};function hudText(id,value){const node=hudNodes[id]||(hudNodes[id]=$(id));if(node.textContent!==value)node.textContent=value}
