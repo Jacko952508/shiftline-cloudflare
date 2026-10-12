@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SHIFTLINE — Deployment Diagnostics</title>
+<style>html{background:#07111b;color:#e2f4f7;font:15px system-ui,sans-serif}body{max-width:670px;margin:auto;padding:28px 18px}h1{font-size:27px;color:#a8eaf5}h2{font-size:17px;margin-top:28px}p{line-height:1.5;color:#c2d9e2}button,a.link{display:inline-block;border:1px solid #7ad6e2;border-radius:9px;padding:12px 17px;background:#153747;color:white;font-weight:700;text-decoration:none}pre{white-space:pre-wrap;word-break:break-word;background:#0c2130;padding:13px;border-radius:8px;border:1px solid #315366;min-height:130px}small{color:#b4cbd7}.yes{color:#9ef1bf}.no{color:#ff9f9f}.maybe{color:#ffdaa3}</style></head><body>
+<small>SHIFTLINE / CLOUDFLARE WORKERS</small><h1>Deployment health check</h1>
+<p>Checks whether the essential source, 3D engine and music files are being served as the correct file types. No logins or personal game data are accessed.</p>
+<button id="run">Check game files</button> <a class="link" href="./">Back to game</a><pre id="report" aria-live="polite">Select Check game files…</pre>
+<p><small>Music files may be missing temporarily while the original tracks transfer from Hatchable; the game now includes synthesised music fallback.</small></p>
+<script>
+document.getElementById('run').onclick=async()=>{
+ const output=document.getElementById('report');output.textContent='Checking this Cloudflare deployment…';
+ const files=[['index.html','text/html'],['race-engine.js?v=92','javascript'],['menu.js?v=72','javascript'],['audio.js?v=77','javascript'],['vendor/three.module.js','javascript'],['vendor/three.core.js','javascript'],['music/m1.mp3','audio'],['music/s6.mp3','audio']];
+ const report=['SITE: '+location.origin,'BROWSER: '+navigator.userAgent,''];
+ const canvas=document.createElement('canvas');
+ let gl=null;try{gl=canvas.getContext('webgl2')||canvas.getContext('webgl')}catch{}
+ report.push('WebGL: '+(gl?'AVAILABLE':'UNAVAILABLE'));gl?.getExtension('WEBGL_lose_context')?.loseContext();
+ for(const [path,expected] of files){
+  try{
+   const result=await fetch('./'+path,{method:'HEAD',cache:'no-store'});
+   const mime=(result.headers.get('content-type')||'').toLowerCase();
+   const good=result.ok&&(expected==='javascript'?(/javascript|ecmascript/.test(mime)):mime.includes(expected));
+   report.push((good?'PASS':'FAIL')+' '+path+' — HTTP '+result.status+' — '+(mime||'unknown type'));
+  }catch(error){report.push('ERROR '+path+' — '+error.message);}
+ }
+ report.push('');report.push('Copy this report when requesting assistance.');
+ output.textContent=report.join('\n');
+};
+</script></body></html>
