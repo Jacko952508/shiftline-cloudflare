@@ -1,0 +1,36 @@
+name: SHIFTLINE 3D Observatory Mobile Test
+on:
+  push:
+    paths:
+      - 'public/live-track-explorer.js'
+      - 'public/race-engine.js'
+      - 'public/observatory.css'
+      - 'public/index.html'
+      - 'test/observatory-mobile.mjs'
+      - '.github/workflows/observatory-mobile.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Chromium and image inspection
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Open six real tracks and test viewer controls
+        run: node test/observatory-mobile.mjs
+      - name: Preserve preview screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observatory-mobile-screenshots
+          path: observatory-screenshots
+          if-no-files-found: ignore

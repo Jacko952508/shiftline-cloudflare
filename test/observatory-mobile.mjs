@@ -1,0 +1,68 @@
+import {chromium} from 'playwright';
+import {PNG} from 'pngjs';
+import {mkdir} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const url='https://shiftline-game.jackbowerman.workers.dev/?observatory-test=96';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+await mkdir('observatory-screenshots',{recursive:true});
+const browser=await chromium.launch({
+ headless:true,args:['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle',
+ '--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox']
+});
+const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+const pageErrors=[];page.on('pageerror',e=>pageErrors.push(String(e)));
+page.on('console',m=>{if(m.type()==='error')console.log('BROWSER CONSOLE:',m.text().slice(0,500))});
+function imageCheck(buffer,name) {
+ const png=PNG.sync.read(buffer),n=png.width*png.height;
+ let varied=0,bright=0,first=null;const stride=Math.max(1,Math.floor(n/15000));
+ for(let p=0;p<n;p+=stride){const i=p*4,red=png.data[i],green=png.data[i+1],blue=png.data[i+2];if(!first)first=[red,green,blue];if(Math.abs(red-first[0])+Math.abs(green-first[1])+Math.abs(blue-first[2])>40)varied++;if(red+green+blue>180)bright++;}
+ console.log(name+' screenshot '+png.width+'x'+png.height+' varied='+varied+' bright='+bright);
+ assert.ok(varied>100,'Viewer rendering looks flat/empty: '+name);
+}
+try {
+ await page.goto(url,{waitUntil:'domcontentloaded',timeout:35000});
+ await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:90000});
+ console.log('PASS actual Three.js game initialises on Cloudflare');
+ let passed=0;
+ for(const [course,label] of [[1,'ECLIPSE'],[2,'LEVIATHAN'],[3,'CINDER'],[4,'TEMPEST'],[5,'VERDANT'],[6,'FRACTURE']]){
+  if(course!==1){
+   await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
+   await wait(700);
+  }
+  await page.evaluate(()=>document.getElementById('obsOpen').click());
+  await page.waitForFunction(()=>!document.getElementById('observatory').classList.contains('off'),{timeout:20000});
+  const initial=await page.evaluate(()=>({
+   title:document.getElementById('obsTitle').textContent,
+   menuHidden:document.getElementById('menu').classList.contains('off'),
+   area:document.getElementById('observatoryViewport').getBoundingClientRect().height,
+   canvas:[document.getElementById('game').width,document.getElementById('game').height]
+  }));
+  assert.ok(initial.title.toUpperCase().includes(label),'Wrong course: '+JSON.stringify(initial));
+  assert.ok(initial.menuHidden);
+  assert.ok(initial.area>100,'no room to render actual map');
+  await wait(450);
+  if(course===1||course===5){
+   const screenshot=await page.screenshot({path:'observatory-screenshots/course-'+course+'.png'});
+   imageCheck(screenshot,'course '+course);
+  }
+  for(const mode of ['overhead','chase','fly','orbit']){
+   await page.locator('[data-obs-mode="'+mode+'"]').click();
+   await wait(130);
+   assert.equal(await page.locator('[data-obs-mode="'+mode+'"]').getAttribute('class'),'active');
+  }
+  await page.locator('[data-obs-chapter="2"]').click();
+  await page.waitForFunction(()=>Number.parseInt(document.getElementById('obsDistance').textContent,10)>45,{timeout:5000});
+  await page.locator('#obsScrub').evaluate(el=>{el.value='800';el.dispatchEvent(new Event('input',{bubbles:true}))});
+  assert.ok((await page.locator('#obsDistance').textContent()).includes('80'));
+  await page.locator('#obsClose').click();
+  await page.waitForFunction(()=>document.getElementById('observatory').classList.contains('off')&&!document.getElementById('menu').classList.contains('off'),{timeout:10000});
+  console.log('PASS '+label+': actual world, four camera modes, chapter, scrub, return to menu');
+  passed++;
+ }
+ await page.evaluate(()=>document.getElementById('launch').click());
+ await page.waitForFunction(()=>!document.getElementById('count').classList.contains('off'),{timeout:25000});
+ console.log('PASS regular race still launches after Observatory');
+ console.log('Browser errors: '+JSON.stringify(pageErrors.slice(0,12)));
+ assert.equal(pageErrors.length,0,'Uncaught browser errors: '+pageErrors.join(' | '));
+ console.log('SHIFTLINE OBSERVATORY E2E PASS: '+passed+' courses');
+} finally {await browser.close()}
