@@ -24,11 +24,11 @@ async function checkStatic() {
   const r=await get(site+'/?smoke='+Date.now());
   const t=await r.text();
   assert.match(r.headers.get('content-type')||'',/text\/html/i);
-  assert.match(t,/race-engine\.js\?v=100/);
+  assert.match(t,/race-engine\.js\?v=103/);
   return t;
  });
  assert.match(html,/type="importmap"/);
- for(const file of ['race-engine.js?v=100','vendor/three.module.js','vendor/three.core.js']){
+ for(const file of ['race-engine.js?v=103','vendor/three.module.js','vendor/three.core.js']){
   await retry('Cloudflare '+file,async()=>{
    const r=await get(site+'/'+file);
    const t=await r.text();

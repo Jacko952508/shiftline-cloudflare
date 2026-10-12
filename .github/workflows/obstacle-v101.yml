@@ -1,0 +1,44 @@
+name: SHIFTLINE v101 Obstacle Graphics Staging
+on:
+  push:
+    branches: [obstacle-surfaces-v101-staging]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate JavaScript syntax across app and tests
+        run: |
+          find public -maxdepth 2 -type f -name '*.js' -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          node --check test/obstacle-v101.mjs
+      - name: Install browser dependencies
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Start static staging build without touching Cloudflare
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public > /tmp/shiftline-stage.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/obstacle-surfaces.js >/dev/null
+      - name: Verify all six obstacle types, hitboxes, coordinates and material maps
+        run: node test/obstacle-v101.mjs
+      - name: Check cockpit, all six 3D worlds, progress and browser stability
+        run: node test/upgrade-v100.mjs
+      - name: Verify real remote multiplayer with staged client assets
+        env:
+          SHIFTLINE_SITE: http://127.0.0.1:8765
+        run: node test/cloudflare-multiplayer.mjs
+      - name: Preserve screenshots from staging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: obstacle-v101-staging
+          path: upgrade-screenshots
+          if-no-files-found: ignore
