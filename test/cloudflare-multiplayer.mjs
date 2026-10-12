@@ -2,7 +2,7 @@
 // No credentials, player data or permanent rooms. Opens two temporary WebSocket test clients.
 import assert from 'node:assert/strict';
 
-const site='https://shiftline-game.jackbowerman.workers.dev';
+const site='https://shiftline-game.beyondthebox.workers.dev';
 const relay='https://tuber-racers-relay.onrender.com';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const timeout=(ms)=>AbortSignal.timeout(ms);
