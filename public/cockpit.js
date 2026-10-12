@@ -59,13 +59,13 @@ export function updateCockpit(c,dt,data,rect,width,height){
  const sway=1-Math.exp(-Math.min(.1,Math.max(0,dt))*14);
  const lateral=THREE.MathUtils.clamp(data.lateral||0,-15,15),vertical=THREE.MathUtils.clamp(data.vertical||0,-15,15);
  const bank=THREE.MathUtils.clamp(data.bank||0,-1.1,1.1);
- c.root.rotation.z+=(THREE.MathUtils.clamp(-lateral*.0035-bank*.034,-.13,.13)-c.root.rotation.z)*sway;
+ c.root.rotation.z+=(THREE.MathUtils.clamp(-lateral*.0022-bank*.026,-.09,.09)-c.root.rotation.z)*sway;
  c.root.rotation.x+=(THREE.MathUtils.clamp(vertical*.004,-.075,.075)-c.root.rotation.x)*sway;
  c.root.position.y+=(THREE.MathUtils.clamp(-Math.abs(vertical)*.0015,-.025,0)-c.root.position.y)*sway;
  c.hud.rotation.z+=(c.root.rotation.z*.62-c.hud.rotation.z)*sway;
  c.hud.rotation.x+=(c.root.rotation.x*.56-c.hud.rotation.x)*sway;
  c.nose.rotation.x+=(THREE.MathUtils.clamp(vertical*.004,-.08,.08)-c.nose.rotation.x)*sway;
- c.nose.rotation.z+=(THREE.MathUtils.clamp(-lateral*.004-bank*.04,-.15,.15)-c.nose.rotation.z)*sway;
+ c.nose.rotation.z+=(THREE.MathUtils.clamp(-lateral*.0025-bank*.027,-.1,.1)-c.nose.rotation.z)*sway;
  c.nose.updateMatrixWorld(true);c.clip.set(new THREE.Vector3(0,0,-1),.1).applyMatrix4(c.forebody.matrixWorld);
  const k=1-Math.exp(-Math.min(.1,Math.max(0,dt))*24);c.pitch+=(THREE.MathUtils.clamp((data.vertical||0)*.045,-.23,.23)-c.pitch)*k;c.roll+=(THREE.MathUtils.clamp(-(data.lateral||0)*.05,-.24,.24)-c.roll)*k;c.stick.rotation.set(c.pitch,0,c.roll);c.rightStick.rotation.set(c.pitch,0,c.roll);
  c.trim.emissiveIntensity=data.boost?.35:.12;c.cap.position.z=data.boost?.027:.036;c.ring.material.color.setHex(data.boost?0xe4fff5:[0x72efff,0xffbd78,0xa6ffcb][c.custom.instrument]);

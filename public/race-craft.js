@@ -19,5 +19,5 @@ export function disposeCraft(scene,g){scene.remove(g);for(const kind of g.userDa
 
 // Ship nose points down local -Z: positive X rotation raises it; negative
 // Z rotation lowers the right wing. The track basis handles loops independently.
-export function steeringBank(current,lateral,dt){const target=THREE.MathUtils.clamp(-lateral*.22,-Math.PI/3,Math.PI/3);return current+(target-current)*(1-Math.exp(-Math.min(.1,Math.max(0,dt))*16));}
+export function steeringBank(current,lateral,dt){const target=THREE.MathUtils.clamp(-lateral*.105,-.44,.44);return current+(target-current)*(1-Math.exp(-Math.min(.1,Math.max(0,dt))*16));}
 export function flightAttitude(g,lateral,vertical,dt,physicalBank=null){const a=g.userData.flight||(g.userData.flight={pitch:0,roll:0});const k=1-Math.exp(-Math.min(.1,Math.max(0,dt))*10);a.pitch+=(THREE.MathUtils.clamp(vertical*.055,-.28,.28)-a.pitch)*k;a.roll=physicalBank===null?steeringBank(a.roll,lateral,dt):physicalBank;g.rotateZ(a.roll);g.rotateX(a.pitch);return a;}

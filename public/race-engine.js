@@ -1,6 +1,6 @@
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
 import{menuCamera}from'./menu-camera.js?v=87';
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=86';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=97';
 import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=72';
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=96';
@@ -18,7 +18,7 @@ import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=69';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=85';
-import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=83';
+import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=97';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=86';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=72';
