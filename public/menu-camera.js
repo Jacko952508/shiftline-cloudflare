@@ -1,17 +1,20 @@
 import * as THREE from 'three';
 
-// Dedicated cinematic menu presets; gameplay camera and obstacles remain untouched.
-// Enclosed courses are filmed from inside their clear corridor. Open-air
-// tracks are filmed from a raised diagonal for a better view of the scenery.
+// Four curated, continuously moving hero shots for each existing course.
+// This is menu-only: racing camera, progress, obstacles and physics are unchanged.
+// Editing the shot fractions changes filming locations, NOT course geometry.
+const SHOT_SECONDS=14;
 export const PREVIEW_CAMERA={
-  1:{part:.09,back:21,front:33,x:.8,y:.6,fov:69},
-  2:{part:.27,back:24,front:34,x:-.7,y:.7,fov:69},
-  3:{part:.34,back:24,front:34,x:.9,y:.6,fov:71},
-  4:{part:.24,back:37,front:58,x:18,y:21,fov:66},
-  5:{part:.30,back:37,front:57,x:22,y:22,fov:67},
-  6:{part:.23,back:41,front:54,x:-22,y:18,fov:66}
+  1:{shots:[.09,.28,.55,.82],back:21,front:48,x:.75,y:.65,fov:75,travel:108,offsets:[[.8,.6],[-.5,.7],[.4,-.4],[.5,.65]]},
+  2:{shots:[.12,.33,.59,.83],back:24,front:49,x:-.65,y:.7,fov:75,travel:100,offsets:[[-.7,.7],[.55,.6],[-.35,-.3],[.65,.5]]},
+  3:{shots:[.1,.34,.62,.83],back:24,front:48,x:.8,y:.6,fov:76,travel:103,offsets:[[.9,.6],[-.65,.7],[.55,.35],[-.55,.55]]},
+  4:{shots:[.13,.34,.59,.83],back:37,front:86,x:20,y:23,fov:72,travel:135,offsets:[[20,23],[-18,29],[24,34],[-15,22]]},
+  5:{shots:[.12,.34,.58,.84],back:38,front:82,x:24,y:22,fov:73,travel:128,offsets:[[24,23],[-20,27],[17,36],[-24,20]]},
+  6:{shots:[.11,.32,.6,.83],back:43,front:80,x:-23,y:21,fov:72,travel:134,offsets:[[-23,23],[18,28],[-26,35],[23,20]]}
 };
-const hit=new THREE.Vector3(),direction=new THREE.Vector3();
+export const MENU_SHOT_DURATION=SHOT_SECONDS;
+const hit=new THREE.Vector3(),direction=new THREE.Vector3(),up=new THREE.Vector3();
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function candidateClear(from,to,world){
   const boxes=world?.sceneryBounds;
   if(!boxes?.length)return true;
@@ -22,30 +25,45 @@ function candidateClear(from,to,world){
   for(const b of boxes){
     if(b.containsPoint(from))return false;
     const p=ray.intersectBox(b,hit);
-    if(p&&p.distanceTo(from)<distance*.86)return false;
+    if(p&&p.distanceTo(from)<distance*.87)return false;
   }
   return true;
 }
 function safePosition(track,s,p,x,y,world){
   const v=track.pose(Math.max(4,s-p.back),x,y);
-  if(world?.ground)v.y=Math.max(v.y,world.ground(v.x,v.z)+13);
+  if(world?.ground)v.y=Math.max(v.y,world.ground(v.x,v.z)+15);
   return v;
 }
-export function menuCamera(track,course,camera,t,world){
-  const p=PREVIEW_CAMERA[course],base=Math.max(55,Math.min(track.length-110,track.length*p.part));
-  if(world&&!world._menuCameraPreset){
-    const to=track.pose(Math.min(track.length-4,base+p.front),0,0);
-    const angles=course<4?[[p.x,p.y]]:[[p.x,p.y],[-p.x,p.y],[p.x,p.y+13],[-p.x,p.y+13],[.9,.7]];
-    const safe=angles.find(([x,y])=>candidateClear(safePosition(track,base,p,x,y,world),to,world));
-    world._menuCameraPreset=safe||[.9,.7];
-  }
-  const s=Math.max(55,Math.min(track.length-110,base+Math.sin(t*.11)*8));
-  const [px,py]=world?world._menuCameraPreset||[p.x,p.y]:[p.x,p.y];
-  const from=safePosition(track,s,p,px+Math.sin(t*.08)*.25,py+Math.cos(t*.13)*.2,course>=4?world:null);
+function resolveShot(track,course,shot,world){
+  const p=PREVIEW_CAMERA[course],base=clamp(track.length*p.shots[shot],60,track.length-170);
+  const [ox,oy]=p.offsets[shot];
+  const candidate=course<4?[[ox,oy]]:[[ox,oy],[-ox,oy],[ox,oy+16],[-ox,oy+16],[.85,.65]];
+  const target=track.pose(Math.min(track.length-4,base+p.front+30),0,0);
+  const chosen=candidate.find(([x,y])=>candidateClear(safePosition(track,base,p,x,y,world),target,world))||[.85,.65];
+  return {base,x:chosen[0],y:chosen[1]};
+}
+// The fade happens only when changing edited shots, so we never swipe through
+// several kilometres of unseen track or teleport the camera while visible.
+export function menuCamera(track,course,camera,t,world,reduced=false){
+  const p=PREVIEW_CAMERA[course]||PREVIEW_CAMERA[1],shot=reduced?0:Math.floor(t/SHOT_SECONDS)%p.shots.length;
+  const elapsed=reduced?0:t%SHOT_SECONDS;
+  const progress=reduced?0:Math.min(1,elapsed/(SHOT_SECONDS-.65));
+  if(world&&!world._menuShotPresets)world._menuShotPresets=new Map();
+  let preset=world?world._menuShotPresets.get(shot):null;
+  if(!preset){preset=resolveShot(track,course,shot,world);world?._menuShotPresets.set(shot,preset);}
+  const s=clamp(preset.base+p.travel*progress,60,track.length-95),F=track.frame(Math.max(1,s-p.back));
+  const wobble=reduced?0:Math.sin(t*.48+shot)*.62;
+  const from=safePosition(track,s,p,preset.x+wobble,preset.y+(reduced?0:Math.sin(t*.32)*.42),course>=4?world:null);
   camera.position.copy(from);
-  camera.up.copy(track.frame(s-p.back).u);
-  camera.lookAt(track.pose(Math.min(track.length-4,s+p.front),0,0));
-  const fov=p.fov+Math.sin(t*.075)*.7;
-  if(Math.abs(fov-camera.fov)>.1){camera.fov=fov;camera.updateProjectionMatrix();}
+  up.copy(F.u).addScaledVector(F.r,reduced?0:Math.sin(t*.3+shot)*.065).normalize();
+  camera.up.copy(up);
+  const look=track.pose(Math.min(track.length-4,s+p.front),course>=4?Math.sin(t*.16+shot)*2:0,course>=4?.6:0);
+  camera.lookAt(look);
+  const fov=p.fov+(reduced?0:Math.sin(t*.21+shot)*1.3);
+  if(Math.abs(fov-camera.fov)>.09){camera.fov=fov;camera.updateProjectionMatrix();}
+  // Brief cut mask preserves visual continuity while changing viewpoints.
+  const fade=reduced||t<SHOT_SECONDS?Math.max(0,(elapsed-(SHOT_SECONDS-.65))/.65):
+    Math.max(clamp((.65-elapsed)/.65,0,1),clamp((elapsed-(SHOT_SECONDS-.65))/.65,0,1));
+  camera.userData.menuReel={shot,progress,fade:clamp(fade,0,1),s};
   return s;
 }
