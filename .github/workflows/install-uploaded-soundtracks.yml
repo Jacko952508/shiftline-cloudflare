@@ -40,6 +40,7 @@ jobs:
           HASHES
           file *.mp3 | grep -q 'Audio'
           cp *.mp3 "$GITHUB_WORKSPACE/public/music/"
+          touch "$GITHUB_WORKSPACE/public/music/.user-soundtracks-installed"
           cd "$GITHUB_WORKSPACE"
           rm -f "$dir/SHIFTLINE_music_part1.zip" "$dir/SHIFTLINE_music_part2.zip"
           git add public/music
