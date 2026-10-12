@@ -18,7 +18,7 @@ export function createTrackExplorer(track,scene,world,specs=[]){
 }
 export function resetExplorer(e){
  if(!e)return;
- e.mode='orbit';e.yaw=.55;e.pitch=.62;e.zoom=1;e.pan.set(0,0,0);
+ e.mode='orbit';e.yaw=.55;e.pitch=e.track?.course<=2?.62:.50;e.zoom=1;e.pan.set(0,0,0);
  e.hasCamera=false;e.paused=false;e.pointers.clear();
 }
 export function zoomExplorer(e,factor){if(e)e.zoom=clamp(e.zoom*factor,.4,2.8);}
@@ -26,7 +26,7 @@ export function setExplorerMode(e,mode){
  if(!e||!['orbit','overhead','chase','fly'].includes(mode))return;
  e.mode=mode;e.pan.set(0,0,0);e.zoom=1;
  e.yaw=mode==='orbit'?.55:0;
- e.pitch=mode==='orbit'?.62:mode==='overhead'?1.35:0;
+ e.pitch=mode==='orbit'?(e.track.course<=2?.62:.50):mode==='overhead'?1.35:0;
  e.hasCamera=false;e.paused=false;
 }
 export function seekExplorer(e,fraction){
@@ -62,7 +62,7 @@ function cameraPose(e){
   }
   setFrameUp(up,t.frame(Math.max(2,s-12)));
  }else if(mode==='orbit'){
-  const distance=clamp((near?115:185)*e.zoom,40,490);
+  const distance=clamp((near?115:t.course===5?125:155)*e.zoom,40,490);
   const cp=clamp(e.pitch,.12,1.47);
   aim.copy(at(t,s)).add(e.pan);
   pos.copy(aim).addScaledVector(UP_WORLD,Math.sin(cp)*distance);
