@@ -1,0 +1,21 @@
+name: SHIFTLINE Cloudflare Multiplayer Smoke
+on:
+  push:
+    paths:
+      - '.github/workflows/multiplayer-smoke.yml'
+      - 'test/cloudflare-multiplayer.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify deployed Cloudflare game and real two-player room
+        run: node test/cloudflare-multiplayer.mjs
