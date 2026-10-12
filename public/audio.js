@@ -3,17 +3,22 @@ import{effectBuffer}from'./audio-effects.js?v=54';
 let ctx,master,music,sfx,track=0,scene=1,src=null,srcTrack=-1,userVolume=1,boosted=false,lastBoost=false;
 let synth=null,playGeneration=0,engine=null,engineNext=0,sfxLimiter;
 let warmQueue=null,warmPending=false;
-const buffers=new Map(),pending=new Map(),voices=new Set(),musicVoices=new Set(),noiseCache=new Map(),effectTimes=new Map(),timings=new WeakMap();
+const buffers=new Map(),pending=new Map(),voices=new Set(),musicVoices=new Set(),noiseCache=new Map(),effectTimes=new Map(),timings=new WeakMap(),missingRecordings=new Set();
 function ac(){if(ctx&&ctx.state!=='closed')return ctx;if(ctx?.state==='closed')audioStop();ctx=new(window.AudioContext||window.webkitAudioContext)();ctx.addEventListener?.('statechange',()=>{if(ctx.state==='running'&&userVolume>0&&!document.hidden){warmEffects();if(!src||srcTrack!==track)play();}});master=ctx.createGain();master.gain.value=.7*userVolume;master.connect(ctx.destination);music=ctx.createGain();music.gain.value=.52;music.connect(master);sfx=ctx.createGain();sfx.gain.value=.72;sfxLimiter=ctx.createDynamicsCompressor();sfxLimiter.threshold.value=-12;sfxLimiter.knee.value=6;sfxLimiter.ratio.value=4;sfxLimiter.attack.value=.003;sfxLimiter.release.value=.14;sfx.connect(sfxLimiter);sfxLimiter.connect(master);return ctx}
 const recordings={0:{url:'./music/m1.mp3?v=62',seconds:12.88589569161,beats:32},1:{url:'./music/s1.mp3?v=62',seconds:25.77181405896,beats:64},5:{url:'./music/s2.mp3?v=62',seconds:24.30378684807,beats:64},10:{url:'./music/s3.mp3?v=63',seconds:40,beats:96},14:{url:'./music/s4.mp3?v=64',seconds:19.2,beats:32},18:{url:'./music/s5.mp3?v=65',seconds:182.4,beats:304},22:{url:'./music/s6.mp3?v=65',seconds:220.68965986394557,beats:640}};
 function cacheBuffer(id,b){buffers.set(id,b);while(buffers.size>1&&(buffers.size>3||[...buffers.values()].reduce((n,b)=>n+b.length*8,0)>40000000))buffers.delete(buffers.keys().next().value);return b}
 function render(id){if(buffers.has(id)){const b=buffers.get(id);buffers.delete(id);buffers.set(id,b);return Promise.resolve(b)}if(pending.has(id))return pending.get(id).promise;
  const recording=recordings[id];
- if(recording){
+ if(recording&&!missingRecordings.has(id)){
   const promise=(async()=>{const response=await fetch(recording.url);if(!response.ok)throw new Error('Soundtrack unavailable');const decoded=await ac().decodeAudioData(await response.arrayBuffer()),length=Math.min(decoded.length,Math.round(recording.seconds*decoded.sampleRate)),b=length===decoded.length?decoded:ac().createBuffer(decoded.numberOfChannels,length,decoded.sampleRate);
    for(let channel=0;channel<b.numberOfChannels;channel++){const out=b.getChannelData(channel);if(b!==decoded)out.set(decoded.getChannelData(channel).subarray(0,length));const width=Math.min(128,length),jump=out[0]-out[length-1];for(let i=0;i<width;i++)out[i]-=jump*(1-i/width)**3;}
    timings.set(b,{beat:b.duration/recording.beats,beats:recording.beats,kind:100+id});return cacheBuffer(id,b);
-  })();pending.set(id,{promise});promise.finally(()=>pending.delete(id)).catch(()=>{});return promise;
+  })().catch(error=>{
+   // Recorded music may be temporarily absent after migrating the static host.
+   // Use the game's existing offline score engine instead of going silent.
+   console.warn('SHIFTLINE: recorded soundtrack unavailable; using synthesised fallback',recording.url,error);
+   missingRecordings.add(id);pending.delete(id);return render(id);
+  });pending.set(id,{promise});promise.finally(()=>pending.delete(id)).catch(()=>{});return promise;
  }
  if(!synth){try{synth=new Worker('./audio-worker.js?v=53');synth.onmessage=({data})=>{const p=pending.get(data.id);if(!p||!p.resolve)return;pending.delete(data.id);if(data.error){p.reject(new Error(data.error));return}const b=ac().createBuffer(2,data.left.length,data.sampleRate||32000);b.copyToChannel(data.left,0);b.copyToChannel(data.right,1);timings.set(b,{beat:data.left.length/(data.sampleRate||32000)/(data.beats||64),beats:data.beats||64,kind:data.family||0});cacheBuffer(data.id,b);p.resolve(b)};synth.onerror=()=>{for(const [id,p]of pending){if(p.reject){p.reject(new Error('Music synthesis unavailable'));pending.delete(id)}}synth.terminate();synth=null}}catch{return Promise.reject(new Error('Music unavailable'))}}
  let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});pending.set(id,{promise,resolve,reject});synth.postMessage(id);return promise;
