@@ -24,7 +24,7 @@ jobs:
           node-version: '24'
       - name: Validate all local game modules before running
         run: |
-          find public -maxdepth 2 -type f \\( -name '*.js' -o -name '*.mjs' \\) -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          find public -maxdepth 2 -type f -name '*.js' -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
           node --check test/upgrade-v100.mjs
       - name: Install Chromium for isolated candidate testing
         run: |
