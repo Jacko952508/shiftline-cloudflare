@@ -25,7 +25,7 @@ try {
   await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
   try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
   catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
-  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=103"]')}));
+  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=104"]')}));
   console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
   if(markup.button&&markup.ready&&markup.current){deployed=true;break;}
   await wait(10000);

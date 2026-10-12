@@ -25,7 +25,7 @@ try{
  await page.goto(base+'/?candidate=v100',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
  const start=await page.evaluate(()=>({menu:!document.querySelector('#menu').classList.contains('off'),six:document.querySelectorAll('.courseSelector [data-course]').length,quality:[...document.querySelector('#quality').options].map(o=>o.textContent),source:document.querySelector('script[src*="race-engine.js"]')?.getAttribute('src'),sentinel:JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')).sentinel}));
- assert.equal(start.six,6);assert.ok(start.menu);assert.deepEqual(start.quality,['ULTRA','ADAPTIVE','BATTERY SAVER']);assert.equal(start.source,'race-engine.js?v=103');assert.equal(start.sentinel,'v100-retain');
+ assert.equal(start.six,6);assert.ok(start.menu);assert.deepEqual(start.quality,['ULTRA','ADAPTIVE','BATTERY SAVER']);assert.equal(start.source,'race-engine.js?v=104');assert.equal(start.sentinel,'v100-retain');
  console.log('PASS launch, 6 course selector and progress-store compatibility '+JSON.stringify(start));
  checkImage(await page.screenshot({path:'upgrade-screenshots/01-menu.png'}),'menu');
  for(let course=1;course<=6;course++){
