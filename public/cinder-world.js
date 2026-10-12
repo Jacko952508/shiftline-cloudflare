@@ -3,7 +3,7 @@ import{glassDetail,fixtureLighting}from'./surface-detail.js?v=38';
 import * as THREE from 'three';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
 import{poseObject}from'./race-track.js?v=58';
-import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=38';
+import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';
 import{freezeWorld}from'./scene-performance.js';
 import{cinderAct,cinderShift}from'./cinder-colliders.js?v=58';
 const TAU=Math.PI*2;

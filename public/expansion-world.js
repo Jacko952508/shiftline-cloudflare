@@ -4,7 +4,7 @@ import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
 import{EXPANSIONS,expansionShift,expansionAct}from'./expansion-courses.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=58';
-import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=38';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
+import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
 const TAU=Math.PI*2;
 export function expansionGround(course,x,z,endZ){
  if(course===4)return 55+220*Math.exp(-(((x-420*Math.sin(z*.0015))/380)**2))+100*Math.sin(z*.002)**2-550*THREE.MathUtils.smoothstep(-z,-endZ-950,-endZ-350);
