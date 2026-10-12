@@ -20,9 +20,18 @@ function imageCheck(buffer,name) {
  assert.ok(varied>100,'Viewer rendering looks flat/empty: '+name);
 }
 try {
- await page.goto(url,{waitUntil:'domcontentloaded',timeout:35000});
- await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:90000});
- console.log('PASS actual Three.js game initialises on Cloudflare');
+ let deployed=false;
+ for(let attempt=1;attempt<=14;attempt++){
+  await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
+  try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
+  catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
+  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady}));
+  console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
+  if(markup.button&&markup.ready){deployed=true;break;}
+  await wait(10000);
+ }
+ assert.ok(deployed,'Cloudflare has not served the new actual-map Observatory build after retries');
+ console.log('PASS actual Three.js game initialises on Cloudflare with current Observatory');
  let passed=0;
  for(const [course,label] of [[1,'ECLIPSE'],[2,'LEVIATHAN'],[3,'CINDER'],[4,'TEMPEST'],[5,'VERDANT'],[6,'FRACTURE']]){
   if(course!==1){
