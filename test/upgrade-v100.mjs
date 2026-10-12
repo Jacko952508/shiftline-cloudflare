@@ -57,11 +57,13 @@ try{
  await page.evaluate(()=>document.querySelector('[data-course="1"]').click());
  await page.evaluate(()=>document.querySelector('#launch').click());
  await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),{timeout:40000});
- await sleep(4300);
+ // Software WebGL can stretch the 3-second simulated countdown considerably;
+ // wait for the actual race state rather than an arbitrary real-time sleep.
+ await page.waitForFunction(()=>document.querySelector('#count').classList.contains('off'),{timeout:90000});
  await page.evaluate(()=>document.querySelector('#cameraBtn').click());
  await page.waitForFunction(()=>document.body.classList.contains('cockpitActive'),{timeout:40000});
  assert.equal(await page.locator('#cameraBtn').getAttribute('aria-label'),'Switch to chase view');
- await sleep(2600);
+ await page.waitForFunction(()=>{const h=document.querySelector('#perfHUD');return !!h.textContent&&!h.classList.contains('off')},{timeout:75000});
  checkImage(await page.screenshot({path:'upgrade-screenshots/07-cockpit.png'}),'cockpit');
  const hud=await page.evaluate(()=>({text:document.querySelector('#perfHUD').textContent,hidden:document.querySelector('#perfHUD').classList.contains('off')}));
  assert.ok(hud.text.includes('FPS')&&!hud.hidden,'Live performance overlay did not render: '+JSON.stringify(hud));
