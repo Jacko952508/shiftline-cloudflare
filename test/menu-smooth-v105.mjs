@@ -11,7 +11,7 @@ const governor=createMenuFrameGovernor();
 assert.equal(governor.target('high'),60);
 for(let i=0;i<9;i++)governor.observe('high',.052,26);
 assert.equal(governor.target('high'),30,'Ultra must self-limit after slow frames');
-for(let i=0;i<410;i++)governor.observe('high',.0333,6);
+for(let i=0;i<365;i++)governor.observe('high',.0333,6);
 assert.equal(governor.target('high'),60,'Ultra must recover when device has headroom');
 governor.reset();
 assert.equal(governor.target('high'),60);
