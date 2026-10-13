@@ -1,0 +1,50 @@
+name: SHIFTLINE v105 Smooth Cinematic Menu Staging
+on:
+  push:
+    branches: [menu-smooth-v105-staging]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify source and test JavaScript syntax
+        run: |
+          find public -maxdepth 2 -type f -name '*.js' -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          node --check test/menu-smooth-v105.mjs
+      - name: Install mobile browser and screenshots toolkit
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Start branch-only server without touching Cloudflare
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v105-stage.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/menu-pacing.js >/dev/null
+      - name: Verify 30/60fps pacing, camera smoothness and iPhone canvas sizes
+        run: node test/menu-smooth-v105.mjs
+      - name: Verify visual appearance and four cinematic shots per course
+        run: node test/menu-cinematic-v104.mjs
+      - name: Verify cockpit, all six courses and saved progress
+        run: node test/upgrade-v100.mjs
+      - name: Verify obstacle geometry unchanged
+        run: node test/obstacle-v101.mjs
+      - name: Verify multiplayer handshake and two-player exchange
+        env:
+          SHIFTLINE_SITE: http://127.0.0.1:8765
+        run: node test/cloudflare-multiplayer.mjs
+      - name: Upload visual regression captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shiftline-v105-menu-captures
+          path: |
+            menu-v104-screenshots
+            upgrade-screenshots
+          if-no-files-found: ignore
