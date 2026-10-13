@@ -16,7 +16,7 @@ try{
  const checks=await page.evaluate(async()=>{
   const THREE=await import('three');
   const {createTrack}=await import('./race-track.js?v=58');
-  const {menuCamera,PREVIEW_CAMERA,MENU_SHOT_DURATION}=await import('./menu-camera.js?v=104');
+  const {menuCamera,PREVIEW_CAMERA,MENU_SHOT_DURATION}=await import('./menu-camera.js?v=105');
   const results=[];
   for(let course=1;course<=6;course++){
    const track=createTrack(course),world={sceneryBounds:[]},camera=new THREE.PerspectiveCamera(68,390/844,.15,14000);
