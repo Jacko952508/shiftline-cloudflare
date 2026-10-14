@@ -12,6 +12,10 @@ await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',J
 try{
  await page.goto('http://127.0.0.1:8765/?test=webkit',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:90000});
+ const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
+ const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
+ assert.equal(engineURL,'race-engine.js?v=115','fresh game engine URL');
+ assert.equal(cssURL,'style.css?v=115','fresh garage stylesheet URL');
  await page.locator('[data-tab="garage"]').click();
  await page.waitForTimeout(2000);
  const details=await page.evaluate(()=>{
