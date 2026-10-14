@@ -1,8 +1,8 @@
 import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=110';
 import * as THREE from 'three';
-import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=109';
+import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=112';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=38';
-import{PAINT}from'./progress.js?v=72';
+import{PAINT}from'./progress.js?v=112';
 export function createGarage(p){
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x060f19);scene.environment=hdrEnvironment();scene.environmentIntensity=1.2;
  const floor=new THREE.Mesh(new THREE.CylinderGeometry(1.9,2,.12,80),new THREE.MeshStandardMaterial({color:0x17212d,metalness:.65,roughness:.75}));floor.position.y=-.52;floor.receiveShadow=true;scene.add(floor);
@@ -19,7 +19,7 @@ export function equipGarage(g,p){disposeCockpit(g.cockpit);g.cockpit=createCockp
 export function renderGarage(g,renderer,rect,time){
  if(!rect||rect.width<1||rect.height<1||rect.bottom<0||rect.top>innerHeight)return;
  g.ship.rotation.set(g.pitch,g.yaw+(g.auto?Math.sin(time*.18)*.25:0),0);g.ship.position.y=Math.sin(time*.8)*.014;animateCraft(g.ship,time,false,1,0,true);
- g.camera.aspect=rect.width/rect.height;g.camera.position.set(0,g.zoom?.86:1.05,g.zoom?3.4:4.55);g.camera.lookAt(0,-.02,0);g.camera.updateProjectionMatrix();
+ g.camera.aspect=rect.width/rect.height;g.camera.position.set(0,g.zoom?.9:1.18,g.zoom?3.55:5.0);g.camera.lookAt(0,-.02,0);g.camera.updateProjectionMatrix();
  const exposure=renderer.toneMappingExposure;renderer.toneMappingExposure=1.42;renderer.setRenderTarget(null);renderer.setScissorTest?.(false);renderer.setViewport?.(0,0,innerWidth,innerHeight);renderer.clear?.();
  renderer.setViewport?.(rect.left,innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissor?.(rect.left,innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissorTest?.(true);
  try{if(g.viewCockpit){updateCockpit(g.cockpit,.033,{time,speed:0,energy:100,boost:false,lateral:Math.sin(time*.5)*2,vertical:Math.cos(time*.4),lock:'GARAGE / INSTRUMENT PREVIEW'}, {left:rect.width*.45,top:rect.height*.79,width:rect.width*.1,height:rect.width*.1},rect.width,rect.height);renderCockpit(g.cockpit,renderer);}else renderer.render(g.scene,g.camera)}finally{renderer.toneMappingExposure=exposure;renderer.setScissorTest?.(false);renderer.setViewport?.(0,0,innerWidth,innerHeight)}
