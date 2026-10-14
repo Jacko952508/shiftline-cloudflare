@@ -24,6 +24,15 @@ const menuObserver=new MutationObserver(syncMenuAnimation);menuObserver.observe(
 const GARAGE_CATEGORIES=[['ship','◈','SHIP'],['finish','◉','FINISH'],['wing','◤','WINGS'],['engine','◎','ENGINE'],['canopy','◇','CANOPY'],['fin','⌁','FINS'],['livery','≋','LIVERY'],['trail','➤','TRAIL'],['cabin','▣','CABIN'],['instrument','▦','DISPLAYS'],['stick','⊕','CONTROLS'],['presets','✦','PRESETS']];
 const MODEL_SHAPES=['M8 31 L24 4 L39 31 L28 24 L20 24Z M6 22 L3 39 L18 30Z M41 22 L45 39 L30 30Z','M24 3 L30 29 L40 12 L45 41 L29 34 L24 42 L19 34 L3 41 L8 12 L18 29Z','M24 4 L29 24 L45 33 L44 42 L24 34 L4 42 L3 33 L19 24Z','M24 5 Q17 18 3 18 L5 40 Q16 35 24 29 Q32 35 43 40 L45 18 Q31 18 24 5Z','M24 4 L29 35 L24 42 L19 35Z M7 13 L15 9 L17 38 L9 43Z M41 13 L33 9 L31 38 L39 43Z','M24 3 L31 35 L24 43 L17 35Z M16 20 L2 8 L8 38 L19 31Z M32 20 L46 8 L40 38 L29 31Z'];
 document.querySelector('#garageCategories').innerHTML=GARAGE_CATEGORIES.map(([id,icon,name])=>'<button type="button" role="tab" data-garage-category="'+id+'" aria-selected="false"><span>'+icon+'</span>'+name+'</button>').join('');
+// The mini blueprints show a real change of shape, rather than a generic first-letter tile.
+const GARAGE_PART_ART={
+ wing:['M7 35 L22 14 L40 35 L28 31 L20 28Z','M7 38 L19 14 L40 30 L41 39Z','M6 33 Q26 11 43 8 L32 28 L39 40 L19 33Z','M4 36 L37 6 L28 29 L44 41 L15 35Z','M6 30 Q22 8 42 7 Q34 23 24 30 L39 39 L20 32Z'],
+ engine:['M14 16 L34 16 L39 33 L10 33Z','M9 16 L39 16 L44 34 L5 34Z','M14 10 A13 13 0 1 1 13 36 M22 8 A16 16 0 1 0 22 40','M8 18 L31 14 L40 23 L36 36 L10 31Z','M9 13 L16 16 L16 35 L9 38 M39 13 L32 16 L32 35 L39 38'],
+ canopy:['M10 33 Q12 13 24 11 Q36 13 38 33Z','M8 35 L13 18 L23 14 L36 24 L40 35Z','M9 37 L23 9 L39 37 L25 27Z','M7 34 L16 16 L30 16 L41 34 L36 39 L12 39Z','M8 35 Q10 8 24 6 Q40 10 40 35Z'],
+ fin:['M7 34 L13 24 L32 27 L40 34Z','M8 35 L12 13 L21 28 L28 12 L40 35Z','M5 37 L13 8 L23 27 L33 8 L43 37Z','M8 39 L24 5 L40 39Z','M7 37 L10 10 L24 31 L38 10 L41 37Z'],
+ livery:['M12 36 L23 10 L34 36Z','M12 36 L23 10 L34 36 M17 28 L31 28','M12 36 L23 10 L34 36 M20 23 L29 23','M5 35 L16 20 L24 29 L32 20 L43 35','M11 35 L24 8 L37 35 M24 15 L24 34'],
+ trail:['M22 7 Q34 22 17 38 Q29 19 22 7','M13 9 Q43 20 19 39 Q29 17 13 9','M12 35 Q42 4 31 33 M13 29 L22 20','M15 36 Q9 16 30 7 Q24 22 34 38','M12 9 Q44 22 19 39 Q29 23 12 9']
+};
 function optionTile(kind,id,name,description,selected,locked=false,color=null,illustration=null){
  const art=illustration!==null?'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="'+illustration+'"/></svg>':color?'<i class="garageSwatch" style="--chip:'+color+'"></i>':'<span class="garagePartIcon">'+(String(name).charAt(0)||'✦')+'</span>';
  return '<button type="button" class="garageOptionTile'+(selected?' selected':'')+'" data-choice-kind="'+kind+'" data-choice-id="'+id+'"'+(locked?' disabled aria-label="'+name+', locked"':'')+'><span class="garageOptionArt">'+art+'</span><strong>'+name+'</strong><small>'+description+'</small>'+(locked?'<em>LOCKED</em>':selected?'<em>EQUIPPED</em>':'')+'</button>';
@@ -43,11 +52,11 @@ function renderGarageOptions(p){
   const colours=COLORS.map((hex,i)=>optionTile('color',i,names[i],i>=6?'Championship reward':'Accent colour',p.color===i,i>=6&&!unlocked.includes(i),i===7?'linear-gradient(130deg,#fff7bf,#ffc82a,#8d4f06,#fff0a2)':i===6?'linear-gradient(130deg,#fff,#8ea8c4,#173348,#ebfaff)':hex)).join('');
   tiles=finishes+colours;
  }else if(cat==='presets'){title='QUICK BUILDS';sub='Apply a factory style to this ship';tiles=BUILDS.map((b,i)=>optionTile('preset',i,b.name,'Preset 0'+(i+1),false)).join('')}
- else{title=cat==='wing'?'WING GEOMETRY':cat==='cabin'?'CABIN LINING':cat==='instrument'?'INSTRUMENT LIGHTING':cat==='stick'?'PILOT CONTROLS':cat.toUpperCase()+' OPTIONS';sub='Change a component · see the live 3D preview';tiles=PARTS[cat].map((name,i)=>optionTile('part',i,name,cat.toUpperCase()+' / 0'+(i+1),custom[cat]===i)).join('')}
+ else{title=cat==='wing'?'WING GEOMETRY':cat==='cabin'?'CABIN LINING':cat==='instrument'?'INSTRUMENT LIGHTING':cat==='stick'?'PILOT CONTROLS':cat.toUpperCase()+' OPTIONS';sub=['cabin','instrument','stick'].includes(cat)?'Displayed in the live cockpit preview':cat==='trail'?'Rotate to inspect animated rocket plasma':cat==='engine'?'New mechanical housings and rear thrusters':'Physical components · see the live 3D changes';tiles=PARTS[cat].map((name,i)=>optionTile('part',i,name,cat==='trail'?'LIVE PLASMA / '+(i+1):cat==='instrument'||cat==='cabin'||cat==='stick'?'COCKPIT / '+(i+1):'HARDWARE / 0'+(i+1),custom[cat]===i,false,null,GARAGE_PART_ART[cat]?.[i]||null)).join('')}
  $('#garageCategoryTitle').textContent=title;$('#garageCategorySubtitle').textContent=sub;
  rail.innerHTML=tiles;rail.dataset.shownCategory=cat;rail.scrollLeft=same?scroll:0;
 }
-document.querySelector('#garageCategories').addEventListener('click',e=>{const b=e.target.closest('[data-garage-category]');if(!b)return;garageCategory=b.dataset.garageCategory;renderGarageOptions(readProgress());b.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
+document.querySelector('#garageCategories').addEventListener('click',e=>{const b=e.target.closest('[data-garage-category]');if(!b)return;garageCategory=b.dataset.garageCategory;renderGarageOptions(readProgress());window.dispatchEvent(new CustomEvent('shiftline-garage-focus',{detail:{category:garageCategory}}));b.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
 document.querySelector('#garageOptionRail').addEventListener('click',e=>{
  const b=e.target.closest('[data-choice-kind]');if(!b||b.disabled)return;
  const kind=b.dataset.choiceKind,index=Number(b.dataset.choiceId);
