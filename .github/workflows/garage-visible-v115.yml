@@ -1,7 +1,7 @@
-name: SHIFTLINE Six Fleet V117 Visible Model Test
+name: SHIFTLINE Fleet V118 Fins + Textures QA
 on:
   push:
-    branches: [ship-fleet-v117-models, main]
+    branches: [fleet-fin-texture-v118, main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,18 +34,18 @@ jobs:
         run: node test/garage-webkit-v115.mjs
       - name: Smoke test racing with an upgraded SPECTRE and saved progress
         run: node test/fleet-race-v117.mjs
-      - name: Wait for production Cloudflare to serve v117
+      - name: Wait for production Cloudflare to serve v118
         if: github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 60); do
-            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v117' | grep -q 'race-engine.js?v=117'; then
+            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v118' | grep -q 'race-engine.js?v=118'; then
               echo "PASS Cloudflare serving new game engine"
               exit 0
             fi
             echo "Cloudflare not yet updated, retry $i"
             sleep 10
           done
-          echo "FAIL Cloudflare did not deploy v117" >&2
+          echo "FAIL Cloudflare did not deploy v118" >&2
           exit 1
       - name: Check actual production ship pixels in Chromium
         if: github.ref == 'refs/heads/main'
