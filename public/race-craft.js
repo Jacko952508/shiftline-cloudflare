@@ -1,4 +1,4 @@
-import{appearance,SHIP_SCALE}from'./ship-catalog.js?v=72';
+import{appearance,SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{acquirePBR,releasePBR}from'./material-lab.js?v=38';
 import{hullDetail}from'./surface-detail.js?v=38';
 import * as THREE from 'three';

@@ -1,4 +1,4 @@
-export const SHIP_SCALE=.9;
+export const SHIP_SCALE=.83;
 export const MODELS=[
 {name:'VECTOR',tag:'Precision interceptor',xp:0,desc:'Sculpted titanium fuselage and swept aerofoils.'},
 {name:'RAZOR',tag:'Needle chassis',xp:0,desc:'A spear nose, clipped wings and low canopy.'},

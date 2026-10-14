@@ -8,8 +8,12 @@ import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-co
 const RACING_LINES=[];for(let r=0;r<=5.8;r+=.65)for(let k=0;k<24;k++){const a=k*Math.PI*2/24;RACING_LINES.push({x:Math.cos(a)*r,y:Math.sin(a)*r})}
 import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=101';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=67';
+import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js';
-const TAU=Math.PI*2;export const BODY=[{x:0,y:0,z:-1.12,r:.3},{x:0,y:0,z:0,r:.47},{x:-.76,y:0,z:.35,r:.2},{x:.76,y:0,z:.35,r:.2},{x:0,y:0,z:1.0,r:.3}];
+const TAU=Math.PI*2;
+// Keep obstacle hitboxes proportionate to the actual ship, using the original .9-scale envelope as the baseline.
+const collisionScale=SHIP_SCALE/.9;
+export const BODY=[{x:0,y:0,z:-1.12,r:.3},{x:0,y:0,z:0,r:.47},{x:-.76,y:0,z:.35,r:.2},{x:.76,y:0,z:.35,r:.2},{x:0,y:0,z:1.0,r:.3}].map(b=>({x:b.x*collisionScale,y:b.y*collisionScale,z:b.z*collisionScale,r:b.r*collisionScale}));
 let ringHaloTexture=null,ringHaloUsers=0;
 function smallRingGlow(o,mesh,p){
  if(!ringHaloTexture){const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d'),g=c.createRadialGradient(128,128,0,128,128,128);for(const [at,alpha]of [[0,0],[.72,0],[.8,.06],[.88,.36],[.94,.12],[1,0]])g.addColorStop(at,'rgba(255,255,255,'+alpha+')');c.fillStyle=g;c.fillRect(0,0,256,256);ringHaloTexture=new THREE.CanvasTexture(canvas);ringHaloTexture.colorSpace=THREE.SRGBColorSpace;}
@@ -17,7 +21,7 @@ function smallRingGlow(o,mesh,p){
  const halo=new THREE.Mesh(new THREE.PlaneGeometry(extent*2,extent*2),material);halo.name='small-ring-halo';halo.position.z=p.tube*1.16;mesh.add(halo);ringHaloUsers++;(o.ringHalos??=[]).push(halo);o.trim.push(material);
 }
 
-export function clearance(o,state,x,y){return Math.min(localDistance(o,state,x,y,0)-.47,localDistance(o,state,x-.76,y,0)-.2,localDistance(o,state,x+.76,y,0)-.2);}
+export function clearance(o,state,x,y){return Math.min(localDistance(o,state,x+BODY[1].x,y+BODY[1].y,0)-BODY[1].r,localDistance(o,state,x+BODY[2].x,y+BODY[2].y,0)-BODY[2].r,localDistance(o,state,x+BODY[3].x,y+BODY[3].y,0)-BODY[3].r);}
 export function collisionAt(track,specs,s,x,y,time,bank=0,onClearance=null){let first=0,last=specs.length;while(first<last){const mid=(first+last)>>>1;if(specs[mid].s<s-10)first=mid+1;else last=mid}if(first===specs.length||specs[first].s>s+10)return null;const F=track.frame(s),cx=F.p.x+F.r.x*x+F.u.x*y,cy=F.p.y+F.r.y*x+F.u.y*y,cz=F.p.z+F.r.z*x+F.u.z*y,c=Math.cos(bank),si=Math.sin(bank);for(let i=first;i<specs.length;i++){const o=specs[i];if(o.s>s+10)break;const O=o.frame||track.frame(o.s),state=obstacleState(o,time);let gap=Infinity;for(const b of BODY){const bx=b.x*c-b.y*si,by=b.x*si+b.y*c,px=cx+F.r.x*bx+F.u.x*by-F.f.x*b.z-O.p.x,py=cy+F.r.y*bx+F.u.y*by-F.f.y*b.z-O.p.y,pz=cz+F.r.z*bx+F.u.z*by-F.f.z*b.z-O.p.z;const d=localDistance(o,state,px*O.r.x+py*O.r.y+pz*O.r.z,px*O.u.x+py*O.u.y+pz*O.u.z,-(px*O.f.x+py*O.f.y+pz*O.f.z))-b.r;if(d<0)return o;gap=Math.min(gap,d);}if(onClearance&&gap<=.55)onClearance(o,gap);}return null;}
 export function safeTarget(o,time,x=0,y=0){const state=obstacleState(o,time);let best=null,score=Infinity;for(let r=0;r<6.25;r+=.65)for(let k=0;k<24;k++){const a=k*TAU/24,nx=Math.cos(a)*r,ny=Math.sin(a)*r,d=clearance(o,state,nx,ny);if(d<.3)continue;const cost=Math.hypot(nx-x,ny-y)+r*.015;if(cost<score){score=cost;best={x:nx,y:ny,clearance:d}}}return best;}
 // Predict the complete crossing window, then choose a line with margin for wings and motion.
