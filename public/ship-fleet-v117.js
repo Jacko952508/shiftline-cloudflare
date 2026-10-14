@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
 import{installShipExhaust}from'./ship-exhaust-v119.js?v=119';
+import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
 // SHIFTLINE 117 — six deliberately different, complete airframes. All geometry
 // points toward local -Z; wingspan is normalised to 2.08 local units.
 // The gameplay collision envelope is controlled elsewhere and is unchanged.
@@ -327,6 +328,10 @@ function builder(ship,index,c,m,high=true){
    wingPoly([[.22,-.34+sweep],[.58,-.53+sweep],[.72,.30],[.44,.65]],side,polished,.015);
   }
  }
+ // Large, ship-specific optional kits: real geometry for every visual category.
+ const installedKits=addFleetUpgrades(index,c,{add,layer,line,bar,mountedFin,hullMesh,owned,
+  materials:{hull,carbon,trim,polished,graphite,ceramic,glass,glow,premium}});
+ ship.userData.fleetUpgradeSignature=installedKits.signature;
  // Accent paint remains visible even when livery = CLEAN, and is saved per ship.
  for(const side of[-1,1]){
   line([[side*.21,.14,-.42],[side*.29,.15,.14],[side*.35,.13,.45]],paint,.008);
@@ -360,7 +365,7 @@ function builder(ship,index,c,m,high=true){
     const shoeBox=new THREE.Box3().setFromObject(shoe);
     return{side,shoeFin:shoeBox.intersectsBox(new THREE.Box3().setFromObject(fin)),shoeHull:members.some(o=>shoeBox.intersectsBox(new THREE.Box3().setFromObject(o)))};
   });
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,texturedMeshes:textured};
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,texturedMeshes:textured,upgradeCounts:installedKits.counts,upgradeSignature:installedKits.signature,exhaustEmitters:ship.userData.exhaustFX?.actors?.length||0};
  }
  return root;
 }
