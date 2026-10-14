@@ -1,7 +1,7 @@
 name: SHIFTLINE Garage Visible Render Test
 on:
   push:
-    branches: [garage-visibility-v115-staging]
+    branches: [garage-visibility-v115-staging, main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +30,29 @@ jobs:
       - name: Measure real garage ship pixels
         run: node test/garage-visible-v115.mjs
       - name: Verify WebKit can display the ship on iPhone-sized screen
+        run: node test/garage-webkit-v115.mjs
+      - name: Wait for production Cloudflare to serve v115
+        if: github.ref == 'refs/heads/main'
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v115' | grep -q 'race-engine.js?v=115'; then
+              echo "PASS Cloudflare serving new game engine"
+              exit 0
+            fi
+            echo "Cloudflare not yet updated, retry $i"
+            sleep 10
+          done
+          echo "FAIL Cloudflare did not deploy v115" >&2
+          exit 1
+      - name: Check actual production ship pixels in Chromium
+        if: github.ref == 'refs/heads/main'
+        env:
+          SHIFTLINE_SITE: https://shiftline-game.beyondthebox.workers.dev
+        run: node test/garage-visible-v115.mjs
+      - name: Check actual production ship pixels in WebKit
+        if: github.ref == 'refs/heads/main'
+        env:
+          SHIFTLINE_SITE: https://shiftline-game.beyondthebox.workers.dev
         run: node test/garage-webkit-v115.mjs
       - name: Upload diagnostic images
         if: always()
