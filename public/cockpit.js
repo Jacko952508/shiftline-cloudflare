@@ -1,10 +1,12 @@
-import{craft,disposeCraft}from'./race-craft.js?v=107';
+import{craft,disposeCraft}from'./race-craft.js?v=109';
 import * as THREE from 'three';
-import{appearance,MODELS}from'./ship-catalog.js?v=107';
+import{appearance,MODELS}from'./ship-catalog.js?v=109';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff){
- const a=appearance(custom),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
- const tone=[0x72efff,0xffbd78,0xa6ffcb][a.instrument],shell=new THREE.MeshStandardMaterial({color:[0x20313f,0x444b53,0x342b24][a.cabin],roughness:a.cabin===2?.88:.52,metalness:a.cabin===2?0:.5}),rubber=new THREE.MeshStandardMaterial({color:0x090e14,roughness:.9}),trim=new THREE.MeshStandardMaterial({color:tone,emissive:tone,emissiveIntensity:.18,roughness:.6,metalness:.25});
+ const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
+ const tone=(gold||chrome)?0xf0ffff:[0x72efff,0xffbd78,0xa6ffcb][a.instrument],shell=new THREE.MeshStandardMaterial({color:[0x20313f,0x444b53,0x342b24][a.cabin],roughness:a.cabin===2?.88:.52,metalness:a.cabin===2?0:.5}),rubber=new THREE.MeshStandardMaterial({color:0x090e14,roughness:.9}),trim=new THREE.MeshStandardMaterial({color:tone,emissive:tone,emissiveIntensity:.18,roughness:.6,metalness:.25});
+ if(gold||chrome){trim.color.setHex(0xf3ffff);trim.emissive.setHex(0xffffff);trim.emissiveIntensity=.45;}
+ const metalInset=new THREE.MeshStandardMaterial({color:gold?0xb88b31:chrome?0xc6e4f5:0x526f80,metalness:.94,roughness:gold?.22:.32}),fineLight=new THREE.MeshBasicMaterial({color:gold||chrome?0xf4ffff:tone,toneMapped:false});
  const mesh=(geo,mat,x,y,z,parent=root)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);return m};
  scene.add(new THREE.HemisphereLight(0xb9d9ec,0x14202a,2));const key=new THREE.DirectionalLight(0xc5e4ff,3);key.position.set(-2,3,2);scene.add(key);
 
@@ -19,6 +21,15 @@ export function createCockpit(custom={},model=0,color=0x72efff){
  for(let i=0;i<3;i++)mesh(new THREE.BoxGeometry(.045,.008,.12),rubber,side*(.89+i*.06),-.89,-1.48);
  }
  rib([[-1.14,.88,-2.62],[-.65,1.03,-2.85],[0,1.07,-2.92],[.65,1.03,-2.85],[1.14,.88,-2.62]],.022,shell);
+ rib([[-1.11,.855,-2.605],[-.62,1.005,-2.835],[0,1.045,-2.90],[.62,1.005,-2.835],[1.11,.855,-2.605]],.007,fineLight);
+ for(const side of[-1,1]){
+  const lip=mesh(new THREE.BoxGeometry(.36,.035,.43),metalInset,side*.91,-1.04,-1.55);lip.rotation.z=-side*.15;
+  for(let i=0;i<3;i++)mesh(new THREE.BoxGeometry(.09,.008,.025),fineLight,side*(.80+i*.07),-.99,-1.37);
+  rib([[side*.56,-1.05,-1.85],[side*.72,-.94,-1.88],[side*.97,-.9,-1.79]],.008,fineLight);
+ }
+ const centreDash=mesh(new THREE.BoxGeometry(.42,.11,.36),shell,0,-1.08,-1.78);centreDash.rotation.x=-.15;
+ const dashGlass=mesh(new THREE.BoxGeometry(.32,.009,.17),metalInset,0,-1.013,-1.79);
+ for(let i=-2;i<=2;i++)mesh(new THREE.BoxGeometry(.035,.011,.05),fineLight,i*.064,-1.006,-1.77);
  // Edge-only windshield sheen: no opaque/tinted pane over the racing line.
  const glass=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{tint:{value:new THREE.Color(tone)},time:{value:0},boost:{value:0}},vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;uniform vec3 tint;uniform float time;uniform float boost;void main(){float e=pow(abs(v.x-.5)*2.,12.);float top=pow(v.y,18.);float drift=sin(time*.14)*.04;float stripe=exp(-pow((v.x+.18*v.y-.83+drift)*47.,2.))*smoothstep(.15,.9,v.y);float horizon=exp(-pow((v.y-.77+sin(v.x*6.+time*.18)*.03)*20.,2.))*.007;float rim=e*.027+top*.019;float a=rim+stripe*(.014+boost*.005)+horizon;a*=smoothstep(.04,.23,v.y);gl_FragColor=vec4(mix(tint,vec3(.73,.88,.98),.67),min(.052,a));}'});
  
@@ -49,6 +60,10 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
    for(let k=0;k<3;k++){const bar=mesh(edgeGeo,edgeMat,side*.80,-.66+k*.036,-1.574);bar.scale.x=.36+k*.24;bar.rotation.z=-side*.19;}
    for(let k=0;k<3;k++){const rivet=mesh(new THREE.SphereGeometry(.009,6,4),trim,side*(.97+k*.055),-.90,-1.36);rivet.scale.y=.5;}
  }
+ // Sparse free-standing lead reticle: forward space remains unobstructed.
+ const sightPoints=[-.24,-.035,-.12,-.035,.12,-.035,.24,-.035,0,.085,0,.145,0,-.11,0,-.17];
+ const sightGeo=new THREE.BufferGeometry();const positions=[];for(let i=0;i<sightPoints.length;i+=2)positions.push(sightPoints[i],sightPoints[i+1],-1.72);sightGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ const sight=new THREE.LineSegments(sightGeo,new THREE.LineBasicMaterial({color:tone,transparent:true,opacity:.53,depthTest:false}));sight.renderOrder=7;hud.add(sight);
  const result={scene,camera,root,hud,panels,stick,rightStick,nose,forebody,clip,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};return result;
 }
 export function updateCockpit(c,dt,data,rect,width,height){

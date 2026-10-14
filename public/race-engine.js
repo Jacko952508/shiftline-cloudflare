@@ -1,7 +1,7 @@
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
 import{menuCamera,PREVIEW_CAMERA,prepareMenuCamera}from'./menu-camera.js?v=105';
 import{menuFrameProfile,createMenuFrameGovernor}from'./menu-pacing.js?v=105';
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=107';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=109';
 import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=72';
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=96';
@@ -10,7 +10,7 @@ import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./grap
 import{shipAppearance}from'./ship-wire.js?v=72';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=69';
-import{createGarage,equipGarage,renderGarage,disposeGarage}from'./garage-scene.js?v=107';
+import{createGarage,equipGarage,renderGarage,disposeGarage}from'./garage-scene.js?v=109';
 import{Combat,COMBAT_VERSION,PULSE_LIMIT,PULSE_COOLING,WEAPONS}from'./combat-core.js?v=67';
 import{createCombatView,updateCombatView,shieldHit,disposeCombatView}from'./combat-view.js?v=58';
 import{setNameTag,updateNameTag,disposeNameTag}from'./name-tags.js';
@@ -20,7 +20,7 @@ import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=107';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=100';
-import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=107';
+import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=109';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=105';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=72';
@@ -188,7 +188,7 @@ function openExplorer(){
 function openGarage(){disposeRace();renderer.toneMappingExposure=1.15;if(effects?.final?.uniforms?.exposure)effects.final.uniforms.exposure.value=1;garage=createGarage(readProgress());renderer.shadowMap.enabled=true;}
 window.addEventListener('shiftline-garage',e=>{if(state!=='menu'||!window.shiftlineReady)return;if(e.detail.active)openGarage();else if(garage)buildPreview()});
 window.addEventListener('shiftline-customisation',()=>{if(state!=='menu'||!window.shiftlineReady)return;if(garage)equipGarage(garage,readProgress());else buildPreview()});
-const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=.55;garage.pitch=.12;garage.auto=true;garage.drag=null}};
+const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageZoomView').onclick=()=>{if(garage){garage.zoom=!garage.zoom;$('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=.55;garage.pitch=.12;garage.auto=true;garage.drag=null;garage.zoom=false;$('#garageZoomView').textContent='ZOOM IN';}};
 function init(){bind();renderer=new THREE.WebGLRenderer({canvas:$('#game'),antialias:false,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,qualityRatio()));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;effects=new RaceEffects(renderer);scene=new THREE.Scene();scene.updateMatrix();scene.matrixAutoUpdate=false;camera=new THREE.PerspectiveCamera(74,innerWidth/innerHeight,.15,14000);buildPreview();window.shiftlineReady=true;document.body.classList.add('gpuReady');renderer.setAnimationLoop(loop)}
 try{init()}catch(error){console.error(error);window.shiftlineReady=false;$('#loadError').classList.remove('off')}
 
