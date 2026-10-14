@@ -10,7 +10,7 @@ import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./grap
 import{shipAppearance}from'./ship-wire.js?v=72';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=69';
-import{createGarage,equipGarage,renderGarage,disposeGarage}from'./garage-scene.js?v=118';
+import{createGarage,equipGarage,renderGarage,disposeGarage}from'./garage-scene.js?v=119';
 import{Combat,COMBAT_VERSION,PULSE_LIMIT,PULSE_COOLING,WEAPONS}from'./combat-core.js?v=67';
 import{createCombatView,updateCombatView,shieldHit,disposeCombatView}from'./combat-view.js?v=58';
 import{setNameTag,updateNameTag,disposeNameTag}from'./name-tags.js';
@@ -20,7 +20,7 @@ import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=107';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=100';
-import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=118';
+import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=119';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=105';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=112';
