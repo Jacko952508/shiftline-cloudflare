@@ -1,0 +1,37 @@
+name: SHIFTLINE Garage Visible Render Test
+on:
+  push:
+    branches: [garage-visibility-v115-staging]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  garage-visible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check JavaScript syntax
+        run: |
+          find public -maxdepth 2 -type f -name '*.js' -not -path '*/vendor/*' -print0 | xargs -0 -n 1 node --check
+          node --check test/garage-visible-v115.mjs
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium
+      - name: Start staging webserver
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-stage.log 2>&1 &
+          sleep 2
+      - name: Measure real garage ship pixels
+        run: node test/garage-visible-v115.mjs
+      - name: Upload diagnostic images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-visible-v115
+          path: garage-visible-artifacts
+          if-no-files-found: ignore
