@@ -116,7 +116,7 @@ export function addFleetUpgrades(index,c,api){
     mark('canopy',layer([[.06,z0+.14],[.25,z0+.29],[.24,z1-.03],[.10,z1+.02]],finish,.337,.032,side),'armour-hood');
     bracket('canopy',[side*.21,.31,lead],[side*.20,.29,tail],.07,graphite);
    }else if(c.canopy===4){ // tall bubble with illuminated root rails
-    mark('canopy',hullMesh([[z0+.16,.005,.004,.25],[z0+.34,.13,.10,.29],[z0+.57,.17,.135,.32],[z1-.05,.11,.07,.29],[z1+.08,.012,.012,.24]],glass,0,0,14),'raised-glass-bubble');
+    if(side===1)mark('canopy',hullMesh([[z0+.16,.005,.004,.25],[z0+.34,.13,.10,.29],[z0+.57,.17,.135,.32],[z1-.05,.11,.07,.29],[z1+.08,.012,.012,.24]],glass,0,0,14),'raised-glass-bubble');
     bracket('canopy',[side*.16,.29,lead],[side*.14,.33,tail],.048,coloured);
    }
   }
