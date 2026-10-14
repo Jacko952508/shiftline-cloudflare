@@ -1,4 +1,4 @@
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=109';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=110';
 import * as THREE from 'three';
 import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=109';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=38';
@@ -15,7 +15,7 @@ export function createGarage(p){
  const back=new THREE.DirectionalLight(0xffffff,1.7);back.position.set(0,4,3);scene.add(back);
  const g={scene,key,ring,ship:null,yaw:.55,pitch:.12,drag:null,auto:true,zoom:false,camera:new THREE.PerspectiveCamera(38,1,.1,40)};equipGarage(g,p);return g;
 }
-export function equipGarage(g,p){disposeCockpit(g.cockpit);g.cockpit=createCockpit(p.custom,p.craft,PAINT[p.color]||PAINT[0]);const previous=g.ship;g.ship=craft(g.scene,PAINT[p.color]||PAINT[0],p.craft,false,p.custom);if(previous)disposeCraft(g.scene,previous);g.ring.material.color.setHex(p.color===7?0xffda81:p.color===6?0xe8faff:p.color===8?0xffa6dc:0x75ced7);tuneTextureFiltering(g.scene,4);}
+export function equipGarage(g,p){disposeCockpit(g.cockpit);g.cockpit=createCockpit(p.custom,p.craft,PAINT[p.color]||PAINT[0],g.scene.environment);const previous=g.ship;g.ship=craft(g.scene,PAINT[p.color]||PAINT[0],p.craft,false,p.custom);if(previous)disposeCraft(g.scene,previous);g.ring.material.color.setHex(p.color===7?0xffda81:p.color===6?0xe8faff:p.color===8?0xffa6dc:0x75ced7);tuneTextureFiltering(g.scene,4);}
 export function renderGarage(g,renderer,rect,time){
  if(!rect||rect.width<1||rect.height<1||rect.bottom<0||rect.top>innerHeight)return;
  g.ship.rotation.set(g.pitch,g.yaw+(g.auto?Math.sin(time*.18)*.25:0),0);g.ship.position.y=Math.sin(time*.8)*.014;animateCraft(g.ship,time,false,1,0,true);

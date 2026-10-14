@@ -2,8 +2,9 @@ import{craft,disposeCraft}from'./race-craft.js?v=109';
 import * as THREE from 'three';
 import{appearance,MODELS}from'./ship-catalog.js?v=109';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
-export function createCockpit(custom={},model=0,color=0x72efff){
+export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
+ scene.environment=environment;scene.environmentIntensity=1.32;
  const tone=(gold||chrome)?0xf0ffff:[0x72efff,0xffbd78,0xa6ffcb][a.instrument],shell=new THREE.MeshStandardMaterial({color:[0x20313f,0x444b53,0x342b24][a.cabin],roughness:a.cabin===2?.88:.52,metalness:a.cabin===2?0:.5}),rubber=new THREE.MeshStandardMaterial({color:0x090e14,roughness:.9}),trim=new THREE.MeshStandardMaterial({color:tone,emissive:tone,emissiveIntensity:.18,roughness:.6,metalness:.25});
  if(gold||chrome){trim.color.setHex(0xf3ffff);trim.emissive.setHex(0xffffff);trim.emissiveIntensity=.45;}
  const metalInset=new THREE.MeshStandardMaterial({color:gold?0xb88b31:chrome?0xc6e4f5:0x526f80,metalness:.94,roughness:gold?.22:.32}),fineLight=new THREE.MeshBasicMaterial({color:gold||chrome?0xf4ffff:tone,toneMapped:false});
