@@ -34,7 +34,7 @@ try{
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
- assert.equal(engineURL,'race-engine.js?v=115','fresh game engine URL');
+ assert.equal(engineURL,'race-engine.js?v=116','fresh game engine URL');
  assert.equal(cssURL,'style.css?v=115','fresh garage stylesheet URL');
  await page.locator('[data-tab="garage"]').click();
  const first=await measure('01-razor-gold');
@@ -43,6 +43,10 @@ try{
  await page.locator('[data-choice-kind="ship"][data-choice-id="4"]').scrollIntoViewIfNeeded();
  await page.locator('[data-choice-kind="ship"][data-choice-id="4"]').click();
  const third=await measure('03-gemini');
+ const models=['VECTOR','RAZOR','PHANTOM','MANTA','GEMINI','SPECTRE'];
+ await page.locator('[data-garage-category="ship"]').click();
+ for(let i=0;i<6;i++){const tile=page.locator('[data-choice-kind="ship"][data-choice-id="'+i+'"]');await tile.scrollIntoViewIfNeeded();await tile.click();const stats=await measure('craft-'+i);assert.ok(stats.pctBright>.025,models[i]+' not visible');}
+
  if(errors.length)throw new Error('Page errors '+errors.join('; '));
  assert.ok(first.pctBright>.025,'RAZOR invisible; bright pixel ratio '+first.pctBright);
  assert.ok(second.pctBright>.025,'VECTOR invisible; bright pixel ratio '+second.pctBright);
