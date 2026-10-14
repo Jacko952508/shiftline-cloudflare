@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
+import{installShipExhaust}from'./ship-exhaust-v119.js?v=119';
 // SHIFTLINE 117 — six deliberately different, complete airframes. All geometry
 // points toward local -Z; wingspan is normalised to 2.08 local units.
 // The gameplay collision envelope is controlled elsewhere and is unchanged.
@@ -338,6 +339,7 @@ function builder(ship,index,c,m,high=true){
  root.scale.x*=scale;root.updateMatrixWorld(true);
  const finalBox=new THREE.Box3().setFromObject(root);
  const actualSpan=finalBox.max.x-finalBox.min.x;
+ installShipExhaust(ship,root,index,c,high);
  root.userData.designId=NAMES[index];
  root.userData.wingspan=SPAN;
  root.userData.wingspanBeforeScale=w;
