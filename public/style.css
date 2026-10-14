@@ -509,3 +509,17 @@ body.garageOpen #garagePage.off{display:none!important}
 @media(min-width:750px){body.garageOpen #menu .dashboard{padding-left:20px;padding-right:20px}#garagePage .garageOptionTile{min-width:134px;flex-basis:134px;width:134px;height:123px}#garagePage .garageControls.garageDock{max-height:330px}}
 @media(max-width:460px){#garagePage .garageTopLine{font-size:8px;letter-spacing:.055em}#garagePage .garageFrame button{font-size:8px;min-height:29px;padding:6px 7px}}
 @media(max-height:630px){body.garageOpen #menu .mast{display:none}body.garageOpen #menu .tabs{margin:2px 0}#garagePage .garageHeader h2{font-size:23px}#garagePage .garageOptionTile{height:97px}#garagePage .garageOptionArt{height:34px}#garagePage .garageOptionArt svg{height:34px}#garagePage .garageControls.garageDock{max-height:45dvh}}
+
+/* V113 hotfix: the WebGL canvas sits BEHIND the menu; do not paint over its viewport. */
+body.garageOpen #menu{background:transparent!important}
+body.garageOpen #menu .dashboard{background:transparent!important}
+body.garageOpen #garagePage .garageStage{background:transparent!important}
+body.garageOpen #garagePage .craftDisplay{background:transparent!important;box-shadow:none!important}
+body.garageOpen #garagePage .garageHeader{background:linear-gradient(180deg,#071827f7,#071827dc)!important}
+body.garageOpen #garagePage .garageControls.garageDock{background:linear-gradient(160deg,#092333f9,#061422fc 80%)!important}
+body.garageOpen #garagePage .garageTopLine{letter-spacing:.06em}
+body.garageOpen #garagePage .garageOptionTile{height:98px}
+body.garageOpen #garagePage .garageOptionArt{height:37px}
+body.garageOpen #garagePage .garageOptionArt svg{height:36px}
+body.garageOpen #garagePage .garageCategories button{min-height:43px}
+body.garageOpen #garagePage .garageCategories button span{font-size:17px}
