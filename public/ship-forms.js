@@ -53,6 +53,68 @@ export function sculptCraft(ship,model,cosmetics,materials){
  if(model===2){const ridge=add(new THREE.BoxGeometry(.14,.028,.62),hull,0,.163,.35);ridge.rotation.x=-.06;}
  if(model===4)for(const side of[-1,1]){const shoulder=add(new THREE.BoxGeometry(.085,.045,.60),accent,side*.24,.095,.20);shoulder.rotation.z=side*.15;}
  if(model===5)for(const side of[-1,1]){const blade=add(plate([[.15,.10],[.42,.06],[.39,.88],[.22,.65]],.019),carbon);blade.scale.x=side;blade.position.y=.14;}
+
+ // V116: model-specific architectural detailing, all kept inside the racing hitbox.
+ const dark=new THREE.MeshStandardMaterial({color:0x0b1826,metalness:.63,roughness:.42});
+ const panel=new THREE.MeshPhysicalMaterial({color:model===1?0x7f1829:model===3?0xd9e6ee:0x9aaebf,metalness:.86,roughness:.26,clearcoat:.75,side:THREE.DoubleSide});
+ const cyan=new THREE.MeshBasicMaterial({color:model===1?0xff244c:0x44d8ff,toneMapped:false});
+ const violet=new THREE.MeshBasicMaterial({color:0xa782ff,toneMapped:false});
+ const glassMat=new THREE.MeshPhysicalMaterial({color:0x06384a,metalness:.22,roughness:.11,transparent:true,opacity:.92,clearcoat:1,clearcoatRoughness:.07});
+ const tapered=(x,y,z,rx,ry,rz,mat=panel)=>{const m=add(new THREE.ConeGeometry(rx,rz,8,1),mat,x,y,z);m.scale.y=ry/Math.max(.001,rz);m.rotation.x=Math.PI/2;return m;};
+ const line=(points,mat=cyan,width=.007)=>{const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const mesh=add(new THREE.TubeGeometry(curve,Math.max(8,points.length*4),width,5,false),mat);mesh.castShadow=false;return mesh};
+ const sidePanel=(points,side,mat=panel,height=.12)=>{const m=add(plate(points,.018),mat);m.scale.x=side;m.position.y=height;return m};
+ // Continuous canopy replaces the flat centre of the stock chassis.
+ const canopy=add(hullLoft([[-.78,.008,.015,.20],[-.57,.105,.055,.23],[-.21,.19,.10,.245],[.24,.17,.10,.235],[.48,.08,.045,.21],[.56,.008,.012,.18]],20),glassMat);
+ line([[0,.23,-.66],[0,.345,-.21],[0,.32,.26],[0,.22,.51]],accent,.005);
+ if(model===0||model===4){
+  // Vector's shorter pods and Gemini's heavier independent twin hulls.
+  for(const side of[-1,1]){
+   const x=side*(model===4?.75:.72);
+   const pod=add(hullLoft([[-1.04,.006,.008,0],[-.83,.10,.085,.015],[-.50,model===4?.205:.16,.145,.02],[.30,model===4?.20:.16,.14,.025],[.77,.12,.105,.015],[1.04,.006,.008,0]],20),dark,x,.10);
+   const spine=add(hullLoft([[-.93,.003,.004,.05],[-.66,.05,.025,.08],[.16,.055,.025,.085],[.75,.045,.025,.075],[1.02,.004,.003,.05]],12),carbon,x,.13);
+   for(let i=0;i<9;i++){const z=-.65+i*.15;const stripe=add(new THREE.BoxGeometry(model===4?.27:.22,.004,.012),carbon,x,.246,z);stripe.rotation.y=side*.06;}
+   line([[x,.14,-.87],[x+side*.08,.245,-.42],[x+side*.08,.24,.36],[x,.14,.86]],cyan,.006);
+   const nozzle=add(new THREE.CylinderGeometry(.075,.11,.22,12),dark,x,.09,.89);nozzle.rotation.x=Math.PI/2;
+   const thrust=add(new THREE.CylinderGeometry(.045,.055,.02,12),violet,x,.09,1.005);thrust.rotation.x=Math.PI/2;
+   if(model===0){sidePanel([[.26,-.20],[.53,-.28],[.61,.42],[.36,.57]],side,panel,.11);}
+   else {sidePanel([[.32,-.27],[.50,-.39],[.58,.53],[.38,.67]],side,panel,.095);}
+  }
+ }
+ if(model===1){
+  // RAZOR: three long aggressive red needles and angular layered armour.
+  sidePanel([[.20,-.40],[.58,-.82],[.94,-.97],[.78,-.32],[.90,.42],[.52,.18]],1,panel,.145);
+  sidePanel([[.20,-.40],[.58,-.82],[.94,-.97],[.78,-.32],[.90,.42],[.52,.18]],-1,panel,.145);
+  for(const side of[-1,1]){
+   sidePanel([[.33,-.20],[.71,-.79],[.79,-.24],[.56,.15]],side,dark,.177);
+   line([[side*.32,.19,-.35],[side*.65,.19,-.78],[side*.77,.19,-.25],[side*.71,.18,.30]],cyan,.009);
+   const blade=add(plate([[.41,-.26],[.67,-.69],[.86,.62],[.66,.42]],.026),panel);blade.scale.x=side;blade.position.y=.17;
+  }
+  line([[0,.22,-1.32],[0,.29,-.8],[0,.35,-.31]],cyan,.009);
+ }
+ if(model===2||model===5){
+  // PHANTOM broad faceted stealth wings; SPECTRE's tall split blades.
+  for(const side of[-1,1]){
+   sidePanel(model===2?[[.25,-.24],[.92,-.71],[.76,.05],[.99,.70],[.53,.53]]:[[.30,-.22],[.99,-.84],[.67,.06],[.94,.83],[.49,.46]],side,panel,.117);
+   sidePanel([[.40,-.18],[.78,-.46],[.66,.17],[.49,.39]],side,dark,.15);
+   for(let i=0;i<4;i++)line([[side*(.48+i*.075),.16,.23],[side*(.51+i*.075),.16,.36]],cyan,.005);
+   if(model===5){const blade=add(plate([[.45,-.22],[.72,-.55],[.98,.83],[.69,.50]],.032),dark);blade.scale.x=side;blade.position.y=.19;line([[side*.73,.20,-.48],[side*.93,.22,.69]],cyan,.009);}
+  }
+ }
+ if(model===3){
+  // MANTA: broad white sweeping scythes with actual open negative space.
+  for(const side of[-1,1]){
+   const scythe=add(plate([[.18,-.29],[.48,-.55],[.99,-.70],[.89,-.25],[.67,.25],[.78,.76],[.53,.65],[.43,.18]],.043),panel);
+   scythe.scale.x=side;scythe.position.y=.125;
+   sidePanel([[.43,-.18],[.70,-.40],[.60,-.05],[.48,.26]],side,dark,.18);
+   line([[side*.35,.18,-.31],[side*.74,.18,-.49],[side*.66,.18,.12],[side*.79,.17,.68]],cyan,.008);
+  }
+ }
+ for(const side of[-1,1]){
+  for(let i=0;i<5;i++){
+   const x=side*(.22+i*.06);
+   const rivet=add(new THREE.SphereGeometry(.007,5,4),dark,x,.155,.32+i*.035);rivet.castShadow=false;
+  }
+ }
  ship.userData.sculptMaterials=[glow,accent];
  return root;
 }
