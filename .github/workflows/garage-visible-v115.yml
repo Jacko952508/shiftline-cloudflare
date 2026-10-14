@@ -1,7 +1,7 @@
 name: SHIFTLINE Garage Visible Render Test
 on:
   push:
-    branches: [garage-visibility-v115-staging, main]
+    branches: [six-ship-sculpt-v116]
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
         run: node test/garage-visible-v115.mjs
       - name: Verify WebKit can display the ship on iPhone-sized screen
         run: node test/garage-webkit-v115.mjs
-      - name: Wait for production Cloudflare to serve v115
+      - name: Wait for production Cloudflare to serve v116
         if: github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 60); do
