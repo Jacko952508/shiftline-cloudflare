@@ -66,8 +66,14 @@ try{
  await page.locator('[data-garage-category="wing"]').click();
  await page.locator('[data-choice-kind="part"][data-choice-id="3"]').click();
  assert.equal((await page.evaluate(()=>window.__shiftlineModelQA)).options.wing,3,'Ship-specific wing choice changes actual 3D geometry');
+ await page.locator('[data-garage-category="engine"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
+ const equipped=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.equal(equipped.options.engine,4,'Engine option changes live ship build');
+ assert.ok(Math.abs(equipped.measuredSpan-2.08)<.002,'Custom options must not change equal racing wingspan');
+
  const record=await page.evaluate(()=>JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')));
- assert.ok(record.shipBuilds&&record.shipBuilds[5].custom.wing===3,'SPECTRE wing choice persisted independently');
+ assert.ok(record.shipBuilds&&record.shipBuilds[5].custom.wing===3&&record.shipBuilds[5].custom.engine===4,'SPECTRE wing choice persisted independently');
  console.log('PASS six different visible, equal-wingspan 3D models with working customisation',spans);
 
 }finally{await browser.close();}
