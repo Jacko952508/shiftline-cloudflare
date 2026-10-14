@@ -56,11 +56,17 @@ try{
   assert.equal(meta?.id,names[i],'Correct independent mesh for '+names[i]);
   assert.ok(Math.abs(meta.measuredSpan-2.08)<.002,names[i]+' unequal actual wingspan '+meta.measuredSpan);
   assert.ok(meta.parts>7,names[i]+' has insufficient unique geometry');
+  const mountCount=[2,2,2,1,2,2][i];
+  assert.equal(meta.finMounts?.length,mountCount,names[i]+' fin or blade mounts missing');
+  assert.equal(meta.finShoes,mountCount,names[i]+' physical attachment shoes missing');
+  assert.ok(meta.texturedMeshes>=3,names[i]+' still lacks proper mapped surface materials: '+meta.texturedMeshes);
+  assert.ok(meta.contacts?.length===mountCount&&meta.contacts.every(x=>x.shoeFin&&x.shoeHull),names[i]+' fin is physically disconnected from wing or fuselage: '+JSON.stringify(meta.contacts));
+
   spans.push(meta.measuredSpan);
   const stat=await measure('117-'+names[i].toLowerCase());
   assert.ok(stat.pctBright>.035,names[i]+' invisible');
   signatures.push([Math.round(stat.average*10),Math.round(stat.pctBright*1000),meta.parts]);
-  console.log('MODEL',names[i],JSON.stringify({parts:meta.parts,span:meta.measuredSpan,brightness:stat.pctBright,average:stat.average}));
+  console.log('MODEL',names[i],JSON.stringify({parts:meta.parts,span:meta.measuredSpan,brightness:stat.pctBright,average:stat.average,finContact:meta.contacts,materialFaces:meta.texturedMeshes}));
  }
  assert.ok(new Set(signatures.map(x=>x.join(','))).size>=5,'Six model renders are insufficiently different');
  await page.locator('[data-garage-category="wing"]').click();
@@ -74,6 +80,6 @@ try{
 
  const record=await page.evaluate(()=>JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')));
  assert.ok(record.shipBuilds&&record.shipBuilds[5].custom.wing===3&&record.shipBuilds[5].custom.engine===4,'SPECTRE wing choice persisted independently');
- console.log('PASS six different visible, equal-wingspan 3D models with working customisation',spans);
+ console.log('PASS six textured visible 3D ships, physically joined tail fins, equal wingspans and working customisation',spans);
 
 }finally{await browser.close();}
