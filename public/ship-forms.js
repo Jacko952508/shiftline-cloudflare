@@ -27,13 +27,15 @@ export function sculptCraft(ship,model,cosmetics,materials){
  const glow=new THREE.MeshBasicMaterial({color:premium?0xffffff:0x8ef5ff,toneMapped:false,side:THREE.DoubleSide});
  const accent=new THREE.MeshPhysicalMaterial({color:premium?0xf6ffff:0x91cbdc,metalness:.68,roughness:.24,clearcoat:.9,emissive:premium?0xffffff:0x144b59,emissiveIntensity:premium?1.15:.14});
  const add=(geo,mat,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;root.add(m);return m};
+ const wingType=cosmetics.wing||0,shapeWidth=[.96,1,.88,.92,1.0][wingType],sweep=[0,-.12,.06,-.18,-.05][wingType];
+ const styledWing=contours[model].map(([x,z])=>[x*shapeWidth,z+(x>.48?sweep*(x-.48)*1.7:0)]);
  for(const side of[-1,1]){
-  const wing=add(plate(contours[model]),model===2?carbon:hull);wing.scale.x=side;wing.position.y=model===3?.029:.046;
+  const wing=add(plate(styledWing),model===2?carbon:hull);wing.scale.x=side;wing.position.y=model===3?.029:.046;
   if(model===3){const inset=add(plate([[.34,-.19],[.77,-.44],[.64,-.07],[.56,.25],[.43,.38]],.008),carbon);inset.scale.x=side;inset.position.y=.075;}
   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(side*.27,.072,-.18),new THREE.Vector3(side*(model===3?.53:.47),.078,model===1?-.61:-.32),new THREE.Vector3(side*(model===3?.85:.93),.068,model===3?-.48:model===5?-.73:-.28)]);
   const seam=add(new THREE.TubeGeometry(curve,9,premium?.011:.007,5,false),glow);seam.castShadow=false;
   if(model===0||model===4){
-   const radius=model===4?.22:.16;
+   const radius=(model===4?.22:.16)*[1,1.13,.9,.85,1.08][cosmetics.engine||0];
    add(hullLoft([[-1.02,.012,.014,.01],[-.72,radius*.8,radius*.85,.01],[-.14,radius,radius*.79,.01],[.54,radius*.84,radius*.8,.01],[.84,.10,.11,.01],[.97,.02,.02,.01]],14),model===0?carbon:hull,side*.72,.018);
    add(new THREE.TorusGeometry(radius*.77,.018,6,20),accent,side*.72,.01,.82);
    add(new THREE.TorusGeometry(radius*.59,.012,6,20),glow,side*.72,.01,.87);
