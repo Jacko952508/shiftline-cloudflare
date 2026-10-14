@@ -5,9 +5,9 @@ import {mkdir} from 'node:fs/promises';
 const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
-const errors=[],warnings=[];
+const errors=[],warnings=[],shaderErrors=[];
 page.on('pageerror',e=>errors.push(e.stack||e.message));
-page.on('console',e=>{if(e.type()==='error'||e.type()==='warning')warnings.push(e.text())});
+page.on('console',e=>{if(e.type()==='error'||e.type()==='warning'){warnings.push(e.text());if(/WebGLProgram|VALIDATE_STATUS|fragment shader|vertex shader|shader error|Shader Error/i.test(e.text()))shaderErrors.push(e.text())}});
 await mkdir('garage-visible-artifacts',{recursive:true});
 await page.addInitScript(()=>{localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({seaRevision:3,courseRevisions:{1:2,2:3},xp:5000,craft:1,color:7,custom:{},records:{},ghosts:{},medals:{},races:2,career:{unlocked:[6,7,8]}}))});
 async function measure(label){
@@ -60,6 +60,8 @@ try{
   assert.equal(meta.finMounts?.length,mountCount,names[i]+' fin or blade mounts missing');
   assert.equal(meta.finShoes,mountCount,names[i]+' physical attachment shoes missing');
   assert.ok(meta.texturedMeshes>=3,names[i]+' still lacks proper mapped surface materials: '+meta.texturedMeshes);
+  assert.equal(meta.exhaustEmitters,2,names[i]+' has no proper paired rocket thrusters');
+  assert.ok(meta.upgradeCounts&&typeof meta.upgradeSignature==='string',names[i]+' customisation kit missing');
   assert.ok(meta.contacts?.length===mountCount&&meta.contacts.every(x=>x.shoeFin&&x.shoeHull),names[i]+' fin is physically disconnected from wing or fuselage: '+JSON.stringify(meta.contacts));
 
   spans.push(meta.measuredSpan);
@@ -80,6 +82,42 @@ try{
 
  const record=await page.evaluate(()=>JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')));
  assert.ok(record.shipBuilds&&record.shipBuilds[5].custom.wing===3&&record.shipBuilds[5].custom.engine===4,'SPECTRE wing choice persisted independently');
- console.log('PASS six textured visible 3D ships, physically joined tail fins, equal wingspans and working customisation',spans);
+ // Inspect several actual customisations. The optional kits must add geometry,
+ // not merely change the selected tile in the menu.
+ await page.locator('[data-garage-category="wing"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
+ let kit=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.ok(kit.upgradeCounts.wing>=7,'Crescent wing kit should add several substantial 3D panels');
+ assert.equal(kit.options.wing,4);
+ await page.locator('[data-garage-category="canopy"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
+ kit=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.ok(kit.upgradeCounts.canopy>=2,'Raised canopy option should add visible 3D parts');
+ await page.locator('[data-garage-category="fin"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="3"]').click();
+ kit=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.ok(kit.upgradeCounts.fin>=1,'Dorsal fin configuration must add a physical stabiliser');
+ await page.locator('[data-garage-category="livery"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
+ kit=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.ok(kit.upgradeCounts.livery>=5,'Full livery must add larger coloured body panels');
+ await page.locator('[data-garage-category="engine"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="2"]').click();
+ kit=await page.evaluate(()=>window.__shiftlineModelQA);
+ assert.ok(kit.upgradeCounts.engine>=6,'Ion collar must add real glowing engine geometry');
+ await page.locator('[data-garage-category="trail"]').click();
+ await page.waitForTimeout(950);
+ const originalTrail=await page.evaluate(()=>window.__shiftlineTrailQA);
+ assert.equal(originalTrail?.emitters,2,'Paired engine trails must exist and animate');
+ assert.ok(originalTrail.length>.80,'Idle thruster wake must be visible and animated');
+ await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
+ await page.waitForTimeout(900);
+ const roseTrail=await page.evaluate(()=>window.__shiftlineTrailQA);
+ assert.equal(roseTrail?.colour,0xff89cf,'Changing exhaust colour must change the real shader');
+ assert.ok(roseTrail.length>.80,'Custom trail must have visible plasma length');
+ await page.screenshot({path:'garage-visible-artifacts/119-rose-rocket-trails.png'});
+ assert.deepEqual(shaderErrors,[],'Plasma shaders must compile successfully in WebGL');
+ console.log('PASS V119 3D kits, physical livery, engine modules, real animated paired rocket trails and five selectable colours',JSON.stringify({originalTrail,roseTrail,spans}));
+
 
 }finally{await browser.close();}
