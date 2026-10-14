@@ -10,7 +10,7 @@ page.on('console',m=>{if(m.type()==='error')errors.push('Console error: '+m.text
 await mkdir('garage-visible-artifacts',{recursive:true});
 await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({seaRevision:3,courseRevisions:{1:2,2:3},xp:5000,craft:1,color:7,custom:{},records:{},ghosts:{},medals:{},races:2,career:{unlocked:[6,7,8]}})));
 try{
- await page.goto('http://127.0.0.1:8765/?test=webkit',{waitUntil:'domcontentloaded',timeout:45000});
+ await page.goto((process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765')+'/?test=webkit',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:90000});
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
