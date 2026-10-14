@@ -10,11 +10,14 @@ await mkdir('garage-visible-artifacts',{recursive:true});
 await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({seaRevision:3,courseRevisions:{1:2,2:3},xp:5000,craft:5,color:0,custom:{wing:3,engine:4,fin:2,trail:2},records:{1:112000},ghosts:{},medals:{},races:4,shipBuilds:{5:{color:0,custom:{wing:3,engine:4,fin:2,trail:2}}}})));
 try{
  await page.goto((process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765')+'/?shipqa=1',{waitUntil:'domcontentloaded',timeout:50000});
- await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:100000});
+ await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
  await page.locator('#launch').click({timeout:15000});
  // Wait for the actual in-game countdown, not wall-clock time: software WebGL
  // may render fewer frames while shaders compile, delaying the game timer.
- await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off')===true,{timeout:90000});
+ await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off')===true,null,{timeout:150000}).catch(async error=>{
+  const info=await page.evaluate(()=>({count:document.querySelector('#count')?.textContent,countOff:document.querySelector('#count')?.classList.contains('off'),menuOff:document.querySelector('#menu')?.classList.contains('off'),boost:document.querySelector('#boost')?.textContent}));
+  console.log('COUNTDOWN_DIAGNOSTIC',JSON.stringify(info));throw error;
+ });
  await page.waitForTimeout(520);
  const idleRocket=await page.evaluate(()=>window.__shiftlineTrailQA);
  assert.equal(idleRocket?.emitters,2,'Real race must have twin animated thrusters');
