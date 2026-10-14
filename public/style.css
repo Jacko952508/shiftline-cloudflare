@@ -452,3 +452,60 @@ body.gpuReady #menu .dashboard{z-index:2}
 #garagePage #careerPaint8:not(:disabled){background:linear-gradient(110deg,#452947,#b36caa,#e8a8cf);color:#ffe5fa}
 #garagePage #garageNote{font-size:11px;margin-top:15px;padding:10px 4px}
 @media(max-width:700px){#garagePage .garageHeader{padding:13px 11px}#garagePage .garageTitleBar{align-items:flex-start}#garagePage .garageSeries{font-size:8px;max-width:105px}#garagePage .craftDisplay{height:298px}#garagePage .garageFrame span{width:100%;margin-bottom:5px}#garagePage .garageFrame{justify-content:flex-end}#garagePage .garageFrame button{font-size:8px;min-height:30px;padding:6px 9px}#garagePage .garageControls{padding:14px 10px}#garagePage .craftChoices{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#garagePage .partRow button{flex-basis:92px}#garagePage .garageSpec{font-size:8px}}
+
+/* V112 Flightworks: anchored showroom and horizontal, touch-first 3D customisation */
+body.garageOpen #menu{overflow:hidden!important;background:#04111d!important}
+body.garageOpen #menu .dashboard{height:100dvh;min-height:0;max-width:940px;overflow:hidden;display:flex;flex-direction:column;padding:calc(8px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom))}
+body.garageOpen #menu .mast{flex:0 0 auto;padding:0 5px}
+body.garageOpen #menu .brand{font-size:26px}
+body.garageOpen #menu .brand small{display:none}
+body.garageOpen #menu .pilot{font-size:9px}
+body.garageOpen #menu .tabs{flex:0 0 auto;margin:4px 0 8px;gap:10px;border-bottom:1px solid #6ddaff29}
+body.garageOpen #menu .tabs button{font-size:11px;padding:6px 0}
+body.garageOpen #garagePage{height:auto;min-height:0;flex:1;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:8px;overflow:hidden;animation:none}
+body.garageOpen #garagePage.off{display:none!important}
+#garagePage .garageStage{display:flex;flex-direction:column;min-height:0;overflow:hidden;border:1px solid #74cde03d;border-radius:14px;background:linear-gradient(170deg,#0c2031,#06111d)}
+#garagePage .garageHeader{flex:0 0 auto;padding:8px 12px 5px!important;border:0!important;border-radius:0;background:transparent!important}
+#garagePage .garageTopLine{display:flex;justify-content:space-between;gap:8px;color:#61dbee;font:700 9px/1.5 monospace;letter-spacing:.13em}
+#garagePage .garageHeader h2{font-size:27px;margin:2px 0 0;line-height:1}
+#garagePage .garageTitleBar{align-items:center;gap:10px}
+#garagePage #garageFinishLabel{font:700 9px monospace;max-width:47%;text-align:right;letter-spacing:.09em;color:#a6f3ff}
+#garagePage #garageDescription{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0}
+#garagePage #garageFinishDescription{font-size:9px;color:#88bbd0;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#garagePage .craftDisplay{flex:1;min-height:150px;height:auto!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:inset 0 20px 40px #03101c78!important;background:radial-gradient(ellipse,#19436072,transparent 70%)!important}
+#garagePage .garageFrame{inset:8px 8px auto;display:flex;justify-content:flex-end;align-items:center;gap:5px}
+#garagePage .garageFrame span{width:auto;margin-right:auto;font-size:8px}
+#garagePage .garageFrame button{min-height:30px;padding:7px 8px}
+#garagePage .garageSpec{font-size:8px;bottom:7px}
+#garagePage .garagePreviewMark{bottom:7px}
+#garagePage .garageControls.garageDock{flex:none;max-height:min(43dvh,300px);margin:0;padding:9px 9px 6px;border-radius:14px;border:1px solid #8cdae358;background:linear-gradient(160deg,#092333f4,#061422f5 80%);overflow:hidden;box-shadow:0 5px 30px #0007}
+#garagePage .garageCategories{display:flex;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;touch-action:pan-x;padding:0 0 8px;scrollbar-width:none}
+#garagePage .garageCategories::-webkit-scrollbar,#garagePage .garageOptionRail::-webkit-scrollbar{display:none}
+#garagePage .garageCategories button{flex:0 0 77px;min-height:51px;border:1px solid #8eeaff2b;border-radius:10px;background:#0e2838;color:#a7c8d7;font:800 10px 'Barlow Condensed',Arial;letter-spacing:.09em;scroll-snap-align:center}
+#garagePage .garageCategories button span{display:block;color:#5fcee1;font:20px/1.15 sans-serif;margin-bottom:3px}
+#garagePage .garageCategories button.selected{background:#123b51;color:#fff;border-color:#70edff;box-shadow:inset 0 0 18px #5aeaff20,0 0 10px #6adfff36}
+#garagePage .garageCategories button.selected span{color:#e3ffff}
+#garagePage .garageSelectionHead{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:3px 3px 7px}
+#garagePage .garageSelectionHead strong{display:block;color:#f4fdff;font:800 16px 'Barlow Condensed',Arial;letter-spacing:.12em}
+#garagePage .garageSelectionHead small{display:block;color:#9abccb;font:10px 'Barlow',Arial;line-height:1.2;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:min(65vw,450px)}
+#garagePage #garageBuildBadge{color:#75dfc5;font:8px monospace;white-space:nowrap}
+#garagePage .garageOptionRail{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 2px 7px}
+#garagePage .garageOptionTile{position:relative;min-width:115px;width:115px;flex:0 0 115px;height:115px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;overflow:hidden;scroll-snap-align:start;border:1px solid #8fcbdf30;border-radius:10px;padding:9px;background:linear-gradient(150deg,#173648,#0a1a29);color:#effbff}
+#garagePage .garageOptionTile.selected{border-color:#aafaff;background:linear-gradient(145deg,#22546a,#0d2635);box-shadow:inset 0 0 18px #6ae9ff22,0 0 12px #4cddff39}
+#garagePage .garageOptionTile:disabled{opacity:.42}
+#garagePage .garageOptionArt{display:flex;align-items:center;justify-content:center;height:53px;width:100%;margin-bottom:2px}
+#garagePage .garageOptionArt svg{height:51px;width:70px;fill:#537d98;stroke:#b4eaff;stroke-width:1.2;filter:drop-shadow(0 0 5px #39bcff42)}
+#garagePage .garageOptionTile.selected svg{fill:#6cbed1;stroke:#f0ffff}
+#garagePage .garageOptionTile strong{display:block;font:800 13px 'Barlow Condensed',Arial;letter-spacing:.055em;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#garagePage .garageOptionTile small{display:block;font:9px 'Barlow',Arial;color:#a6bac6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#garagePage .garageOptionTile em{position:absolute;top:3px;right:4px;font:700 7px monospace;font-style:normal;color:#9ef9e8}
+#garagePage .garageSwatch{width:58px;height:36px;border-radius:7px;background:var(--chip);border:1px solid #eefaff70;box-shadow:0 3px 16px #0006,inset 0 2px 6px #ffffff32}
+#garagePage .garagePartIcon{font:800 33px 'Barlow Condensed',sans-serif;color:#a7e6fc;text-shadow:0 0 15px #5ae8ff88}
+#garagePage #garageNote{margin:0!important;padding:1px 2px!important;max-height:15px;overflow:hidden;font:9px/1.3 sans-serif;color:#80aabd}
+#garagePage .garageLegacy{display:none!important}
+#garagePage.premiumGold #garageFinishLabel{color:#ffda6c}
+#garagePage.premiumGold .garageStage{border-color:#ffda6c7d}
+#garagePage.premiumChrome .garageStage{border-color:#e2f8ffb5}
+@media(min-width:750px){body.garageOpen #menu .dashboard{padding-left:20px;padding-right:20px}#garagePage .garageOptionTile{min-width:134px;flex-basis:134px;width:134px;height:123px}#garagePage .garageControls.garageDock{max-height:330px}}
+@media(max-width:460px){#garagePage .garageTopLine{font-size:8px;letter-spacing:.055em}#garagePage .garageFrame button{font-size:8px;min-height:29px;padding:6px 7px}}
+@media(max-height:630px){body.garageOpen #menu .mast{display:none}body.garageOpen #menu .tabs{margin:2px 0}#garagePage .garageHeader h2{font-size:23px}#garagePage .garageOptionTile{height:97px}#garagePage .garageOptionArt{height:34px}#garagePage .garageOptionArt svg{height:34px}#garagePage .garageControls.garageDock{max-height:45dvh}}
