@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-const base='http://127.0.0.1:8765';
+const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
 const errors=[],warnings=[];
