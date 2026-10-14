@@ -188,6 +188,21 @@ function openExplorer(){
 function openGarage(){disposeRace();renderer.toneMappingExposure=1.15;if(effects?.final?.uniforms?.exposure)effects.final.uniforms.exposure.value=1;garage=createGarage(readProgress());renderer.shadowMap.enabled=true;}
 window.addEventListener('shiftline-garage',e=>{if(state!=='menu'||!window.shiftlineReady)return;if(e.detail.active)openGarage();else if(garage)buildPreview()});
 window.addEventListener('shiftline-customisation',()=>{if(state!=='menu'||!window.shiftlineReady)return;if(garage)equipGarage(garage,readProgress());else buildPreview()});
+window.addEventListener('shiftline-garage-focus',event=>{
+ if(!garage||state!=='menu')return;
+ const cat=event.detail?.category;
+ const cockpit=['cabin','instrument','stick'].includes(cat);
+ garage.viewCockpit=cockpit;
+ $('#garageCockpitView').textContent=cockpit?'EXTERIOR':'COCKPIT';
+ if(!cockpit){
+  // Show the actual exhaust outlets and plasma colour when those tabs are active.
+  const rear=cat==='engine'||cat==='trail';
+  garage.yaw=rear?.08:.55;garage.pitch=rear?.27:.12;
+  garage.zoom=false;garage.auto=!rear;
+  $('#garageZoomView').textContent='ZOOM IN';
+ }
+});
+
 const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageZoomView').onclick=()=>{if(garage){garage.zoom=!garage.zoom;$('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=.55;garage.pitch=.12;garage.auto=true;garage.drag=null;garage.zoom=false;$('#garageZoomView').textContent='ZOOM IN';}};
 function init(){bind();renderer=new THREE.WebGLRenderer({canvas:$('#game'),antialias:false,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,qualityRatio()));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;effects=new RaceEffects(renderer);scene=new THREE.Scene();scene.updateMatrix();scene.matrixAutoUpdate=false;camera=new THREE.PerspectiveCamera(74,innerWidth/innerHeight,.15,14000);buildPreview();window.shiftlineReady=true;document.body.classList.add('gpuReady');renderer.setAnimationLoop(loop)}
 try{init()}catch(error){console.error(error);window.shiftlineReady=false;$('#loadError').classList.remove('off')}
