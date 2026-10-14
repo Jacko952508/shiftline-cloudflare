@@ -19,10 +19,7 @@ let last=0,menuFrame=0;
 function menuActive(){return !document.hidden&&!$('#menu').classList.contains('off')&&!document.body.classList.contains('gpuReady')}
 function animate(t){menuFrame=0;if(!menuActive())return;menuFrame=requestAnimationFrame(animate);if(t-last<33)return;last=t;let[w,h]=fit(canvas);draw(cx,w,h,t/1000,false);if(page==='race'){[w,h]=fit(preview);draw(px,w,h,t/1000,true)}}
 function syncMenuAnimation(){if(menuActive()){if(!menuFrame)menuFrame=requestAnimationFrame(animate)}else if(menuFrame){cancelAnimationFrame(menuFrame);menuFrame=0}}
-const menuObserver=new MutationObserver(syncMenuAnimation);menuObserver.observe(document.body,{attributes:true,attributeFilter:['class']});menuObserver.observe($('#menu'),{attributes:true,attributeFilter:['class']});document.addEventListener('visibilitychange',syncMenuAnimation);refresh();syncMenuAnimation();
-
-function drawCinder(ctx,w,h,time,small){ctx.fillStyle='#151b25';ctx.fillRect(0,0,w,h);const cx=w*.58,cy=h*.48,r=Math.min(w,h)*.45;ctx.fillStyle='#362922';ctx.beginPath();ctx.ellipse(cx,cy+h*.18,r*1.8,r*.5,0,0,Math.PI*2);ctx.fill();for(let i=12;i>=0;i--){const rr=r*Math.pow(.81,i);ctx.strokeStyle=i%3?'#677277':'#ffa169';ctx.lineWidth=Math.max(1,rr*.035);ctx.beginPath();ctx.ellipse(cx,cy,rr,rr*.83,.1,0,Math.PI*2);ctx.stroke()}ctx.fillStyle='#ffb97b';ctx.font='bold '+Math.max(10,w*.035)+'px sans-serif';ctx.fillText('CINDER FORGE',w*.08,h*.9)}
-
+const menuObserver=new MutationObserver(syncMenuAnimation);menuObserver.observe(document.body,{attributes:true,attributeFilter:['class']});menuObserver.observe($('#menu'),{attributes:true,attributeFilter:['class']});document.addEventListener('visibilitychange',syncMenuAnimation);
 // Mobile Flightworks: side-scrolling tabs and one options strip, never a long page.
 const GARAGE_CATEGORIES=[['ship','◈','SHIP'],['finish','◉','FINISH'],['wing','◤','WINGS'],['engine','◎','ENGINE'],['canopy','◇','CANOPY'],['fin','⌁','FINS'],['livery','≋','LIVERY'],['trail','➤','TRAIL'],['cabin','▣','CABIN'],['instrument','▦','DISPLAYS'],['stick','⊕','CONTROLS'],['presets','✦','PRESETS']];
 const MODEL_SHAPES=['M8 31 L24 4 L39 31 L28 24 L20 24Z M6 22 L3 39 L18 30Z M41 22 L45 39 L30 30Z','M24 3 L30 29 L40 12 L45 41 L29 34 L24 42 L19 34 L3 41 L8 12 L18 29Z','M24 4 L29 24 L45 33 L44 42 L24 34 L4 42 L3 33 L19 24Z','M24 5 Q17 18 3 18 L5 40 Q16 35 24 29 Q32 35 43 40 L45 18 Q31 18 24 5Z','M24 4 L29 35 L24 42 L19 35Z M7 13 L15 9 L17 38 L9 43Z M41 13 L33 9 L31 38 L39 43Z','M24 3 L31 35 L24 43 L17 35Z M16 20 L2 8 L8 38 L19 31Z M32 20 L46 8 L40 38 L29 31Z'];
@@ -61,3 +58,7 @@ document.querySelector('#garageOptionRail').addEventListener('click',e=>{
  else if(kind==='preset'){p.custom=appearance(BUILDS[index].parts);if(index===1)p.color=1;if(index===2)p.color=3}
  });
 });
+
+refresh();syncMenuAnimation();
+
+function drawCinder(ctx,w,h,time,small){ctx.fillStyle='#151b25';ctx.fillRect(0,0,w,h);const cx=w*.58,cy=h*.48,r=Math.min(w,h)*.45;ctx.fillStyle='#362922';ctx.beginPath();ctx.ellipse(cx,cy+h*.18,r*1.8,r*.5,0,0,Math.PI*2);ctx.fill();for(let i=12;i>=0;i--){const rr=r*Math.pow(.81,i);ctx.strokeStyle=i%3?'#677277':'#ffa169';ctx.lineWidth=Math.max(1,rr*.035);ctx.beginPath();ctx.ellipse(cx,cy,rr,rr*.83,.1,0,Math.PI*2);ctx.stroke()}ctx.fillStyle='#ffb97b';ctx.font='bold '+Math.max(10,w*.035)+'px sans-serif';ctx.fillText('CINDER FORGE',w*.08,h*.9)}
