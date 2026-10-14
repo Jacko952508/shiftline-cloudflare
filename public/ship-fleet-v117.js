@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
 // SHIFTLINE 117 — six deliberately different, complete airframes. All geometry
 // points toward local -Z; wingspan is normalised to 2.08 local units.
 // The gameplay collision envelope is controlled elsewhere and is unchanged.
@@ -78,11 +79,11 @@ function builder(ship,index,c,m,high=true){
   hull.color.setHex([0xc4d3dc,0x99172a,0x34404e,0xe5eff4,0xb9c7d2,0xc8d3df][index]);
   hull.roughness=[.27,.23,.52,.20,.34,.26][index];
  }
- const polished=material({color:premium?hull.color.clone():new THREE.Color(index===1?0xa61c35:index===3?0xeaf2fb:0xc3d6e0),metalness:.9,roughness:.21,clearcoat:1,clearcoatRoughness:.13,side:THREE.DoubleSide});
- const graphite=material({color:0x16212c,metalness:.57,roughness:.53,side:THREE.DoubleSide});
- const tiledPod=material({map:podTileTexture(),color:0x8499a8,metalness:.56,roughness:.42,clearcoat:.26,side:THREE.DoubleSide});
- const stealth=material({color:0x263341,metalness:.58,roughness:.62,side:THREE.DoubleSide});
- const ceramic=material({color:0xe8eef3,metalness:.38,roughness:.24,clearcoat:1,side:THREE.DoubleSide});
+ const polished=material({...fleetSurfaceMaps('brushed'),bumpScale:.007,color:premium?hull.color.clone():new THREE.Color(index===1?0xa61c35:index===3?0xeaf2fb:0xc3d6e0),metalness:.9,roughness:.31,clearcoat:1,clearcoatRoughness:.13,side:THREE.DoubleSide});
+ const graphite=material({...fleetSurfaceMaps('industrial'),bumpScale:.009,color:0x263745,metalness:.63,roughness:.67,side:THREE.DoubleSide});
+ const tiledPod=material({...fleetSurfaceMaps('pod'),bumpScale:.015,color:0xa5bdce,metalness:.62,roughness:.6,clearcoat:.26,side:THREE.DoubleSide});
+ const stealth=material({...fleetSurfaceMaps('stealth'),bumpScale:.005,color:0x374b5c,metalness:.58,roughness:.70,side:THREE.DoubleSide});
+ const ceramic=material({...fleetSurfaceMaps('ceramic'),bumpScale:.003,color:0xf4fbff,metalness:.26,roughness:.39,clearcoat:1,side:THREE.DoubleSide});
  const shade=material({color:0x071522,metalness:.38,roughness:.7,side:THREE.DoubleSide});
  const accentHex=index===1?0xff2d54:index===4?0x8deeff:0x61dcff;
  const glow=basic(premium?0xf4fcff:accentHex);
@@ -137,10 +138,39 @@ function builder(ship,index,c,m,high=true){
   else if(c.livery===3)line([[side*.23,.15,.13],[side*.45,.15,.52],[side*.29,.15,.76]],paint,.008);
   else line([[side*.13,.18,-.65],[side*.15,.20,.55]],paint,.011);
  };
+ const finMounts=[];root.userData.finMounts=finMounts;
+ const mountedFin=(side,x,z,baseY,height,skin=polished,chord=.36,lean=.10)=>{
+  // Solid welded stabiliser: bottom edge starts WITHIN the wing/deck.
+  // A physical root shoe and sloping gussets overlap both the fin and chassis.
+  const half=.019,outline=[
+   [x,baseY,z-chord*.56],
+   [x,baseY,z+chord*.54],
+   [x+lean,baseY+height,z+chord*.17],
+   [x+lean*.83,baseY+height,z-chord*.12]
+  ],positions=[],uvs=[],indices=[];
+  for(let face=0;face<2;face++)for(const [px,py,pz]of outline){
+   positions.push(side*(px+(face===0?-half:half)),py,pz);
+   uvs.push(pz-z+.5,py-baseY);
+  }
+  indices.push(0,1,2,0,2,3,4,6,5,4,7,6);
+  for(let j=0;j<4;j++){const k=(j+1)%4;indices.push(j,k,k+4,j,k+4,j+4);}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+  geo.setIndex(indices);geo.computeVertexNormals();
+  const fin=add(geo,skin);fin.name='connected-fin-'+index+'-'+side;
+  // Root shoe intersects the underside of the fin and the actual wing skin.
+  const shoe=add(new THREE.BoxGeometry(.17,.12,chord*.83),graphite,[side*x,baseY-.023,z]);
+  shoe.name='fin-root-shoe-'+index+'-'+side;
+  bar([side*(x-.075),baseY-.045,z-chord*.28],[side*(x+lean*.23),baseY+height*.36,z-chord*.13],.063,.054,skin).name='fin-front-gusset';
+  bar([side*(x-.067),baseY-.045,z+chord*.29],[side*(x+lean*.32),baseY+height*.28,z+chord*.11],.055,.045,graphite).name='fin-rear-gusset';
+  if(high)line([[side*x,baseY+.036,z-chord*.43],[side*(x+lean*.86),baseY+height*.90,z-chord*.10]],glow,.005);
+  finMounts.push({side,model:index,baseY,shoeBottom:baseY-.083,shoeTop:baseY+.037,footX:x,footZ:z,kind:'structural'});
+  return fin;
+ };
  const aftFins=(offset=.28)=>{
   for(const side of[-1,1]){
-   const fin=layer([[offset,.18],[offset+.12,.47],[offset+.21,.78],[offset+.07,.70]],c.fin===0?graphite:polished,.18+finHeight*.32,.022,side);
-   fin.rotation.z=side*finHeight*.54;
+   mountedFin(side,offset+.045,.59,.059,.18+finHeight*.57,c.fin===0?graphite:polished,.33,.105);
   }
  };
  const podBands=(x,y,zs,radius,mat=polished)=>{
@@ -184,7 +214,7 @@ function builder(ship,index,c,m,high=true){
    hullMesh([[-1.49,.003,.003,.04],[-1.20,.032,.055,.045],[-.72,.085,.068,.055],[-.25,.085,.063,.05],[.51,.10,.06,.03]],red,side*.70,0,12);
    line([[side*.67,.117,-1.30],[side*.68,.12,-.88],[side*.73,.124,-.27],[side*.80,.12,.40]],glow,.009);
    for(let k=0;k<4;k++)vane(side*(.42+k*.07),.13,.20+k*.13,.07);
-   const fin=layer([[.55,.26],[.78,.55],[.80,.87],[.57,.73]],red,.19+finHeight*.28,.027,side);fin.rotation.z=side*.21;
+   mountedFin(side,.70,.54,.064,.21+finHeight*.68,red,.42,.14);
    finishDetail(side);thruster(side*.46,.025,.85,.075,exhaust);
   }
   // Exposed mechanics behind the black canopy
@@ -202,8 +232,7 @@ function builder(ship,index,c,m,high=true){
    layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.10,.011,side);
    line([[side*.31,.11,-.46],[side*.70,.113,.04],[side*.99,.095,.50]],glow,.005);
    for(let k=0;k<3;k++)vane(side*(.48+k*.085),.117,.37+k*.12,.10);
-   const fin=layer([[.53,.38],[.61,.63],[.78,.83],[.69,.80]],graphite,.13+finHeight*.26,.024,side);
-   fin.rotation.z=side*.12;
+   mountedFin(side,.70,.60,.055,.10+finHeight*.48,graphite,.31,.085);
    finishDetail(side);
   }
   canopy(-.72,.21,.16,.078);
@@ -226,7 +255,7 @@ function builder(ship,index,c,m,high=true){
    finishDetail(side);
   }
   line([[0,.12,-1.28],[0,.18,-1.06],[0,.19,-.78]],glow,.008);
-  const fin=layer([[.04,.32],[.16,.55],[.21,.79],[.11,.76]],(premium||c.finish!==0)?hull:ceramic,.11+finHeight*.2,.021,1);
+  mountedFin(1,.09,.54,.108,.12+finHeight*.47,(premium||c.finish!==0)?hull:ceramic,.30,.045);
   break;
  }
  case 4:{ // GEMINI: three boxier industrial hulls and exposed heavy-duty crossbeams
@@ -263,6 +292,12 @@ function builder(ship,index,c,m,high=true){
    const blade=add(bladeGeometry(side),(premium||c.finish!==0)?hull:polished,[0,0,0]);
    blade.scale.y=1+[0,.20,.12,.34,.26][c.fin];blade.scale.z=1+sweep*.52;
    blade.material.side=THREE.DoubleSide;
+   const rootFront=bar([side*.37,.012,-.37],[side*.54,.29,.12],.11,.077,graphite);
+   rootFront.name='spectre-forward-blade-root';
+   const rootRear=bar([side*.74,.012,.71],[side*.78,.28,.46],.10,.07,polished);
+   rootRear.name='spectre-rear-blade-root';
+   const seat=add(new THREE.BoxGeometry(.20,.095,.35),graphite,[side*.47,.046,.03]);seat.name='spectre-blade-foot';
+   finMounts.push({side,model:index,baseY:.045,shoeBottom:-.02,shoeTop:.115,footX:.45,footZ:.05,kind:'sword-blade'});
    line([[side*.32,.10,-.47],[side*.79,.67,.26],[side*.95,.1,.83]],glow,.013);
    layer([[.30,-.25],[.81,-.60],[.77,.15],[.41,.21]],carbon,.073,.023,side);
    for(let k=0;k<4;k++)vane(side*(.32+k*.09),.17,.32+k*.09,.063);
@@ -313,7 +348,8 @@ function builder(ship,index,c,m,high=true){
  ship.userData.designOptions={wing:c.wing,engine:c.engine,fin:c.fin,livery:c.livery};
  // An optional diagnostic for browser tests: no gameplay state is exposed.
  if(typeof window!=='undefined'&&location.search.includes('shipqa=1')){
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions};
+  let textured=0,finShoes=0;root.traverse(o=>{if(o.isMesh&&o.material?.map)textured++;if(o.name?.includes('fin-root-shoe')||o.name==='spectre-blade-foot')finShoes++;});
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,texturedMeshes:textured};
  }
  return root;
 }
