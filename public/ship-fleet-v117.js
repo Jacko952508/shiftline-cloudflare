@@ -18,7 +18,7 @@ function loft(stations,sides=16){
  }
  for(let i=0;i<stations.length-1;i++)for(let k=0;k<sides;k++){
   const a=i*(sides+1)+k,b=a+sides+1;
-  idx.push(a,b,a+1,a+1,b,b+1);
+  idx.push(a,a+1,b,a+1,b+1,b);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
@@ -52,6 +52,21 @@ function bladeGeometry(side){
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
  geo.computeVertexNormals();return geo;
 }
+let ceramicTiles=null;
+function podTileTexture(){
+ if(ceramicTiles)return ceramicTiles;
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#586b7d';ctx.fillRect(0,0,128,128);
+ for(let row=0;row<8;row++)for(let col=0;col<8;col++){
+  const x=col*16,y=row*16;
+  ctx.fillStyle=((row*11+col*7)%4===0)?'#697989':'#566879';ctx.fillRect(x+1,y+1,14,14);
+  ctx.fillStyle='#283543';ctx.fillRect(x+1,y+14,14,1);ctx.fillRect(x+14,y+1,1,13);
+  ctx.fillStyle='rgba(190,216,232,.16)';ctx.fillRect(x+2,y+2,12,1);
+ }
+ ceramicTiles=new THREE.CanvasTexture(canvas);ceramicTiles.colorSpace=THREE.SRGBColorSpace;
+ ceramicTiles.wrapS=ceramicTiles.wrapT=THREE.RepeatWrapping;ceramicTiles.repeat.set(3,5);
+ ceramicTiles.anisotropy=2;return ceramicTiles;
+}
 function enginePod(stations,mat,x,y,add,sides=16){return add(loft(stations,sides),mat,[x,y,0]);}
 function builder(ship,index,c,m,high=true){
  const root=new THREE.Group();root.name='SHIFTLINE_V117_'+NAMES[index];ship.add(root);
@@ -65,6 +80,7 @@ function builder(ship,index,c,m,high=true){
  }
  const polished=material({color:premium?hull.color.clone():new THREE.Color(index===1?0xa61c35:index===3?0xeaf2fb:0xc3d6e0),metalness:.9,roughness:.21,clearcoat:1,clearcoatRoughness:.13,side:THREE.DoubleSide});
  const graphite=material({color:0x16212c,metalness:.57,roughness:.53,side:THREE.DoubleSide});
+ const tiledPod=material({map:podTileTexture(),color:0x8499a8,metalness:.56,roughness:.42,clearcoat:.26,side:THREE.DoubleSide});
  const stealth=material({color:0x263341,metalness:.58,roughness:.62,side:THREE.DoubleSide});
  const ceramic=material({color:0xe8eef3,metalness:.38,roughness:.24,clearcoat:1,side:THREE.DoubleSide});
  const shade=material({color:0x071522,metalness:.38,roughness:.7,side:THREE.DoubleSide});
@@ -145,7 +161,7 @@ function builder(ship,index,c,m,high=true){
   for(const side of[-1,1]){
    wingPoly([[.15,-.23],[.45,-.40],[.68,-.31],[.69,.46],[.37,.51],[.15,.27]],side,polished,.02);
    const x=side*.77,rad=.172*eng;
-   hullMesh([[-1.30,.004,.004,0],[-1.05,rad*.44,rad*.46,0],[-.62,rad,rad*.85,0],[.16,rad*1.1,rad,.01],[.65,rad*.83,rad*.9,0],[.83,rad*.76,rad*.75,0]],graphite,x,.055,20);
+   hullMesh([[-1.30,.004,.004,0],[-1.05,rad*.44,rad*.46,0],[-.62,rad,rad*.85,0],[.16,rad*1.1,rad,.01],[.65,rad*.83,rad*.9,0],[.83,rad*.76,rad*.75,0]],tiledPod,x,.055,20);
    hullMesh([[-.93,.01,.01,.13],[-.60,rad*.35,.023,.13],[.26,rad*.32,.030,.14],[.68,.015,.02,.12]],carbon,x,0,16);
    bar([side*.29,.03,-.18],[side*.67,.03,-.18],.10,.07,polished);
    bar([side*.33,.03,.38],[side*.69,.03,.39],.12,.07,hull);
@@ -217,7 +233,7 @@ function builder(ship,index,c,m,high=true){
   canopy(-.65,.24,.153,.12);
   for(const side of[-1,1]){
    const x=side*.79,rad=.215*eng;
-   hullMesh([[-1.16,.018,.018,0],[-.98,rad*.7,rad*.64,0],[-.52,rad,rad*.90,0],[.40,rad,rad*.92,.01],[.77,rad*.94,rad*.85,.01],[.94,rad*.84,rad*.76,0]],graphite,x,.07,12);
+   hullMesh([[-1.16,.018,.018,0],[-.98,rad*.7,rad*.64,0],[-.52,rad,rad*.90,0],[.40,rad,rad*.92,.01],[.77,rad*.94,rad*.85,.01],[.94,rad*.84,rad*.76,0]],tiledPod,x,.07,12);
    const upper=layer([[.61,-.76],[.95,-.76],[.97,.65],[.65,.65]],carbon,.25,.025,side);
    // Open truss lattice connects the three bodies, not shallow shared wings.
    for(const z of[-.44,.10,.56]){
@@ -261,6 +277,8 @@ function builder(ship,index,c,m,high=true){
  const w=box.max.x-box.min.x;
  const scale=SPAN/Math.max(.01,w);
  root.scale.x*=scale;root.updateMatrixWorld(true);
+ const finalBox=new THREE.Box3().setFromObject(root);
+ const actualSpan=finalBox.max.x-finalBox.min.x;
  root.userData.designId=NAMES[index];
  root.userData.wingspan=SPAN;
  root.userData.wingspanBeforeScale=w;
@@ -271,7 +289,7 @@ function builder(ship,index,c,m,high=true){
  ship.userData.designOptions={wing:c.wing,engine:c.engine,fin:c.fin,livery:c.livery};
  // An optional diagnostic for browser tests: no gameplay state is exposed.
  if(typeof window!=='undefined'&&location.search.includes('shipqa=1')){
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,unscaled:w,parts:root.children.length,options:ship.userData.designOptions};
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions};
  }
  return root;
 }
