@@ -71,13 +71,14 @@ function plasmaMaterial(tint,opacity){
 }
 function particlesMaterial(color){
  return new THREE.ShaderMaterial({
-  uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:.6}},
+  uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:.6},uLength:{value:2.25}},
   vertexShader:[
    'precision mediump float;',
    'attribute float aPointSize;',
    'varying float vFade;',
+   'uniform float uLength;',
    'void main(){',
-   ' vFade=clamp(1.0-position.z,0.0,1.0);',
+   ' vFade=clamp(1.0-position.z/max(0.1,uLength),0.0,1.0);',
    ' vec4 mvPosition=modelViewMatrix*vec4(position,1.0);',
    ' gl_PointSize=clamp(aPointSize*200.0/max(0.4,-mvPosition.z),1.0,8.0);',
    ' gl_Position=projectionMatrix*mvPosition;',
@@ -138,7 +139,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
    this.length+=(targetLen-this.length)*response;
    this.power+=(targetPower-this.power)*response;
    this.boost=!!boost;
-   for(const mat of this.materials){if(mat.uniforms.uTime)mat.uniforms.uTime.value=time;if(mat.uniforms.uPower)mat.uniforms.uPower.value=this.power}
+   for(const mat of this.materials){if(mat.uniforms.uTime)mat.uniforms.uTime.value=time;if(mat.uniforms.uPower)mat.uniforms.uPower.value=this.power;if(mat.uniforms.uLength)mat.uniforms.uLength.value=this.length}
    for(let e=0;e<this.actors.length;e++){
     const a=this.actors[e],flicker=1+Math.sin(time*29+e*2.7)*.08;
     a.outer.scale.z=this.length*flicker;
@@ -154,7 +155,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     }
     coords.needsUpdate=true;
    }
-   if(typeof location!=='undefined'&&location.search.includes('shipqa=1')){
+   if(high&&typeof location!=='undefined'&&location.search.includes('shipqa=1')){
     window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
    }
   }
