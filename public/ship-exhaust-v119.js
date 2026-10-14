@@ -103,8 +103,8 @@ export function installShipExhaust(ship,root,index,custom,high=true){
  const colour=PALETTE[custom.trail|0]||PALETTE[0];
  const positions=LOCATIONS[index]||LOCATIONS[0];
  const fxGroup=new THREE.Group();fxGroup.name='dynamic-rocket-trails';root.add(fxGroup);
- const outerMat=plasmaMaterial(colour,.48),innerMat=plasmaMaterial(colour,.82);
- const coreMat=plasmaMaterial(0xf6ffff,.95),particleMat=particlesMaterial(colour);
+ const outerMat=plasmaMaterial(colour,high?.48:.28),innerMat=plasmaMaterial(colour,high?.82:.42);
+ const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68),particleMat=particlesMaterial(colour);
  const outerGeo=plumeGeometry(.13,1.8),innerGeo=plumeGeometry(.068,1),coreGeo=plumeGeometry(.024,.5);
  const particles=high?24:10,actors=[];
  for(let e=0;e<positions.length;e++){
@@ -117,19 +117,21 @@ export function installShipExhaust(ship,root,index,custom,high=true){
    mesh.castShadow=false;mesh.receiveShadow=false;mesh.name='animated-rocket-plume';anchor.add(mesh);
   }
   inner.position.z=.001;core.position.z=.002;
+  // Rivals retain visible bright rocket cores without the full alpha overdraw.
+  inner.visible=high;
   const geometry=new THREE.BufferGeometry(),coords=new Float32Array(particles*3),sizes=new Float32Array(particles);
   for(let i=0;i<particles;i++)sizes[i]=.035+rand(i+e*41)*.07;
   geometry.setAttribute('position',new THREE.BufferAttribute(coords,3));
   geometry.setAttribute('aPointSize',new THREE.BufferAttribute(sizes,1));
   const pts=new THREE.Points(geometry,particleMat);pts.name='rocket-spark-wake';
-  pts.frustumCulled=false;pts.renderOrder=18;anchor.add(pts);
+  pts.frustumCulled=false;pts.renderOrder=18;pts.visible=high;anchor.add(pts);
   const throat=new THREE.Mesh(new THREE.CircleGeometry(.069,18),
    new THREE.MeshBasicMaterial({color:colour,transparent:true,opacity:.9,side:THREE.DoubleSide,
     blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
-  throat.name='lit-rocket-throat';throat.position.z=.015;anchor.add(throat);
+  throat.name='lit-rocket-throat';throat.position.z=.015;throat.material.opacity=high?.90:.57;anchor.add(throat);
   actors.push({anchor,outer,inner,core,pts,geometry,count:particles});
  }
- const fx={name:'SHIFTLINE-ROCKET-V119',ship,index,colour,custom,actors,materials:[outerMat,innerMat,coreMat,particleMat],length:0,power:0,boost:false,lastTime:0,hasPlumes:true,
+ const fx={name:'SHIFTLINE-ROCKET-V119',ship,index,colour,custom,actors,materials:[outerMat,innerMat,coreMat,particleMat],length:1.15,power:.20,boost:false,lastTime:0,hasPlumes:true,
   update(time,boost=false,reduced=false){
    if(!Number.isFinite(time))time=0;
    const targetPower=boost?1:.27;
@@ -146,6 +148,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     a.inner.scale.z=this.length*.85*(1+Math.cos(time*32+e)*.035);
     a.core.scale.z=this.length*.70*flicker;
     a.outer.scale.x=a.outer.scale.y=boost?1.24:1;
+    if(!high)continue;
     const coords=a.geometry.getAttribute('position');
     for(let i=0;i<a.count;i++){
      const cycle=((rand(i+e*97)+time*(boost?.54:.24))%1+1)%1;
