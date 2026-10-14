@@ -94,7 +94,7 @@ function builder(ship,index,c,m,high=true){
   const o=new THREE.Mesh(geo,mat);o.position.set(...xyz);
   o.castShadow=high;o.receiveShadow=high;parent.add(o);return o;
  };
- const hullMesh=(st,mat=hull,x=0,y=0,n=16)=>enginePod(st,mat,x,y,add,n);
+ const hullMesh=(st,mat=hull,x=0,y=0,n=16)=>{const o=enginePod(st,mat,x,y,add,n);o.userData.structuralHull=true;return o;};
  const layer=(pts,mat=hull,y=.08,th=.025,side=1)=>{
   const o=add(plate(pts,th),mat,[0,y,0]);o.scale.x=side;return o;
  };
@@ -128,7 +128,7 @@ function builder(ship,index,c,m,high=true){
  const finHeight=[.16,.30,.23,.43,.34][c.fin];
  const wingPoly=(points,side,mat=hull,y=.065)=>{
   const remap=points.map(([x,z])=>[x*wingScale,z+(x>.35?sweep*(x-.35):0)]);
-  return layer(remap,mat,y,.040,side);
+  const o=layer(remap,mat,y,.040,side);o.userData.structuralHull=true;return o;
  };
  const finishDetail=(side)=>{
   if(c.livery===0)return;
@@ -168,9 +168,9 @@ function builder(ship,index,c,m,high=true){
   finMounts.push({side,model:index,baseY,shoeBottom:baseY-.083,shoeTop:baseY+.037,footX:x,footZ:z,kind:'structural'});
   return fin;
  };
- const aftFins=(offset=.28)=>{
+ const aftFins=(offset=.28,z=.59)=>{
   for(const side of[-1,1]){
-   mountedFin(side,offset+.045,.59,.059,.18+finHeight*.57,c.fin===0?graphite:polished,.33,.105);
+   mountedFin(side,offset+.045,z,.059,.18+finHeight*.57,c.fin===0?graphite:polished,.33,.105);
   }
  };
  const podBands=(x,y,zs,radius,mat=polished)=>{
@@ -202,7 +202,7 @@ function builder(ship,index,c,m,high=true){
    for(let k=0;k<3;k++)vane(side*(.39+k*.09),.125,.30,.05);
    finishDetail(side);
   }
-  aftFins(.23);break;
+  aftFins(.31,.46);break;
  }
  case 1:{ // RAZOR: open trident channels with three complete, sharply forward prongs
   const red=(premium||c.finish!==0)?hull:polished;
@@ -243,7 +243,7 @@ function builder(ship,index,c,m,high=true){
   hullMesh([[-1.47,.004,.01,0],[-1.16,.07,.045,.01],[-.64,.19,.11,.03],[-.05,.24,.14,.04],[.42,.20,.12,.035],[.76,.095,.06,.02]],(premium||c.finish!==0)?hull:ceramic,0,0,20);
   canopy(-.73,.40,.215,.13);
   for(const side of[-1,1]){
-   const w=add(crescentGeometry(),(premium||c.finish!==0)?hull:ceramic,[0,.025,0]);w.scale.x=side*wingScale;
+   const w=add(crescentGeometry(),(premium||c.finish!==0)?hull:ceramic,[0,.025,0]);w.scale.x=side*wingScale;w.userData.structuralHull=true;
    // The wing's concavity is deliberately left empty, unlike a normal delta wing.
    const cavity=layer([[.39,-.14],[.60,-.30],[.72,.03],[.48,.34]],graphite,.069,.016,side);
    cavity.visible=high;
@@ -348,8 +348,17 @@ function builder(ship,index,c,m,high=true){
  ship.userData.designOptions={wing:c.wing,engine:c.engine,fin:c.fin,livery:c.livery};
  // An optional diagnostic for browser tests: no gameplay state is exposed.
  if(typeof window!=='undefined'&&location.search.includes('shipqa=1')){
-  let textured=0,finShoes=0;root.traverse(o=>{if(o.isMesh&&o.material?.map)textured++;if(o.name?.includes('fin-root-shoe')||o.name==='spectre-blade-foot')finShoes++;});
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,texturedMeshes:textured};
+  let textured=0,finShoes=0;
+  root.traverse(o=>{if(o.isMesh&&o.material?.map)textured++;if(o.name?.includes('fin-root-shoe')||o.name==='spectre-blade-foot')finShoes++;});
+  const members=root.children.filter(o=>o.userData.structuralHull);
+  const contacts=finMounts.map(({side,kind},i)=>{
+    const shoe=kind==='sword-blade'?root.children.find(o=>o.name==='spectre-blade-foot'&&Math.sign(o.position.x)===side):root.getObjectByName('fin-root-shoe-'+index+'-'+side);
+    const fin=kind==='sword-blade'?root.children.find(o=>o.name==='spectre-forward-blade-root'&&Math.sign(o.position.x)===side):root.getObjectByName('connected-fin-'+index+'-'+side);
+    if(!shoe||!fin)return{side,shoeFin:false,shoeHull:false};
+    const shoeBox=new THREE.Box3().setFromObject(shoe);
+    return{side,shoeFin:shoeBox.intersectsBox(new THREE.Box3().setFromObject(fin)),shoeHull:members.some(o=>shoeBox.intersectsBox(new THREE.Box3().setFromObject(o)))};
+  });
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,texturedMeshes:textured};
  }
  return root;
 }
