@@ -30,7 +30,7 @@ async function measure(label){
  return stats;
 }
 try{
- await page.goto(base+'/?stage=visibility-v115',{waitUntil:'domcontentloaded',timeout:50000});
+ await page.goto(base+'/?stage=fleet-v117&shipqa=1',{waitUntil:'domcontentloaded',timeout:50000});
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
@@ -47,5 +47,27 @@ try{
  assert.ok(first.pctBright>.025,'RAZOR invisible; bright pixel ratio '+first.pctBright);
  assert.ok(second.pctBright>.025,'VECTOR invisible; bright pixel ratio '+second.pctBright);
  assert.ok(third.pctBright>.025,'GEMINI invisible; bright pixel ratio '+third.pctBright);
- console.log('PASS visible craft pixels for all three tested models');
+ const names=['VECTOR','RAZOR','PHANTOM','MANTA','GEMINI','SPECTRE'],signatures=[],spans=[];
+ await page.locator('[data-garage-category="ship"]').click();
+ for(let i=0;i<6;i++){
+  const item=page.locator('[data-choice-kind="ship"][data-choice-id="'+i+'"]');
+  await item.scrollIntoViewIfNeeded();await item.click();
+  const meta=await page.evaluate(()=>window.__shiftlineModelQA);
+  assert.equal(meta?.id,names[i],'Correct independent mesh for '+names[i]);
+  assert.ok(Math.abs(meta.measuredSpan-2.08)<.002,names[i]+' unequal actual wingspan '+meta.measuredSpan);
+  assert.ok(meta.parts>7,names[i]+' has insufficient unique geometry');
+  spans.push(meta.measuredSpan);
+  const stat=await measure('117-'+names[i].toLowerCase());
+  assert.ok(stat.pctBright>.035,names[i]+' invisible');
+  signatures.push([Math.round(stat.average*10),Math.round(stat.pctBright*1000),meta.parts]);
+  console.log('MODEL',names[i],JSON.stringify({parts:meta.parts,span:meta.measuredSpan,brightness:stat.pctBright,average:stat.average}));
+ }
+ assert.ok(new Set(signatures.map(x=>x.join(','))).size>=5,'Six model renders are insufficiently different');
+ await page.locator('[data-garage-category="wing"]').click();
+ await page.locator('[data-choice-kind="part"][data-choice-id="3"]').click();
+ assert.equal((await page.evaluate(()=>window.__shiftlineModelQA)).options.wing,3,'Ship-specific wing choice changes actual 3D geometry');
+ const record=await page.evaluate(()=>JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')));
+ assert.ok(record.shipBuilds&&record.shipBuilds[5].custom.wing===3,'SPECTRE wing choice persisted independently');
+ console.log('PASS six different visible, equal-wingspan 3D models with working customisation',spans);
+
 }finally{await browser.close();}
