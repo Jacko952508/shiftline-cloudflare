@@ -157,9 +157,9 @@ function builder(ship,index,c,m,high=true){
  // Everything above provides manufacturing vocabulary, not a shared airframe.
  switch(index){
  case 0: { // VECTOR: polished slim interceptor, independent long tapered torpedo nacelles
-  spine(1.46);canopy(-.67,.39,.18,.13);
+  spine(1.46,(premium||c.finish!==0)?hull:polished);canopy(-.67,.39,.18,.13);
   for(const side of[-1,1]){
-   wingPoly([[.15,-.23],[.45,-.40],[.68,-.31],[.69,.46],[.37,.51],[.15,.27]],side,polished,.02);
+   wingPoly([[.15,-.23],[.45,-.40],[.68,-.31],[.69,.46],[.37,.51],[.15,.27]],side,(premium||c.finish!==0)?hull:polished,.02);
    const x=side*.77,rad=.172*eng;
    hullMesh([[-1.30,.004,.004,0],[-1.05,rad*.44,rad*.46,0],[-.62,rad,rad*.85,0],[.16,rad*1.1,rad,.01],[.65,rad*.83,rad*.9,0],[.83,rad*.76,rad*.75,0]],tiledPod,x,.055,20);
    hullMesh([[-.93,.01,.01,.13],[-.60,rad*.35,.023,.13],[.26,rad*.32,.030,.14],[.68,.015,.02,.12]],carbon,x,0,16);
@@ -175,7 +175,7 @@ function builder(ship,index,c,m,high=true){
   aftFins(.23);break;
  }
  case 1:{ // RAZOR: open trident channels with three complete, sharply forward prongs
-  const red=premium?hull:polished;
+  const red=(premium||c.finish!==0)?hull:polished;
   hullMesh([[-1.61,.003,.003,0],[-1.26,.072,.05,.004],[-.82,.15,.085,.004],[-.26,.19,.12,0],[.45,.19,.12,0],[.86,.09,.06,0]],red,0,0,14);
   canopy(-.67,.38,.135,.105);
   for(const side of[-1,1]){
@@ -193,10 +193,11 @@ function builder(ship,index,c,m,high=true){
   break;
  }
  case 2:{ // PHANTOM: one continuous, broad, almost flat stealth-delta airframe
-  hullMesh([[-1.31,.008,.013,-.025],[-.95,.13,.05,-.005],[-.52,.21,.07,0],[.25,.27,.085,0],[.76,.23,.06,-.01]],graphite);
+  const stealthShell=(premium||c.finish!==0)?hull:stealth;
+  hullMesh([[-1.31,.008,.013,-.025],[-.95,.13,.05,-.005],[-.52,.21,.07,0],[.25,.27,.085,0],[.76,.23,.06,-.01]],(premium||c.finish!==0)?hull:graphite);
   const plan=[[.07,-1.03],[.37,-.74],[1.03,.17],[1.02,.58],[.70,.72],[.35,.57],[.05,.85]];
   for(const side of[-1,1]){
-   wingPoly(plan,side,stealth,.015);
+   wingPoly(plan,side,stealthShell,.015);
    layer([[.18,-.66],[.52,-.42],[.90,.22],[.74,.52],[.38,.24]],graphite,.080,.018,side);
    layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.10,.011,side);
    line([[side*.31,.11,-.46],[side*.70,.113,.04],[side*.99,.095,.50]],glow,.005);
@@ -210,10 +211,10 @@ function builder(ship,index,c,m,high=true){
   break;
  }
  case 3:{ // MANTA: white biomorphic crescent, with genuine cut-outs/open air under each arm
-  hullMesh([[-1.47,.004,.01,0],[-1.16,.07,.045,.01],[-.64,.19,.11,.03],[-.05,.24,.14,.04],[.42,.20,.12,.035],[.76,.095,.06,.02]],premium?hull:ceramic,0,0,20);
+  hullMesh([[-1.47,.004,.01,0],[-1.16,.07,.045,.01],[-.64,.19,.11,.03],[-.05,.24,.14,.04],[.42,.20,.12,.035],[.76,.095,.06,.02]],(premium||c.finish!==0)?hull:ceramic,0,0,20);
   canopy(-.73,.40,.215,.13);
   for(const side of[-1,1]){
-   const w=add(crescentGeometry(),premium?hull:ceramic,[0,.025,0]);w.scale.x=side*wingScale;
+   const w=add(crescentGeometry(),(premium||c.finish!==0)?hull:ceramic,[0,.025,0]);w.scale.x=side*wingScale;
    // The wing's concavity is deliberately left empty, unlike a normal delta wing.
    const cavity=layer([[.39,-.14],[.60,-.30],[.72,.03],[.48,.34]],graphite,.069,.016,side);
    cavity.visible=high;
@@ -225,7 +226,7 @@ function builder(ship,index,c,m,high=true){
    finishDetail(side);
   }
   line([[0,.12,-1.28],[0,.18,-1.06],[0,.19,-.78]],glow,.008);
-  const fin=layer([[.04,.32],[.16,.55],[.21,.79],[.11,.76]],premium?hull:ceramic,.11+finHeight*.2,.021,1);
+  const fin=layer([[.04,.32],[.16,.55],[.21,.79],[.11,.76]],(premium||c.finish!==0)?hull:ceramic,.11+finHeight*.2,.021,1);
   break;
  }
  case 4:{ // GEMINI: three boxier industrial hulls and exposed heavy-duty crossbeams
@@ -255,11 +256,12 @@ function builder(ship,index,c,m,high=true){
   aftFins(.18);break;
  }
  case 5:{ // SPECTRE: super-slim spear body between two truly vertical sword-like wings
-  hullMesh([[-1.73,.003,.005,-.015],[-1.43,.045,.05,0],[-.78,.118,.09,.015],[-.14,.17,.14,.02],[.51,.165,.11,.018],[.93,.10,.06,0]],premium?hull:polished);
+  hullMesh([[-1.73,.003,.005,-.015],[-1.43,.045,.05,0],[-.78,.118,.09,.015],[-.14,.17,.14,.02],[.51,.165,.11,.018],[.93,.10,.06,0]],(premium||c.finish!==0)?hull:polished);
   canopy(-.79,.28,.145,.115);
   for(const side of[-1,1]){
    wingPoly([[.13,-.37],[.45,-.64],[.91,-.75],[.98,.84],[.45,.62],[.23,.73]],side,graphite,.005);
-   const blade=add(bladeGeometry(side),premium?hull:polished,[0,0,0]);
+   const blade=add(bladeGeometry(side),(premium||c.finish!==0)?hull:polished,[0,0,0]);
+   blade.scale.y=1+[0,.20,.12,.34,.26][c.fin];blade.scale.z=1+sweep*.52;
    blade.material.side=THREE.DoubleSide;
    line([[side*.32,.10,-.47],[side*.79,.67,.26],[side*.95,.1,.83]],glow,.013);
    layer([[.30,-.25],[.81,-.60],[.77,.15],[.41,.21]],carbon,.073,.023,side);
@@ -270,6 +272,28 @@ function builder(ship,index,c,m,high=true){
   line([[0,.10,-1.69],[0,.13,-1.32],[0,.16,-.95]],glow,.008);
   break;
  }
+ }
+ // Every engine variant is a visible, real 3D assembly on every chassis.
+ // The housings are deliberately specific to the exhaust location of each ship.
+ if(c.engine!==0){
+  const xs=[.77,.46,.23,.39,.79,.28],ys=[.055,.025,-.02,-.03,.07,.02],zs=[.83,.85,.79,.75,.96,.88];
+  for(const side of[-1,1]){
+   const x=side*xs[index],y=ys[index],z=zs[index],r=index===4?.15:index===0?.12:.086;
+   if(c.engine===1){const shroud=add(new THREE.CylinderGeometry(r*1.18,r*.96,.26,12,1,true),polished,[x,y,z-.13]);shroud.rotation.x=PI/2;}
+   if(c.engine===2){for(let k=0;k<3;k++){const ring=add(new THREE.TorusGeometry(r*(.9+k*.09),.012,6,16),glow,[x,y,z-.06+k*.07]);ring.castShadow=false;}}
+   if(c.engine===3){const pivot=add(new THREE.CylinderGeometry(r*.75,r*1.26,.19,10),graphite,[x,y,z+.02]);pivot.rotation.x=PI/2;
+    for(const sign of[-1,1]){const flap=add(new THREE.BoxGeometry(.028,.11,.21),polished,[x+sign*r*.75,y,z]);flap.rotation.z=sign*.22;}}
+   if(c.engine===4){for(const sign of[-1,1]){const shield=add(new THREE.BoxGeometry(.045,r*1.6,.29),polished,[x+sign*r*.95,y,z-.11]);shield.rotation.z=sign*.16;}}
+  }
+ }
+ if(index===4 && c.wing!==0){
+  for(const side of[-1,1]){
+   wingPoly([[.22,-.34+sweep],[.58,-.53+sweep],[.72,.30],[.44,.65]],side,polished,.015);
+  }
+ }
+ // Accent paint remains visible even when livery = CLEAN, and is saved per ship.
+ for(const side of[-1,1]){
+  line([[side*.21,.14,-.42],[side*.29,.15,.14],[side*.35,.13,.45]],paint,.008);
  }
  // Equal-width garage/race geometry independent of wing option or chosen airframe.
  root.updateMatrixWorld(true);
