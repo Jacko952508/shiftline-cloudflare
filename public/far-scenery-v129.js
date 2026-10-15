@@ -24,7 +24,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   for(const m of meshes){m.frustumCulled=false;m.castShadow=false;m.receiveShadow=false}
   for(let i=0;i<count;i++){
    const span=Math.max(0,end-start-30),s=Math.min(track.length-2,start+15+span*random(i+3,start+9)),f=track.frame(s);
-   const angle=(i+.25*random(i+13,start+2))*Math.PI*2/count,radius=58+72*random(i+17,start+5);
+   const angle=(i+.25*random(i+13,start+2))*Math.PI*2/count,radius=95+85*random(i+17,start+5);
    const height=(theme.form==='tower'?18:theme.form==='canopy'?22:28)+58*random(i+7,start+11);
    const width=(theme.form==='canopy'?7:4)+9*random(i+29,start);
    radialVector.copy(f.r).multiplyScalar(Math.cos(angle)).addScaledVector(f.u,Math.sin(angle));
