@@ -3,6 +3,14 @@ import * as THREE from 'three';
 // long boost plumes, soft particles and five real-time selectable trail colours.
 // Installed AFTER wing normalization so the common hitbox and span stay intact.
 const PALETTE=[0x65eaff,0xff873c,0xbc8dff,0x72ffd1,0xff89cf];
+// Each trail has different width, length, turbulence and flicker, not just tint.
+const TRAIL_STYLES=[
+ {name:'Ice Plasma',width:.94,length:1,turb:.50,flicker:.055,sparks:.70},
+ {name:'Solar Flare',width:1.33,length:.94,turb:1.25,flicker:.22,sparks:1.42},
+ {name:'Violet Pulse',width:1.09,length:1.12,turb:1.05,flicker:.17,sparks:1.15},
+ {name:'Emerald Ion',width:.76,length:1.26,turb:.30,flicker:.035,sparks:.65},
+ {name:'Rose Plasma',width:1.16,length:1.11,turb:.76,flicker:.13,sparks:1.00}
+];
 const LOCATIONS=[
  [[-.77,.055,.855],[.77,.055,.855]],
  [[-.46,.025,.865],[.46,.025,.865]],
@@ -15,14 +23,15 @@ const vertex=[
  'precision mediump float;',
  'uniform float uTime;',
  'uniform float uPower;',
+ 'uniform float uTurbulence;',
  'varying vec2 vUv;',
  'void main(){',
  ' vUv=uv;',
  ' vec3 p=position;',
  ' float t=uv.y;',
  ' float wobble=(sin(uTime*13.0+t*32.0+uv.x*6.2831)*0.027+sin(uTime*19.0-t*47.0+uv.x*11.0)*0.014)*t*t;',
- ' p.x+=wobble*(0.7+uPower*0.3);',
- ' p.y+=cos(uTime*14.0+t*31.0+uv.x*8.0)*0.026*t*t;',
+ ' p.x+=wobble*(0.6+uPower*0.4)*uTurbulence;',
+ ' p.y+=cos(uTime*14.0+t*31.0+uv.x*8.0)*0.024*t*t*uTurbulence;',
  ' gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);',
  '}'
 ].join('\n');
@@ -32,11 +41,12 @@ const fragment=[
  'uniform float uTime;',
  'uniform float uPower;',
  'uniform float uOpacity;',
+ 'uniform float uTurbulence;',
  'varying vec2 vUv;',
  'void main(){',
  ' float t=clamp(vUv.y,0.0,1.0);',
  ' float edge=pow(1.0-t,0.95);',
- ' float noise=0.84+0.16*sin(uTime*25.0-t*47.0+sin(vUv.x*23.0)*4.0);',
+ ' float noise=0.84+0.16*sin(uTime*(22.0+uTurbulence*6.0)-t*(44.0+uTurbulence*9.0)+sin(vUv.x*23.0)*4.0);',
  ' float waves=0.87+0.13*sin(t*82.0-uTime*31.0+vUv.x*20.0);',
  ' float fade=pow(edge,0.72)*(0.65+0.35*smoothstep(0.0,0.13,t));',
  ' float a=fade*noise*waves*uOpacity*(0.68+uPower*0.32);',
@@ -61,10 +71,10 @@ function plumeGeometry(radius,flare=1){
  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  g.setIndex(idx);g.computeVertexNormals();return g;
 }
-function plasmaMaterial(tint,opacity){
+function plasmaMaterial(tint,opacity,style){
  return new THREE.ShaderMaterial({
   vertexShader:vertex,fragmentShader:fragment,
-  uniforms:{uTint:{value:new THREE.Color(tint)},uTime:{value:0},uPower:{value:.15},uOpacity:{value:opacity}},
+  uniforms:{uTint:{value:new THREE.Color(tint)},uTime:{value:0},uPower:{value:.15},uOpacity:{value:opacity},uTurbulence:{value:style?.turb??.5}},
   transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
   blending:THREE.AdditiveBlending,toneMapped:false
  });
@@ -101,10 +111,11 @@ function particlesMaterial(color){
 const rand=i=>((Math.sin(i*127.1+45.97)*43758.5453)%1+1)%1;
 export function installShipExhaust(ship,root,index,custom,high=true){
  const colour=PALETTE[custom.trail|0]||PALETTE[0];
+ const style=TRAIL_STYLES[custom.trail|0]||TRAIL_STYLES[0];
  const positions=LOCATIONS[index]||LOCATIONS[0];
  const fxGroup=new THREE.Group();fxGroup.name='dynamic-rocket-trails';root.add(fxGroup);
- const outerMat=plasmaMaterial(colour,high?.48:.28),innerMat=plasmaMaterial(colour,high?.82:.42);
- const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68),particleMat=particlesMaterial(colour);
+ const outerMat=plasmaMaterial(colour,high?.48:.28,style),innerMat=plasmaMaterial(colour,high?.82:.42,style);
+ const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68,style),particleMat=particlesMaterial(colour);
  const outerGeo=plumeGeometry(.13,1.8),innerGeo=plumeGeometry(.068,1),coreGeo=plumeGeometry(.024,.5);
  const particles=high?24:10,actors=[];
  for(let e=0;e<positions.length;e++){
@@ -135,7 +146,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
   update(time,boost=false,reduced=false){
    if(!Number.isFinite(time))time=0;
    const targetPower=boost?1:.27;
-   const targetLen=boost?4.35:(reduced?1.25:2.25);
+   const targetLen=(boost?4.35:(reduced?1.25:2.25))*style.length;
    const dt=Math.min(.1,Math.max(.008,time-this.lastTime));this.lastTime=time;
    const response=1-Math.exp(-dt*(boost?17:10));
    this.length+=(targetLen-this.length)*response;
@@ -143,26 +154,33 @@ export function installShipExhaust(ship,root,index,custom,high=true){
    this.boost=!!boost;
    for(const mat of this.materials){if(mat.uniforms.uTime)mat.uniforms.uTime.value=time;if(mat.uniforms.uPower)mat.uniforms.uPower.value=this.power;if(mat.uniforms.uLength)mat.uniforms.uLength.value=this.length}
    for(let e=0;e<this.actors.length;e++){
-    const a=this.actors[e],flicker=1+Math.sin(time*29+e*2.7)*.08;
+    const a=this.actors[e],flicker=1+Math.sin(time*(28+style.turb*5)+e*2.7)*style.flicker;
     a.outer.scale.z=this.length*flicker;
     a.inner.scale.z=this.length*.85*(1+Math.cos(time*32+e)*.035);
     a.core.scale.z=this.length*.70*flicker;
-    a.outer.scale.x=a.outer.scale.y=boost?1.24:1;
+    a.outer.scale.x=a.outer.scale.y=style.width*(boost?1.24:1);
+    a.inner.scale.x=a.inner.scale.y=style.width*.95;
+    a.core.scale.x=a.core.scale.y=style.width*(boost?1.04:.93);
+    // Short, shimmering nozzle glow, not an expensive fullscreen post-process.
+    const throat=a.anchor.getObjectByName('lit-rocket-throat');
+    if(throat){throat.material.opacity=(high?.65:.39)+(boost?.25:0);throat.scale.setScalar(style.width*(1+(boost?.15:0)));}
+    a.pts.visible=high&&!reduced;
     if(!high)continue;
     const coords=a.geometry.getAttribute('position');
     for(let i=0;i<a.count;i++){
      const cycle=((rand(i+e*97)+time*(boost?.54:.24))%1+1)%1;
      const angle=rand(i*11+e*23)*Math.PI*2+time*(.3+.12*this.power);
-     const spread=.017+cycle*(.10+.06*this.power);
+     const spread=(.017+cycle*(.10+.06*this.power))*style.width*style.sparks;
      coords.setXYZ(i,Math.cos(angle)*spread,Math.sin(angle)*spread,.15+cycle*.85*this.length);
     }
     coords.needsUpdate=true;
    }
    if(high&&typeof location!=='undefined'&&location.search.includes('shipqa=1')){
-    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
+    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,style:style.name,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
    }
   }
  };
  ship.userData.exhaustFX=fx;fx.update(.02,false,true);return fx;
 }
 export const SHIP_EXHAUST_PALETTE=PALETTE;
+export const SHIP_EXHAUST_STYLES=TRAIL_STYLES;
