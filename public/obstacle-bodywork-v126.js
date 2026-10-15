@@ -13,7 +13,7 @@ const THEMES={
  5:{name:'VERDANT / oxidized bio-alloy',paint:0x657c68,accent:0x8bdc9b,roughness:.82,metalness:.35},
  6:{name:'FRACTURE / crystallized armour',paint:0x77728f,accent:0xc79bff,roughness:.39,metalness:.75}
 };
-const TAU=Math.PI*2,MAX_RADIAL=6.9;
+const TAU=Math.PI*2,MAX_RADIAL=6.9,Z_AXIS=new THREE.Vector3(0,0,1);
 const finite=n=>Number.isFinite(n);
 export function installObstacleBodywork(obstacle,quality='auto'){
  const theme=THEMES[obstacle.course]||THEMES[1],low=quality==='low';
@@ -32,7 +32,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
   // Decorative hardware never projects beyond the usable cylinder. This
   // deliberately rejects outer-wall fittings rather than clipping in shaders.
   if(Math.hypot(x,y)+Math.hypot(w,h)*.5>=MAX_RADIAL)return;
-  position.set(x,y,z);q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP.clone().set(0,0,1),angle);
+  position.set(x,y,z);q.setFromAxisAngle(Z_AXIS,angle);
   scale.set(w,h,d);matrix.compose(position,q,scale);
   dest.push(matrix.clone());
  };
@@ -110,7 +110,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
  const solid=add(metal,metalMaterial,'V126 / forged mountings');
  const lights=add(light,trimMaterial,'V126 / hazard indicator pins');
  if(lights)obstacle.trim.push(trimMaterial);
- obstacle.bodywork={course:obstacle.course,name:theme.name,metal:metal.length,lit:light.length,low,meshes:[solid,lights].filter(Boolean)};
+ obstacle.bodywork={course:obstacle.course,name:theme.name,metal:metal.length,lit:light.length,low,meshes:[solid,lights].filter(Boolean),indicatorMaterial:lights?.material||null,clipped:false};
  return obstacle.bodywork;
 }
 export function inspectObstacleBodywork(obstacle){return obstacle.bodywork?{

@@ -20,6 +20,7 @@ for(let course=1;course<=6;course++){
   const d=localDistance(obstacle,t,shapeAt.x,shapeAt.y,shapeAt.z);
   const kit=installObstacleBodywork(obstacle,'auto');
   assert.ok(kit.meshes.length>0,'Obstacle lacks machine detailing '+course+'/'+obstacle.kind);
+  assert.ok(kit.indicatorMaterial||kit.lit===0,'Course hazards retain their indicator material');
   assert.equal(JSON.stringify(obstacle.solids),collisionBefore,'Decoration changed a collider '+course+'/'+obstacle.kind);
   assert.equal(localDistance(obstacle,t,0,0,0),d,'Decoration changed collision distance');
   metal+=kit.metal;lights+=kit.lit;decorations+=kit.meshes.length;

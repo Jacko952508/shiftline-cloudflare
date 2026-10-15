@@ -23,6 +23,7 @@ async function check(kind,courses){
    await page.waitForFunction(n=>window.__shiftlineObstacleQA?.course===n&&window.__shiftlineObstacleQA.obstacles>5,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineObstacleQA);
    assert.equal(info.decorOnly,true);
+   assert.equal(info.clipped,true,'Every moving decoration must respect original tunnel boundary');
    assert.ok(info.metalParts>info.obstacles*.7);
    assert.ok(info.glowParts>info.obstacles*.3);
    await page.waitForTimeout(350);
