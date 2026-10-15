@@ -7,7 +7,8 @@ const ENGINE_Y=[.055,.025,-.02,-.03,.07,.02];
 const ENGINE_Z=[.83,.85,.79,.75,.96,.88];
 const CANOPY_Z0=[-.67,-.67,-.72,-.73,-.65,-.79];
 const CANOPY_Z1=[.39,.38,.21,.40,.24,.28];
-const WING_TOP=[.084,.104,.083,.103,.27,.08];
+// Each root plane starts inside a structural wing/deck, never above it.
+const WING_TOP=[.049,.067,.047,.079,.232,.036];
 const OUTER_X=[.86,.84,.90,.88,.85,.88];
 const PALETTE=[0x65eaff,0xff873c,0xbc8dff,0x72ffd1,0xff89cf];
 export function addFleetUpgrades(index,c,api){
@@ -52,15 +53,15 @@ export function addFleetUpgrades(index,c,api){
    const section=[
     [.36,-.17],[.55,-.43],[.83,-.32],[.75,.35],[.44,.33]
    ].map(([x,z])=>[x,z+(c.wing===3?-.13:0)]);
-   wing(section,side,(c.wing===2||c.wing===4)?graphite:coloured,baseY+.045,.018);
+   wing(section,side,(c.wing===2||c.wing===4)?graphite:coloured,baseY+.028,.018);
    bracket('wing',[side*.31,baseY-.026,-.16],[side*.67,baseY+.010,.22],.047,graphite);
-   ornament('wing',[[.35,.052,-.26],[.65,.052,-.55],[.91,.046,-.28]],side,baseY,bright,.008);
-   if(c.wing===1)mark('wing',layer([[.47,.35],[.64,.42],[.70,.70],[.57,.59]],coloured,baseY+.06,.023,side),'rear-aileron');
-   if(c.wing===2)mark('wing',layer([[.45,-.41],[.74,-.70],[.91,-.91],[.72,-.36]],carbon,baseY+.063,.017,side),'swept-edge');
-   if(c.wing===3)mark('wing',layer([[.55,-.26],[.85,-.80],[.97,-1.00],[.78,-.06]],graphite,baseY+.06,.024,side),'arrow-spine');
+   ornament('wing',[[.35,.034,-.26],[.65,.035,-.55],[.91,.033,-.28]],side,baseY,bright,.007);
+   if(c.wing===1)mark('wing',layer([[.47,.35],[.64,.42],[.70,.70],[.57,.59]],coloured,baseY+.031,.023,side),'rear-aileron');
+   if(c.wing===2)mark('wing',layer([[.45,-.41],[.74,-.70],[.91,-.91],[.72,-.36]],carbon,baseY+.032,.017,side),'swept-edge');
+   if(c.wing===3)mark('wing',layer([[.55,-.26],[.85,-.80],[.97,-1.00],[.78,-.06]],graphite,baseY+.031,.024,side),'arrow-spine');
    if(c.wing===4){
-    ornament('wing',[[.52,.07,-.44],[.83,.08,-.75],[1.02,.06,-.65]],side,baseY,bright,.010);
-    mark('wing',layer([[.49,.28],[.76,.31],[.98,.71],[.76,.58]],coloured,baseY+.055,.020,side),'crescent-tip');
+    ornament('wing',[[.52,.034,-.44],[.83,.037,-.75],[1.02,.034,-.65]],side,baseY,bright,.008);
+    mark('wing',layer([[.49,.28],[.76,.31],[.98,.71],[.76,.58]],coloured,baseY+.030,.020,side),'crescent-tip');
    }
   }
  }
@@ -108,12 +109,12 @@ export function addFleetUpgrades(index,c,api){
    const x=side*.166;
    if(c.canopy===1){ // smoked low-profile visor with thick side sill
     bracket('canopy',[x,.25,lead],[x,.265,tail],.085,graphite);
-    mark('canopy',layer([[.10,z0+.12],[.21,z0+.22],[.22,z1-.08],[.10,z1-.02]],graphite,.314,.012,side),'overhanging-visor');
+    mark('canopy',layer([[.10,z0+.12],[.21,z0+.22],[.22,z1-.08],[.10,z1-.02]],graphite,.295,.015,side),'overhanging-visor');
    }else if(c.canopy===2){ // prismatic crystal roof with segmented ribs
     bracket('canopy',[side*.11,.32,lead],[side*.13,.365,tail],.058,coloured);
     for(let i=0;i<3;i++)bracket('canopy',[side*.02,.345,z0+.30+i*.20],[side*.18,.34,z0+.28+i*.20],.032,polished);
    }else if(c.canopy===3){ // armoured cockpit, recessed sight slit
-    mark('canopy',layer([[.06,z0+.14],[.25,z0+.29],[.24,z1-.03],[.10,z1+.02]],finish,.337,.032,side),'armour-hood');
+    mark('canopy',layer([[.06,z0+.14],[.25,z0+.29],[.24,z1-.03],[.10,z1+.02]],finish,.297,.032,side),'armour-hood');
     bracket('canopy',[side*.21,.31,lead],[side*.20,.29,tail],.07,graphite);
    }else if(c.canopy===4){ // tall bubble with illuminated root rails
     if(side===1)mark('canopy',hullMesh([[z0+.16,.005,.004,.25],[z0+.34,.13,.10,.29],[z0+.57,.17,.135,.32],[z1-.05,.11,.07,.29],[z1+.08,.012,.012,.24]],glass,0,0,14),'raised-glass-bubble');
@@ -125,31 +126,31 @@ export function addFleetUpgrades(index,c,api){
  // Fins: tail layout changes count, cant, height and overall 3D attitude.
  if(c.fin>0){
   if(c.fin===3){
-   const fin=mountedFin(1,.075,.54,.082,.46,index===3?ceramic:finish,.42,.07);
+   const fin=mountedFin(1,.075,.46,.065,.39,index===3?ceramic:finish,.36,.06);
    mark('fin',fin,'tall-centre-dorsal');
   }else{
-   const heights=[0,.23,.37,.43,.34],positions=[0,.33,.46,.09,.35],leans=[0,.06,.14,.07,.25];
+   const heights=[0,.23,.32,.39,.30],positions=[0,.33,.43,.09,.35],leans=[0,.06,.13,.07,.18];
    for(const side of[-1,1]){
-    const fin=mountedFin(side,positions[c.fin],c.fin===2?.72:.56,.07,heights[c.fin],index===3?ceramic:finish,.34,leans[c.fin]);
+    const fin=mountedFin(side,positions[c.fin],c.fin===2?.56:.47,.052,heights[c.fin],index===3?ceramic:finish,.34,leans[c.fin]);
     mark('fin',fin,c.fin===4?'canted-v-tail':c.fin===2?'split-long-tail':'twin-blade');
    }
   }
  }
  // Liveries: actual painted armour pieces and luminous panel graphics, not tiny lines.
  if(c.livery>0){
-  const y=WING_TOP[index]+.048;
+  const y=WING_TOP[index]+.032;
   for(const side of[-1,1]){
    if(c.livery===1){
     mark('livery',layer([[.31,-.33],[.41,-.48],[.90,.20],[.79,.38]],coloured,y,.014,side),'full-racing-stripe');
-    ornament('livery',[[.32,.05,-.35],[.42,.05,-.47],[.85,.04,.33]],side,y,bright,.010);
+    ornament('livery',[[.32,.013,-.35],[.42,.013,-.47],[.85,.012,.33]],side,y,bright,.008);
    }else if(c.livery===2){
     mark('livery',layer([[.39,-.22],[.69,-.41],[.79,-.09],[.48,.13]],graphite,y,.018,side),'tech-circuit-panel');
-    for(let k=0;k<3;k++)ornament('livery',[[.45,.04,-.16+k*.16],[.68,.04,-.16+k*.16],[.74,.04,-.13+k*.16]],side,y,bright,.006);
+    for(let k=0;k<3;k++)ornament('livery',[[.45,.016,-.16+k*.16],[.68,.016,-.16+k*.16],[.74,.016,-.13+k*.16]],side,y,bright,.006);
    }else if(c.livery===3){
     for(let k=0;k<2;k++)mark('livery',layer([[.34+k*.13,-.21],[.48+k*.13,-.13],[.71+k*.11,.21],[.56+k*.12,.28]],coloured,y+k*.007,.018,side),'painted-chevron');
    }else if(c.livery===4){
     mark('livery',layer([[.24,-.29],[.52,-.34],[.60,.49],[.40,.55]],coloured,y,.017,side),'full-spine-livery');
-    ornament('livery',[[.30,.055,-.35],[.55,.055,.12],[.59,.055,.49]],side,y,bright,.010);
+    ornament('livery',[[.30,.013,-.35],[.55,.013,.12],[.59,.013,.49]],side,y,bright,.007);
    }
   }
   if(c.livery===4)mark('livery',add(new THREE.BoxGeometry(.095,.018,.94),coloured,[0,.235,-.07]),'painted-central-spine');
