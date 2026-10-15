@@ -135,7 +135,7 @@ function builder(ship,index,c,m,high=true){
    line([[side*width*.45,.191,zFront+.17],[side*width*.86,.195,zFront+.38],[side*width*.94,.186,zBack-.18],[side*width*.26,.166,zBack-.01]],graphite,.012);
    line([[side*width*.34,.205,zFront+.19],[side*width*.84,.21,zFront+.38],[side*width*.91,.202,zBack-.19]],polished,.004);
   }
-  line([[0,.22,zFront+.02],[0,.31,zFront+.40],[0,.30,zBack-.20]],polished,.005);
+  line([[0,.197,zFront+.02],[0,.305,zFront+.40],[0,.30,zBack-.20]],polished,.005);
   return o;
  };
  const wingScale=[.99,1.02,.95,.96,1][c.wing],sweep=[0,-.10,.08,-.10,.14][c.wing];
@@ -231,7 +231,7 @@ function builder(ship,index,c,m,high=true){
   }
   // Exposed mechanics behind the black canopy
   for(let k=0;k<4;k++)bar([-.12,.16,.48+k*.10],[.12,.16,.48+k*.10],.035,.028,graphite);
-  line([[0,.18,-1.46],[0,.25,-1.02],[0,.27,-.70]],glow,.009);
+  line([[0,.030,-1.46],[0,.079,-1.02],[0,.115,-.70]],glow,.007);
   break;
  }
  case 2:{ // PHANTOM: one continuous, broad, almost flat stealth-delta airframe
@@ -267,7 +267,7 @@ function builder(ship,index,c,m,high=true){
    cap(side*.39,-.03,.75,.10,exhaust);
    finishDetail(side);
   }
-  line([[0,.12,-1.28],[0,.18,-1.06],[0,.19,-.78]],glow,.008);
+  line([[0,.043,-1.28],[0,.077,-1.06],[0,.118,-.78]],glow,.006);
   if(c.fin===0)mountedFin(1,.09,.54,.108,.12+finHeight*.47,(premium||c.finish!==0)?hull:ceramic,.30,.045);
   break;
  }
@@ -317,7 +317,7 @@ function builder(ship,index,c,m,high=true){
    thruster(side*.28,.02,.88,.12,exhaust);
    finishDetail(side);
   }
-  line([[0,.10,-1.69],[0,.13,-1.32],[0,.16,-.95]],glow,.008);
+  line([[0,.014,-1.69],[0,.065,-1.32],[0,.115,-.95]],glow,.007);
   break;
  }
  }
