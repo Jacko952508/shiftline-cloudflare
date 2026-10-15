@@ -14,13 +14,13 @@ for(let course=1;course<=6;course++){
  for(const obstacle of reference){
   const motion=new THREE.Group(),parent=new THREE.Group();
   obstacle.motion=motion;obstacle.rig=parent;parent.add(motion);obstacle.trim=[];
-  const collisionBefore=obstacle.solids.map(s=>({...s,points:s.points?.map(p=>[...p])}));
+  const collisionBefore=JSON.stringify(obstacle.solids);
   const shapeAt={x:0,y:0,z:0};
   const t=obstacleState(obstacle,2.3);
   const d=localDistance(obstacle,t,shapeAt.x,shapeAt.y,shapeAt.z);
   const kit=installObstacleBodywork(obstacle,'auto');
   assert.ok(kit.meshes.length>0,'Obstacle lacks machine detailing '+course+'/'+obstacle.kind);
-  assert.deepEqual(obstacle.solids,collisionBefore,'Decoration changed a collider '+course+'/'+obstacle.kind);
+  assert.equal(JSON.stringify(obstacle.solids),collisionBefore,'Decoration changed a collider '+course+'/'+obstacle.kind);
   assert.equal(localDistance(obstacle,t,0,0,0),d,'Decoration changed collision distance');
   metal+=kit.metal;lights+=kit.lit;decorations+=kit.meshes.length;
   for(const m of kit.meshes){
