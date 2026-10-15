@@ -1,7 +1,7 @@
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
 import{menuCamera,PREVIEW_CAMERA,prepareMenuCamera}from'./menu-camera.js?v=105';
 import{menuFrameProfile,createMenuFrameGovernor}from'./menu-pacing.js?v=105';
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=110';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=121';
 import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=72';
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=96';
@@ -10,7 +10,7 @@ import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./grap
 import{shipAppearance}from'./ship-wire.js?v=72';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=69';
-import{createGarage,equipGarage,renderGarage,disposeGarage}from'./garage-scene.js?v=120';
+import{createGarage,equipGarage,renderGarage,disposeGarage,setGarageLighting}from'./garage-scene.js?v=121';
 import{Combat,COMBAT_VERSION,PULSE_LIMIT,PULSE_COOLING,WEAPONS}from'./combat-core.js?v=67';
 import{createCombatView,updateCombatView,shieldHit,disposeCombatView}from'./combat-view.js?v=58';
 import{setNameTag,updateNameTag,disposeNameTag}from'./name-tags.js';
@@ -20,7 +20,7 @@ import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=107';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=100';
-import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=120';
+import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=121';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=105';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=112';
@@ -185,7 +185,7 @@ function openExplorer(){
  resetExplorer(explorer);seekExplorer(explorer,.08);refreshObservatory(true);
  renderDeadline=0;lastFrame=performance.now();
 }
-function openGarage(){disposeRace();renderer.toneMappingExposure=1.15;if(effects?.final?.uniforms?.exposure)effects.final.uniforms.exposure.value=1;garage=createGarage(readProgress());renderer.shadowMap.enabled=true;}
+function openGarage(){disposeRace();renderer.toneMappingExposure=1.15;if(effects?.final?.uniforms?.exposure)effects.final.uniforms.exposure.value=1;garage=createGarage(readProgress());renderer.shadowMap.enabled=true;document.querySelectorAll('[data-garage-light]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.garageLight==='studio')));}
 window.addEventListener('shiftline-garage',e=>{if(state!=='menu'||!window.shiftlineReady)return;if(e.detail.active)openGarage();else if(garage)buildPreview()});
 window.addEventListener('shiftline-customisation',()=>{if(state!=='menu'||!window.shiftlineReady)return;if(garage)equipGarage(garage,readProgress());else buildPreview()});
 window.addEventListener('shiftline-garage-focus',event=>{
@@ -195,12 +195,23 @@ window.addEventListener('shiftline-garage-focus',event=>{
  garage.viewCockpit=cockpit;
  $('#garageCockpitView').textContent=cockpit?'EXTERIOR':'COCKPIT';
  if(!cockpit){
-  // Show the actual exhaust outlets and plasma colour when those tabs are active.
-  const rear=cat==='engine'||cat==='trail';
-  garage.yaw=rear?.08:.55;garage.pitch=rear?.27:.12;
-  garage.zoom=false;garage.auto=!rear;
-  $('#garageZoomView').textContent='ZOOM IN';
+  // Per-component inspection: views are deliberately different so body changes
+  // can be judged without repeated manual dragging on a narrow screen.
+  const focus={
+   engine:{yaw:.02,pitch:.25},trail:{yaw:.02,pitch:.17},
+   canopy:{yaw:2.93,pitch:.26},wing:{yaw:.90,pitch:.48},
+   fin:{yaw:.23,pitch:.48},livery:{yaw:.69,pitch:.38},
+   finish:{yaw:.55,pitch:.19},ship:{yaw:.55,pitch:.16}
+  }[cat]||{yaw:.55,pitch:.20};
+  garage.yaw=focus.yaw;garage.pitch=focus.pitch;
+  garage.zoom=cat==='canopy';garage.auto=cat==='ship'||cat==='finish';
+  $('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';
  }
+ if(typeof location!=='undefined'&&location.search.includes('shipqa=1'))window.__shiftlineInspectQA={category:cat,cockpit,yaw:garage.yaw,pitch:garage.pitch};
+});
+window.addEventListener('shiftline-garage-light',event=>{
+ if(!garage||state!=='menu')return;
+ setGarageLighting(garage,event.detail?.mode);
 });
 
 const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageZoomView').onclick=()=>{if(garage){garage.zoom=!garage.zoom;$('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=.55;garage.pitch=.12;garage.auto=true;garage.drag=null;garage.zoom=false;$('#garageZoomView').textContent='ZOOM IN';}};
