@@ -20,10 +20,12 @@ async function run(kind,courses){
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
-   await page.waitForFunction(c=>window.__shiftlineSceneryQA?.course===c&&window.__shiftlineSceneryQA.version===130,course,{timeout:70000});
+   await page.waitForFunction(c=>window.__shiftlineSceneryQA?.course===c&&window.__shiftlineSceneryQA.version===133,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
    assert.ok(info.minClearance>=24);
    assert.ok(info.landmarks>20);
+   assert.equal(info.chapterCounts.reduce((a,b)=>a+b,0),info.landmarks);
+   assert.ok(info.chapterCounts.every(n=>n>0),'Scenery missing from a chapter');
    assert.ok(info.nearCount>8,'Foreground landmarks missing on course '+course);
    assert.equal(info.collisionObjects,0);assert.equal(info.glassSurfaces,0);assert.equal(info.shadows,0);
    const ss=await page.locator('#game').screenshot({timeout:65000});
@@ -31,7 +33,7 @@ async function run(kind,courses){
    let colored=0,bright=0;
    for(let i=0;i<png.width*png.height;i+=17){const p=i*4,r=png.data[p],g=png.data[p+1],b=png.data[p+2];if(Math.max(r,g,b)-Math.min(r,g,b)>17)colored++;if(r+g+b>250)bright++}
    assert.ok(colored>120&&bright>80,'Blank or dark viewport '+course+': '+JSON.stringify({colored,bright}));
-   console.log('PASS V130 '+kind.name()+' '+course+' '+JSON.stringify({name:info.name,landmarks:info.landmarks,minClearance:info.minClearance,colored,bright}));
+   console.log('PASS V133 '+kind.name()+' '+course+' '+JSON.stringify({name:info.name,landmarks:info.landmarks,minClearance:info.minClearance,colored,bright}));
    if(course===1||course===3||course===5||course===6){
     await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-course-'+course+'.png'});
     await page.locator('#obsScrub').evaluate(el=>{el.value='520';el.dispatchEvent(new Event('input',{bubbles:true}));});

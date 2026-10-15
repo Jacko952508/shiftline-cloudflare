@@ -10,8 +10,8 @@ for(let course=1;course<=6;course++){
  assert.ok(d.total>15,'Too few landmarks');
  assert.ok(d.minClearance>=24,'Scenery crosses another piece of the route: '+d.minClearance);
  assert.equal(d.root.parent,scene);
- assert.ok(d.geometries.length===4);
- assert.ok(d.chunks.every(c=>c.meshes.length===4&&c.count<=4));
+ assert.ok(d.geometries.length===5);
+ assert.ok(d.chunks.every(c=>c.meshes.length===5&&c.count<=4&&c.meshes[4].count===0));
  for(const c of d.chunks)for(const mesh of c.meshes){
   assert.ok(mesh.isInstancedMesh);assert.equal(mesh.castShadow,false);
   assert.equal(mesh.material.transparent,false);assert.equal(mesh.material.depthWrite,true);
@@ -20,6 +20,7 @@ for(let course=1;course<=6;course++){
  assert.ok(d.chunks.some(c=>c.group.visible),'Nothing visible near flight');
  assert.ok(d.chunks.some(c=>!c.group.visible),'Distant sections not culled');
  assert.equal(d.total,d.chunks.reduce((n,c)=>n+c.count,0));
+ assert.equal(d.chapterCounts.reduce((a,b)=>a+b,0),d.total);
  const data=[course,d.name,d.total,d.minClearance,d.chunks.length,d.geometries[0].type];
  signatures.push(data);
  disposeFarScenery(world);
@@ -32,6 +33,8 @@ for(let course=1;course<=6;course++){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
  attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
  assert.ok(d.total>25,'Auto detail unexpectedly sparse');
+ assert.ok(d.chapterCounts.every(c=>c>0),'Not all four chapters have distinct scenery on course '+course);
+ assert.ok(d.chunks.some(c=>c.meshes[4].count>0),'Course-specific form was not instanced');
  assert.ok(d.nearCount>8,'Foreground band not visible on '+course+': '+d.nearCount);
  assert.ok(d.minClearance>=24);
  updateFarScenery(world,400,12.125);const before=d.motionStep;
@@ -50,7 +53,7 @@ for(const course of [2,4,6]){
  const first=d.chunks.find(c=>c.count>4);
  assert.ok(first,'No populated high-detail chunk');
  const original=first.count;
- setFarSceneryQuality(world,'low');assert.equal(d.low,true);assert.equal(first.meshes[0].count,4);
- setFarSceneryQuality(world,'auto');assert.equal(d.low,false);assert.equal(first.meshes[0].count,original);
+ setFarSceneryQuality(world,'low');assert.equal(d.low,true);assert.equal(first.meshes[0].count,4);assert.equal(first.meshes[4].count,0);
+ setFarSceneryQuality(world,'auto');assert.equal(d.low,false);assert.equal(first.meshes[0].count,original);assert.equal(first.meshes[4].count,original);
  disposeFarScenery(world);console.log('PASS V131 live LOD switch course '+course);
 }

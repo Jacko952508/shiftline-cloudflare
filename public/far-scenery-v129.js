@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// V130 / Phase 3 worldscapes: six independent distant silhouettes.
+// V133 / Phase 3 worldscapes: six independent distant silhouettes.
 // Keep every scenic mesh opaque, unlit by shadow maps, and separate from
 // glass, hitboxes, tunnel physics, WorldFinish and the game's save format.
 const PROFILES={
@@ -22,6 +22,16 @@ const PROFILES={
  6:{name:'RIFT QUARRY / jagged basalt, suspended shards and violet rifts',kind:'rift',
     primary:0x5c6074,secondary:0x9692b9,accent:0xc09aff,shade:0x33364c,
     base:47,height:96,spread:12}
+};
+// Four independent chapter accents per world, applied through existing
+// instance colours (no extra lights, shaders, render targets or textures).
+const CHAPTER_LIGHT={
+ 1:[0x6aeaff,0x9aa8ff,0xffc481,0xff855c],
+ 2:[0x58ded1,0x94e9b2,0x719ce9,0x9fe9c6],
+ 3:[0x89c7d6,0xef9954,0xff6b43,0xffb26b],
+ 4:[0x88c8f5,0xb4a8ff,0x76d9ff,0xffd2a3],
+ 5:[0xa0e79e,0x7bdfcd,0xe8d28c,0x9bbaff],
+ 6:[0xf4bf97,0x83b1ff,0xc5a5ff,0xffa1d9]
 };
 const TAU=Math.PI*2;
 const UP=new THREE.Vector3(0,1,0);
@@ -51,36 +61,42 @@ function trackIndex(track){
 function shapes(kind,quality){
  const low=quality==='low';
  const cylinder=(a,b,s=8)=>new THREE.CylinderGeometry(a,b,1,low?5:s,1);
- // Four separately batched types: silhouette, distinctive crown/structure,
- // supporting hardware, and a subtle distant signal.
+ // Five optional instanced forms: silhouette, crown, support, a chapter-coloured
+ // beacon and a distinct biome accent (disabled on Low quality).
  switch(kind){
  case 'city':return [
   new THREE.BoxGeometry(1,1,1),
   cylinder(.83,1,8),new THREE.BoxGeometry(1,1,1),
-  new THREE.BoxGeometry(1,1,1)];
+  new THREE.BoxGeometry(1,1,1),
+  new THREE.TorusGeometry(1,.12,low?4:6,low?12:20)];
  case 'reef':return [
   new THREE.IcosahedronGeometry(1,low?0:1),
   cylinder(.32,1,7),new THREE.IcosahedronGeometry(1,low?0:1),
-  new THREE.IcosahedronGeometry(1,0)];
+  new THREE.IcosahedronGeometry(1,0),
+  cylinder(.12,.32,6)];
  case 'forge':return [
   new THREE.IcosahedronGeometry(1,0),
   cylinder(.12,1,7),cylinder(.65,.83,8),
-  new THREE.OctahedronGeometry(1,0)];
+  new THREE.OctahedronGeometry(1,0),
+  cylinder(.38,.44,7)];
  case 'storm':return [
   new THREE.BoxGeometry(1,1,1),
   cylinder(.14,.62,7),new THREE.TorusGeometry(1,.16,low?4:6,low?12:20),
+  new THREE.BoxGeometry(1,1,1),
   new THREE.BoxGeometry(1,1,1)];
  case 'forest':return [
   cylinder(.34,.72,7),
   new THREE.IcosahedronGeometry(1,low?0:1),
-  cylinder(.45,.6,6),new THREE.IcosahedronGeometry(1,0)];
+  cylinder(.45,.6,6),new THREE.IcosahedronGeometry(1,0),
+  cylinder(.24,.40,6)];
  default:return [
   new THREE.IcosahedronGeometry(1,0),
   new THREE.OctahedronGeometry(1,0),new THREE.TetrahedronGeometry(1,0),
-  new THREE.OctahedronGeometry(1,0)];
+  new THREE.OctahedronGeometry(1,0),
+  new THREE.TetrahedronGeometry(1,0)];
  }
 }
-function recipes(profile,anchor,width,height,seed,root){
+function recipes(profile,anchor,width,height,seed,chapter){
  const kind=profile.kind,rot=hash(seed,67)*TAU;
  // scale and position are defined explicitly for each structure so the
  // silhouettes cannot collapse into the same pole-and-cap construction.
@@ -124,7 +140,15 @@ function recipes(profile,anchor,width,height,seed,root){
    a(width*.76,height*.58,width*.3,width*.42,height*.50,width*.44,.35),
    a(-width*.45,height*.97,0,width*.26,height*.25,width*.26)];
  }
- return {parts,variations:[color(0,1),color(1,2),color(2,3),color(3,4)]};
+ // Unique fifth silhouette attached to each structure; it is not a second
+ // free-floating skyline layer and uses the same verified clearance.
+ if(kind==='city')parts.push(a(0,height*(chapter===2?.62:.90),width*.12,width*(chapter===2?1.45:.82),width*(chapter===2?1.45:.85),width*.55,Math.PI/2));
+ else if(kind==='reef')parts.push(a(-width*.53,height*.66,width*.25,width*.20,height*.62,width*.20,chapter===2?.55:.37));
+ else if(kind==='forge')parts.push(a(width*.25,height*.90,0,width*.22,height*.45,width*.22,.16));
+ else if(kind==='storm')parts.push(a(0,height*.87,0,width*.15,height*(chapter===1?.62:.48),width*.12,Math.PI/2));
+ else if(kind==='forest')parts.push(a(-width*.72,height*.65,width*.15,width*.22,height*.78,width*.22,-.68));
+ else parts.push(a(width*.92,height*(chapter===2?.92:.74),width*.16,width*.33,height*.52,width*.35,.36));
+ return {parts,variations:[color(0,1),color(1,2),color(2,3),color(3,4),color(4,5)]};
 }
 function makeMatrix(dummy,part,out=new THREE.Matrix4()){
  dummy.position.copy(part.position);
@@ -142,11 +166,12 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshLambertMaterial({color:profile.primary,flatShading:true}),
   new THREE.MeshLambertMaterial({color:profile.secondary,flatShading:true}),
   new THREE.MeshLambertMaterial({color:profile.shade,flatShading:true}),
-  new THREE.MeshBasicMaterial({color:profile.accent,toneMapped:false,depthWrite:true})
+  new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,depthWrite:true}),
+  new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
- const tint=new THREE.Color();let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;
+ const tint=new THREE.Color();const chapterCounts=[0,0,0,0];let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;
  for(let start=0;start<track.length;start+=stride){
   const end=Math.min(track.length,start+stride);
   const group=new THREE.Group();group.name='V130 / FARSCAPE SECTION '+Math.round(start);
@@ -157,6 +182,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   let count=0;
   for(let j=0;j<perChunk;j++){
    const seed=start*1.97+j*19.23+course*403;
+   const chapter=Math.min(3,Math.floor((start+(end-start)*hash(seed,1))/track.length*4));
    const s=clamp(start+(end-start)*(.12+.76*hash(seed,1)),2,track.length-2),f=track.frame(s);
    const angle=TAU*((j+.34*hash(seed,2))/perChunk);
    horizontal.copy(f.r).multiplyScalar(Math.cos(angle)).addScaledVector(f.u,Math.sin(angle));
@@ -167,7 +193,8 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    // silently dropped; nearby crossing tracks remain absolutely protected.
    const baseDistance=(j%4===0?82:j%3===0?215:115)+67*hash(seed,3);
    const width=profile.spread*(.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
-   const height=profile.height*(.53+.75*hash(seed,5))*(hero?1.36:1);
+   const chapterHeight=[1,.83,1.22,.94][chapter];
+   const height=profile.height*chapterHeight*(.53+.75*hash(seed,5))*(hero?1.36:1);
    const boundsRadius=Math.hypot(width*2.5,height*.65);
    let margin=-Infinity,distance=baseDistance,candidate=null;
    for(let attempt=0;attempt<3;attempt++){
@@ -182,15 +209,17 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
     point.y=floor;
     centre.copy(point).addScaledVector(UP,height*.6);
     margin=candidates(centre,boundsRadius);
-    if(margin>=24){candidate=recipes(profile,point,width,height,seed);break}
+    if(margin>=24){candidate=recipes(profile,point,width,height,seed,chapter);break}
    }
    if(!candidate){skipped++;continue}
    if(distance<190)nearCount++;
    minClearance=Math.min(minClearance,margin);
-   for(let k=0;k<4;k++){
+   chapterCounts[chapter]++;
+   for(let k=0;k<5;k++){
     const mesh=meshes[k],part=candidate.parts[k];
     mesh.setMatrixAt(count,makeMatrix(dummy,part));
-    tint.setRGB(candidate.variations[k],candidate.variations[k],candidate.variations[k]);
+    if(k===3)tint.setHex(CHAPTER_LIGHT[course][chapter]).multiplyScalar(.72+.22*hash(seed,38));
+    else tint.setRGB(candidate.variations[k],candidate.variations[k],candidate.variations[k]);
     mesh.setColorAt(count,tint);
    }
    if(!low&&(course===4||course===6||course===2)&&j%2===0){
@@ -201,18 +230,18 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    count++;
   }
   for(const mesh of meshes){
-   mesh.count=count;
+   mesh.count=(meshes.indexOf(mesh)===4&&low)?0:count;
    mesh.instanceMatrix.needsUpdate=true;
    if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
   }
-  chunks.push({start,end,group,meshes,motions,count});
+  chunks.push({start,end,group,meshes,motions,count,chapter});
   total+=count;
  }
- world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,low,quality,activeLow:low,
+ world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,chapterCounts,low,quality,activeLow:low,
    materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
-  window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,
-   dynamicCount,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:130};
+  window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,chapterCounts,
+   dynamicCount,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:133};
  return world;
 }
 export function setFarSceneryQuality(world,quality){
@@ -220,7 +249,7 @@ export function setFarSceneryQuality(world,quality){
  const low=quality==='low';if(d.activeLow===low)return;
  d.activeLow=d.low=low;
  const limit=d.quality==='low'?4:low?4:Infinity;
- for(const chunk of d.chunks)for(const mesh of chunk.meshes)mesh.count=Math.min(chunk.count,limit);
+ for(const chunk of d.chunks)for(let k=0;k<chunk.meshes.length;k++)chunk.meshes[k].count=(k===4&&low)?0:Math.min(chunk.count,limit);
  d.motionStep=-1;
 }
 export function updateFarScenery(world,along,time=0){
