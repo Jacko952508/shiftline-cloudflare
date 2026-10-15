@@ -234,7 +234,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    mesh.instanceMatrix.needsUpdate=true;
    if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
   }
-  chunks.push({start,end,group,meshes,motions,count,chapter});
+  chunks.push({start,end,group,meshes,motions,count});
   total+=count;
  }
  world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,chapterCounts,low,quality,activeLow:low,
