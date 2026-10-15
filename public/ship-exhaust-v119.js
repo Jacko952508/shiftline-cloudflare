@@ -11,6 +11,13 @@ const TRAIL_STYLES=[
  {name:'Emerald Ion',width:.76,length:1.26,turb:.30,flicker:.035,sparks:.65},
  {name:'Rose Plasma',width:1.16,length:1.11,turb:.76,flicker:.13,sparks:1.00}
 ];
+const ENGINE_PROFILES=[
+ {name:'turbine',radius:1,length:1,core:1},
+ {name:'armoured',radius:1.22,length:.94,core:1.10},
+ {name:'ion-collar',radius:.87,length:1.23,core:1.17},
+ {name:'vector-nozzle',radius:1.08,length:1.13,core:1.06},
+ {name:'split-shroud',radius:1.30,length:.96,core:.89}
+];
 const LOCATIONS=[
  [[-.77,.055,.855],[.77,.055,.855]],
  [[-.46,.025,.865],[.46,.025,.865]],
@@ -112,11 +119,12 @@ const rand=i=>((Math.sin(i*127.1+45.97)*43758.5453)%1+1)%1;
 export function installShipExhaust(ship,root,index,custom,high=true){
  const colour=PALETTE[custom.trail|0]||PALETTE[0];
  const style=TRAIL_STYLES[custom.trail|0]||TRAIL_STYLES[0];
+ const engineProfile=ENGINE_PROFILES[custom.engine|0]||ENGINE_PROFILES[0];
  const positions=LOCATIONS[index]||LOCATIONS[0];
  const fxGroup=new THREE.Group();fxGroup.name='dynamic-rocket-trails';root.add(fxGroup);
  const outerMat=plasmaMaterial(colour,high?.48:.28,style),innerMat=plasmaMaterial(colour,high?.82:.42,style);
  const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68,style),particleMat=particlesMaterial(colour);
- const outerGeo=plumeGeometry(.13,1.8),innerGeo=plumeGeometry(.068,1),coreGeo=plumeGeometry(.024,.5);
+ const outerGeo=plumeGeometry(.13*engineProfile.radius,1.8),innerGeo=plumeGeometry(.068*engineProfile.radius,1),coreGeo=plumeGeometry(.024*engineProfile.core,.5);
  const particles=high?24:10,actors=[];
  for(let e=0;e<positions.length;e++){
   const [x,y,z]=positions[e];
@@ -136,17 +144,25 @@ export function installShipExhaust(ship,root,index,custom,high=true){
   geometry.setAttribute('aPointSize',new THREE.BufferAttribute(sizes,1));
   const pts=new THREE.Points(geometry,particleMat);pts.name='rocket-spark-wake';
   pts.frustumCulled=false;pts.renderOrder=18;pts.visible=high;anchor.add(pts);
-  const throat=new THREE.Mesh(new THREE.CircleGeometry(.069,18),
+  const throat=new THREE.Mesh(new THREE.CircleGeometry(.069*engineProfile.radius,18),
    new THREE.MeshBasicMaterial({color:colour,transparent:true,opacity:.9,side:THREE.DoubleSide,
     blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
   throat.name='lit-rocket-throat';throat.position.z=.015;throat.material.opacity=high?.90:.57;anchor.add(throat);
-  actors.push({anchor,outer,inner,core,pts,geometry,count:particles});
+  const shockRings=[];
+  if(high){
+   const ringMat=new THREE.MeshBasicMaterial({color:colour,opacity:.23,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,toneMapped:false});
+   for(let k=0;k<2;k++){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry((.065+k*.023)*engineProfile.radius,.010,5,20),ringMat);
+    ring.name='boost-shock-diamond';ring.renderOrder=16;ring.visible=false;anchor.add(ring);shockRings.push(ring);
+   }
+  }
+  actors.push({anchor,outer,inner,core,pts,geometry,count:particles,shockRings});
  }
- const fx={name:'SHIFTLINE-ROCKET-V119',ship,index,colour,custom,actors,materials:[outerMat,innerMat,coreMat,particleMat],length:1.15,power:.20,boost:false,lastTime:0,hasPlumes:true,
+ const fx={name:'SHIFTLINE-ROCKET-V121',ship,index,colour,custom,engineProfile,actors,materials:[outerMat,innerMat,coreMat,particleMat],length:1.15,power:.20,boost:false,lastTime:0,hasPlumes:true,
   update(time,boost=false,reduced=false){
    if(!Number.isFinite(time))time=0;
    const targetPower=boost?1:.27;
-   const targetLen=(boost?4.35:(reduced?1.25:2.25))*style.length;
+   const targetLen=(boost?4.35:(reduced?1.25:2.25))*style.length*engineProfile.length;
    const dt=Math.min(.1,Math.max(.008,time-this.lastTime));this.lastTime=time;
    const response=1-Math.exp(-dt*(boost?17:10));
    this.length+=(targetLen-this.length)*response;
@@ -164,7 +180,11 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     // Short, shimmering nozzle glow, not an expensive fullscreen post-process.
     const throat=a.anchor.getObjectByName('lit-rocket-throat');
     if(throat){throat.material.opacity=(high?.65:.39)+(boost?.25:0);throat.scale.setScalar(style.width*(1+(boost?.15:0)));}
-    a.pts.visible=high&&!reduced;
+    for(let k=0;k<a.shockRings.length;k++){
+    const ring=a.shockRings[k];ring.visible=boost&&!reduced;
+    if(ring.visible){ring.position.z=this.length*(.23+k*.19);ring.scale.setScalar((1+.09*Math.sin(time*21+k*2.6))*style.width);}
+   }
+   a.pts.visible=high&&!reduced;
     if(!high)continue;
     const coords=a.geometry.getAttribute('position');
     for(let i=0;i<a.count;i++){
@@ -176,7 +196,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     coords.needsUpdate=true;
    }
    if(high&&typeof location!=='undefined'&&location.search.includes('shipqa=1')){
-    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,style:style.name,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
+    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,style:style.name,engine:engineProfile.name,shockRings:this.actors[0]?.shockRings.length||0,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
    }
   }
  };
