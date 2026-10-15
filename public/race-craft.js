@@ -2,7 +2,7 @@ import{appearance,SHIP_SCALE}from'./ship-catalog.js?v=109';
 import{acquirePBR,releasePBR}from'./material-lab.js?v=38';
 import{hullDetail}from'./surface-detail.js?v=38';
 import * as THREE from 'three';
-import{sculptFleetCraft}from'./ship-fleet-v117.js?v=121';
+import{sculptFleetCraft}from'./ship-fleet-v117.js?v=122';
 import{animateFleetPolish}from'./fleet-polish-v120.js?v=120';
 // Longitudinal lofts give the hull and engine nacelles a continuous manufactured silhouette.
 function loft(stations,sides=12){const pos=[],uv=[],ind=[];for(let i=0;i<stations.length;i++){const[z,rx,ry,y]=stations[i];for(let j=0;j<=sides;j++){const a=j/sides*Math.PI*2;pos.push(Math.cos(a)*rx,Math.sin(a)*ry+y,z);uv.push(j/sides,i/(stations.length-1))}}for(let i=0;i<stations.length-1;i++)for(let j=0;j<sides;j++){const a=i*(sides+1)+j,b=a+sides+1;ind.push(a,a+1,b,b,a+1,b+1)}// Separate cap vertices keep the end plates flat-shaded and seal the hull from rear/below views.
