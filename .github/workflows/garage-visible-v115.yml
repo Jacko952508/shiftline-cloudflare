@@ -1,12 +1,12 @@
-name: SHIFTLINE V120 Integrated Aircraft Structures
+name: SHIFTLINE V120 One-Phase Ship Overhaul
 on:
   push:
-    branches: [fleet-integrated-surfaces-v120, main]
+    branches: [ship-overhaul-v120, main]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: fleet-v119-${{ github.workflow }}-${{ github.ref }}
+  group: fleet-v120-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   garage-visible:
@@ -37,18 +37,18 @@ jobs:
         run: node test/garage-webkit-v115.mjs
       - name: Smoke test racing with an upgraded SPECTRE and saved progress
         run: node test/fleet-race-v117.mjs
-      - name: Wait for production Cloudflare to serve v120
+      - name: Wait for production Cloudflare to serve v121
         if: github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 60); do
-            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v120' | grep -q 'race-engine.js?v=120'; then
+            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v121' | grep -q 'race-engine.js?v=121'; then
               echo "PASS Cloudflare serving new game engine"
               exit 0
             fi
             echo "Cloudflare not yet updated, retry $i"
             sleep 10
           done
-          echo "FAIL Cloudflare did not deploy v120" >&2
+          echo "FAIL Cloudflare did not deploy v121" >&2
           exit 1
       - name: Check actual production ship pixels in Chromium
         if: github.ref == 'refs/heads/main'
