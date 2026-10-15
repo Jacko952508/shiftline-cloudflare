@@ -28,7 +28,7 @@ export function addFleetUpgrades(index,c,api){
  owned.push(bright);
  const wingPoint=(x,z)=>[x,z];
  const wing=(poly,side,mat=finish,height=WING_TOP[index],thickness=.04)=>{
-  const m=layer(poly,mat,height,thickness,side);return mark('wing',m);
+  const m=layer(poly,mat,height,thickness,side);m.userData.structuralHull=true;return mark('wing',m);
  };
  const ornament=(category,points,side,height,mat=coloured,width=.008)=>{
   return mark(category,line(points.map(([x,y,z])=>[x*side,y+height,z]),mat,width),'seam');
