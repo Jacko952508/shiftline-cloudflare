@@ -3,12 +3,13 @@ import * as THREE from 'three';
 // model-specific surface grammar. Detail only: no collisions, physics or saves.
 const NAMES=['VECTOR','RAZOR','PHANTOM','MANTA','GEMINI','SPECTRE'];
 const EXHAUST=[[.77,.055,.83],[.46,.025,.85],[.23,-.02,.79],[.39,-.03,.75],[.79,.07,.96],[.28,.02,.88]];
-const DECK=[.13,.115,.068,.133,.267,.107];
 const PI=Math.PI;
 export function installFleetPrecision(ship,root,index,c,api){
  const {hull,polished,graphite,carbon,trim,glow,premium}=api.materials;
  const {high,owned}=api;
  const stats={model:NAMES[index],engineSockets:0,structuralJoins:0,surfaceMarks:0,finFillets:0,highDetail:!!high};
+ // Opponent ships use the original lightweight shape; keep this pass player/showroom-only.
+ if(!high){ship.userData.fleetPrecision=stats;return stats;}
  const bright=new THREE.MeshBasicMaterial({color:premium?0xffffff:trim.color.clone(),toneMapped:false,side:THREE.DoubleSide});
  const seal=new THREE.MeshStandardMaterial({color:0x0a1520,metalness:.52,roughness:.69,side:THREE.DoubleSide});
  const titanium=new THREE.MeshPhysicalMaterial({color:premium?hull.color.clone():[0xbedce8,0xd36a75,0x607888,0xe5f6fa,0x9baebf,0xc8dae1][index],metalness:.82,roughness:.35,clearcoat:.68,clearcoatRoughness:.17,side:THREE.DoubleSide});
