@@ -1,0 +1,55 @@
+name: SHIFTLINE V130 Phase 3 Distinct Worlds
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/far-scenery-v129.js'
+      - 'public/race-world.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/far-scenery-v130.mjs'
+      - 'test/phase3-browser-v130.mjs'
+      - '.github/workflows/phase3-v130.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '24'
+      - name: Syntax validation
+        run: |
+          node --check public/far-scenery-v129.js
+          node --check public/race-world.js
+          node --check public/race-engine.js
+      - name: Six-world geometry, clearance, animation and quality tests
+        run: node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '24'
+      - name: Install WebGL browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve tested source
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v130.log 2>&1 &
+          sleep 2
+      - name: Inspect all six maps and race in Chromium and iPhone WebKit
+        run: node test/phase3-browser-v130.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v130-worldscape-screenshots
+          path: phase3-v130-frames
+          if-no-files-found: ignore
