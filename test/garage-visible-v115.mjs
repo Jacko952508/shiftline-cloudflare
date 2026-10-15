@@ -62,6 +62,7 @@ try{
   assert.ok(meta.texturedMeshes>=3,names[i]+' still lacks proper mapped surface materials: '+meta.texturedMeshes);
   assert.equal(meta.exhaustEmitters,2,names[i]+' has no proper paired rocket thrusters');
   assert.ok(meta.upgradeCounts&&typeof meta.upgradeSignature==='string',names[i]+' customisation kit missing');
+  assert.ok(meta.insetContacts?.every(p=>p.attached),names[i]+' has an unsupported hovering armour plate: '+JSON.stringify(meta.insetContacts));
   assert.ok(meta.contacts?.length===mountCount&&meta.contacts.every(x=>x.shoeFin&&x.shoeHull),names[i]+' fin is physically disconnected from wing or fuselage: '+JSON.stringify(meta.contacts));
 
   spans.push(meta.measuredSpan);
@@ -116,6 +117,21 @@ try{
  assert.equal(roseTrail?.colour,0xff89cf,'Changing exhaust colour must change the real shader');
  assert.ok(roseTrail.length>.80,'Custom trail must have visible plasma length');
  await page.screenshot({path:'garage-visible-artifacts/119-rose-rocket-trails.png'});
+ // Verify every upgrade stabiliser family is a REPLACEMENT, not stacked on
+ // the old fin set; render selected options to catch floating flaps.
+ await page.locator('[data-garage-category="ship"]').click();
+ for(let i=0;i<6;i++){
+  const tile=page.locator('[data-choice-kind="ship"][data-choice-id="'+i+'"]');
+  await tile.scrollIntoViewIfNeeded();await tile.click();
+  await page.locator('[data-garage-category="fin"]').click();
+  await page.locator('[data-choice-kind="part"][data-choice-id="2"]').click();
+  const geometry=await page.evaluate(()=>window.__shiftlineModelQA);
+  const expected=i===5?4:2; // SPECTRE's two integral blade roots remain.
+  assert.equal(geometry.finMounts.length,expected,names[i]+' has stacked original and optional fins');
+  assert.ok(geometry.contacts.every(c=>c.shoeFin&&c.shoeHull),names[i]+' has an unsupported optional fin: '+JSON.stringify(geometry.contacts));
+  assert.ok(geometry.insetContacts.every(c=>c.attached),names[i]+' has a floating armour panel');
+  if(i===1||i===4||i===5)await page.locator('#craftDisplay').screenshot({path:'garage-visible-artifacts/120-'+names[i].toLowerCase()+'-attached-fins.png'});
+ }
  assert.deepEqual(shaderErrors,[],'Plasma shaders must compile successfully in WebGL');
  console.log('PASS V119 3D kits, physical livery, engine modules, real animated paired rocket trails and five selectable colours',JSON.stringify({originalTrail,roseTrail,spans}));
 
