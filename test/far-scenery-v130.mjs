@@ -32,6 +32,7 @@ for(let course=1;course<=6;course++){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
  attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
  assert.ok(d.total>25,'Auto detail unexpectedly sparse');
+ assert.ok(d.nearCount>8,'Foreground band not visible on '+course+': '+d.nearCount);
  assert.ok(d.minClearance>=24);
  updateFarScenery(world,400,12.125);const before=d.motionStep;
  updateFarScenery(world,430,12.20);assert.equal(d.motionStep,before);

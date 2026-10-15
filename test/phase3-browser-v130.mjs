@@ -16,7 +16,7 @@ async function run(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=131');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=132');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -24,6 +24,7 @@ async function run(kind,courses){
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
    assert.ok(info.minClearance>=24);
    assert.ok(info.landmarks>20);
+   assert.ok(info.nearCount>8,'Foreground landmarks missing on course '+course);
    assert.equal(info.collisionObjects,0);assert.equal(info.glassSurfaces,0);assert.equal(info.shadows,0);
    const ss=await page.locator('#game').screenshot({timeout:65000});
    const png=PNG.sync.read(ss);
@@ -31,8 +32,12 @@ async function run(kind,courses){
    for(let i=0;i<png.width*png.height;i+=17){const p=i*4,r=png.data[p],g=png.data[p+1],b=png.data[p+2];if(Math.max(r,g,b)-Math.min(r,g,b)>17)colored++;if(r+g+b>250)bright++}
    assert.ok(colored>120&&bright>80,'Blank or dark viewport '+course+': '+JSON.stringify({colored,bright}));
    console.log('PASS V130 '+kind.name()+' '+course+' '+JSON.stringify({name:info.name,landmarks:info.landmarks,minClearance:info.minClearance,colored,bright}));
-   if(course===1||course===3||course===5||course===6)
+   if(course===1||course===3||course===5||course===6){
     await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-course-'+course+'.png'});
+    await page.locator('#obsScrub').evaluate(el=>{el.value='520';el.dispatchEvent(new Event('input',{bubbles:true}));});
+    await page.waitForTimeout(450);
+    await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-midcourse-'+course+'.png'});
+   }
    await page.locator('#obsClose').click();
   }
   await page.evaluate(()=>document.querySelector('[data-course="1"]').click());

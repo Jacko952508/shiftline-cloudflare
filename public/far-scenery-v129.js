@@ -146,7 +146,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
  ];
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
- const tint=new THREE.Color();let total=0,skipped=0,minClearance=Infinity,dynamicCount=0;
+ const tint=new THREE.Color();let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;
  for(let start=0;start<track.length;start+=stride){
   const end=Math.min(track.length,start+stride);
   const group=new THREE.Group();group.name='V130 / FARSCAPE SECTION '+Math.round(start);
@@ -162,24 +162,30 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    horizontal.copy(f.r).multiplyScalar(Math.cos(angle)).addScaledVector(f.u,Math.sin(angle));
    // Terrain lives in a world-upright frame even when the track does a loop.
    horizontal.y=0;if(horizontal.lengthSq()<.06)horizontal.set(Math.cos(angle),0,Math.sin(angle));horizontal.normalize();
-   const distance=(j%3===0?210:135)+85*hash(seed,3);
-   point.copy(f.p).addScaledVector(horizontal,distance);
+   // A close foreground band, a middle skyline, and occasional distant
+   // silhouettes. Rejected close placements move outward instead of being
+   // silently dropped; nearby crossing tracks remain absolutely protected.
+   const baseDistance=(j%4===0?82:j%3===0?215:115)+67*hash(seed,3);
    const width=profile.spread*(.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
    const height=profile.height*(.53+.75*hash(seed,5))*(hero?1.36:1);
-   let floor=f.p.y-(course===6?30:course===1?65:course===4?105:80)+35*(hash(seed,6)-.5);
-   if(course>=4&&course!==6&&typeof world.ground==='function'){
-    const grounded=world.ground(point.x,point.z);
-    if(Number.isFinite(grounded)&&Math.abs(grounded-f.p.y)<330)floor=grounded-2;
-   }
-   if(course===6)floor=f.p.y-height*.32+65*(hash(seed,7)-.5);
-   point.y=floor;
-   const candidate=recipes(profile,point,width,height,seed);
-   // Conservative bounding sphere around all four visible parts. The
-   // spatial test also checks *other* course branches and bridge loops.
    const boundsRadius=Math.hypot(width*2.5,height*.65);
-   centre.copy(point).addScaledVector(UP,height*.6);
-   const margin=candidates(centre,boundsRadius);
-   if(!Number.isFinite(margin)||margin<24){skipped++;continue}
+   let margin=-Infinity,distance=baseDistance,candidate=null;
+   for(let attempt=0;attempt<3;attempt++){
+    distance=baseDistance+attempt*82;
+    point.copy(f.p).addScaledVector(horizontal,distance);
+    let floor=f.p.y-(course===6?30:course===1?65:course===4?105:80)+35*(hash(seed,6)-.5);
+    if(course>=4&&course!==6&&typeof world.ground==='function'){
+     const grounded=world.ground(point.x,point.z);
+     if(Number.isFinite(grounded)&&Math.abs(grounded-f.p.y)<330)floor=grounded-2;
+    }
+    if(course===6)floor=f.p.y-height*.32+65*(hash(seed,7)-.5);
+    point.y=floor;
+    centre.copy(point).addScaledVector(UP,height*.6);
+    margin=candidates(centre,boundsRadius);
+    if(margin>=24){candidate=recipes(profile,point,width,height,seed);break}
+   }
+   if(!candidate){skipped++;continue}
+   if(distance<190)nearCount++;
    minClearance=Math.min(minClearance,margin);
    for(let k=0;k<4;k++){
     const mesh=meshes[k],part=candidate.parts[k];
@@ -202,10 +208,10 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   chunks.push({start,end,group,meshes,motions,count});
   total+=count;
  }
- world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,low,quality,activeLow:low,
+ world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,low,quality,activeLow:low,
    materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
-  window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,skipped,chunks:chunks.length,minClearance,
+  window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,
    dynamicCount,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:130};
  return world;
 }
