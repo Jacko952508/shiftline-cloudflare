@@ -1,6 +1,6 @@
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=110';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=121';
 import * as THREE from 'three';
-import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=120';
+import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=121';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=38';
 import{PAINT}from'./progress.js?v=112';
 export function createGarage(p){
@@ -10,12 +10,28 @@ export function createGarage(p){
  const guide=new THREE.GridHelper(5.6,16,0x2b6275,0x142c3c);guide.position.y=-.455;guide.material.transparent=true;guide.material.opacity=.23;scene.add(guide);
  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.87,.016,6,80),new THREE.MeshBasicMaterial({color:0x75ced7}));ring.rotation.x=Math.PI/2;ring.position.y=-.448;scene.add(ring);
  const key=new THREE.SpotLight(0xfff8e9,82,20,.72,.78,2);key.position.set(-3,5,-3);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.normalBias=.025;scene.add(key,key.target);
- const rim=new THREE.DirectionalLight(0x83bfd6,2);rim.position.set(3,1,3);scene.add(rim,new THREE.HemisphereLight(0xd4ecfc,0x17232d,1.5));
+ const rim=new THREE.DirectionalLight(0x83bfd6,2);rim.position.set(3,1,3);const ambient=new THREE.HemisphereLight(0xd4ecfc,0x17232d,1.5);scene.add(rim,ambient);
  const fill=new THREE.DirectionalLight(0xc6e9ff,2.6);fill.position.set(3,2,3);scene.add(fill);
  const back=new THREE.DirectionalLight(0xffffff,1.7);back.position.set(0,4,3);scene.add(back);
- const g={scene,key,ring,ship:null,yaw:.55,pitch:.12,drag:null,auto:true,zoom:false,camera:new THREE.PerspectiveCamera(38,1,.1,40)};equipGarage(g,p);return g;
+ const g={scene,key,rim,ambient,fill,back,floor,ring,ship:null,yaw:.55,pitch:.12,drag:null,auto:true,zoom:false,lightingMode:'studio',camera:new THREE.PerspectiveCamera(38,1,.1,40)};equipGarage(g,p);setGarageLighting(g,'studio');return g;
 }
 export function equipGarage(g,p){disposeCockpit(g.cockpit);g.cockpit=createCockpit(p.custom,p.craft,PAINT[p.color]||PAINT[0],g.scene.environment);const previous=g.ship;g.ship=craft(g.scene,PAINT[p.color]||PAINT[0],p.craft,true,p.custom);if(previous)disposeCraft(g.scene,previous);g.ring.material.color.setHex(p.color===7?0xffda81:p.color===6?0xe8faff:p.color===8?0xffa6dc:0x75ced7);tuneTextureFiltering(g.scene,4);}
+export function setGarageLighting(g,mode='studio'){
+ if(!g)return;
+ const schemes={
+  studio:{background:0x081522,key:82,rim:2.0,fill:2.6,back:1.7,ambient:1.5,env:1.2,exposure:1.42,floor:0x17212d},
+  night:{background:0x020610,key:36,rim:3.2,fill:.52,back:1.3,ambient:.72,env:.68,exposure:1.02,floor:0x0a111e},
+  track:{background:0x213849,key:105,rim:1.35,fill:3.0,back:2.6,ambient:2.1,env:1.5,exposure:1.22,floor:0x253646}
+ };
+ const k=schemes[mode]||schemes.studio;
+ g.lightingMode=schemes[mode]?mode:'studio';
+ g.scene.background.setHex(k.background);
+ g.scene.environmentIntensity=k.env;
+ g.key.intensity=k.key;g.rim.intensity=k.rim;g.fill.intensity=k.fill;g.back.intensity=k.back;g.ambient.intensity=k.ambient;
+ g.floor.material.color.setHex(k.floor);
+ g.exposure=k.exposure;
+ if(typeof location!=='undefined'&&location.search.includes('shipqa=1'))window.__shiftlineLightingQA={mode:g.lightingMode,exposure:g.exposure,ambient:g.ambient.intensity};
+}
 export function renderGarage(g,renderer,rect,time){
  // Render into a dedicated canvas INSIDE the showroom. The global race canvas sits
  // behind the menu and is not reliably visible on iOS WebKit.
@@ -26,7 +42,7 @@ export function renderGarage(g,renderer,rect,time){
  if(!rect||rect.width<1||rect.height<1||rect.bottom<0||rect.top>innerHeight)return;
  g.ship.rotation.set(g.pitch,g.yaw+(g.auto?Math.sin(time*.18)*.25:0),0);g.ship.position.y=Math.sin(time*.8)*.014;animateCraft(g.ship,time,false,1,0,true);
  g.camera.aspect=rect.width/rect.height;g.camera.position.set(0,g.zoom?.9:1.18,g.zoom?3.55:5.0);g.camera.lookAt(0,-.02,0);g.camera.updateProjectionMatrix();
- const exposure=renderer.toneMappingExposure;renderer.toneMappingExposure=1.42;renderer.setRenderTarget(null);renderer.setScissorTest?.(false);renderer.setViewport?.(0,0,g.previewRenderer?rect.width:innerWidth,g.previewRenderer?rect.height:innerHeight);renderer.clear?.();
+ const exposure=renderer.toneMappingExposure;renderer.toneMappingExposure=g.exposure||1.42;renderer.setRenderTarget(null);renderer.setScissorTest?.(false);renderer.setViewport?.(0,0,g.previewRenderer?rect.width:innerWidth,g.previewRenderer?rect.height:innerHeight);renderer.clear?.();
  renderer.setViewport?.(rect.left,g.previewRenderer?0:innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissor?.(rect.left,g.previewRenderer?0:innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissorTest?.(true);
  try{if(g.viewCockpit){updateCockpit(g.cockpit,.033,{time,speed:0,energy:100,boost:false,lateral:Math.sin(time*.5)*2,vertical:Math.cos(time*.4),lock:'GARAGE / INSTRUMENT PREVIEW'}, {left:rect.width*.45,top:rect.height*.79,width:rect.width*.1,height:rect.width*.1},rect.width,rect.height);renderCockpit(g.cockpit,renderer);}else renderer.render(g.scene,g.camera)}finally{renderer.toneMappingExposure=exposure;renderer.setScissorTest?.(false);renderer.setViewport?.(0,0,g.previewRenderer?rect.width:innerWidth,g.previewRenderer?rect.height:innerHeight)}
 }
