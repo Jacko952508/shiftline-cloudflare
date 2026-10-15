@@ -1,0 +1,39 @@
+name: SHIFTLINE V123 iPhone visual smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/race-effects.js'
+      - 'public/ship-exhaust-v119.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/race-visual-v123.mjs'
+      - '.github/workflows/race-visual-v123.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  iphone-race:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax check race shaders and engine
+        run: |
+          node --check public/race-effects.js
+          node --check public/ship-exhaust-v119.js
+          node --check public/race-engine.js
+          node --check test/race-visual-v123.mjs
+      - name: Install race browser dependencies
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start staging game
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-stage.log 2>&1 &
+          sleep 2
+      - name: Test iPhone race visual stability and saved ship
+        run: node test/race-visual-v123.mjs
