@@ -18,7 +18,7 @@ import{createImpacts,burstImpact,updateImpacts,impactPose,disposeImpacts}from'./
 import{tuneTextureFiltering}from'./material-lab.js?v=38';
 import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
-import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=126';
+import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=128';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=125';
 import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=123';
 import{shiftState}from'./race-theme.js';
