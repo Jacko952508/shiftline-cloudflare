@@ -7,7 +7,8 @@ const browserArgs=['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','
 await mkdir('obstacle-v126-artifacts',{recursive:true});
 async function check(kind,courses){
  const browser=await kind.launch(kind===chromium?{headless:true,args:browserArgs}:{headless:true});
- const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+ const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,
+  userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'});
  const errors=[],shaders=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|VALIDATE_STATUS|shader error/i.test(e.text()))shaders.push(e.text())});
@@ -46,6 +47,18 @@ async function check(kind,courses){
   assert.equal(state.record,112000);
   assert.equal(state.lost,false);
   assert.ok(state.obstacles.obstacles>20);
+  await page.waitForFunction(()=>window.__shiftlineRaceVisualQA?.path==='native-webkit',null,{timeout:40000});
+  const frame=PNG.sync.read(await page.locator('#game').screenshot({timeout:65000}));
+  let visible=0,colourful=0,nearBlack=0;
+  for(let p=0;p<frame.width*frame.height;p+=11){
+   const i=p*4,r=frame.data[i],g=frame.data[i+1],b=frame.data[i+2];
+   if(r+g+b>65)visible++;
+   if(Math.max(r,g,b)-Math.min(r,g,b)>18)colourful++;
+   if(r+g+b<8)nearBlack++;
+  }
+  assert.ok(visible>650,'Race canvas is black on '+kind.name()+': '+JSON.stringify({visible,colourful,nearBlack}));
+  assert.ok(colourful>300,'Race lost all coloured track detail on '+kind.name());
+  console.log('RACE PIXELS '+kind.name()+' '+JSON.stringify({visible,colourful,nearBlack}));
   await page.screenshot({path:'obstacle-v126-artifacts/'+kind.name()+'-race.png'});
   assert.deepEqual(errors,[]);
   assert.deepEqual(shaders,[]);

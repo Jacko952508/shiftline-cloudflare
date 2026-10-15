@@ -22,7 +22,7 @@ import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,pl
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=125';
 import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=123';
 import{shiftState}from'./race-theme.js';
-import{RaceEffects}from'./race-effects.js?v=123';
+import{RaceEffects}from'./race-effects.js?v=126';
 import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=112';
 import{audioStart,installAudioActivation,audioResume,audioStop,audioSuspend,setAudioTrack,setAudioBoost,setMasterVolume,engineSound,crashSound,passSound,shiftSound,setAudioScene,countdownSound,finishSound,uiSound,weaponSound,shieldSound,hitSound}from'./audio.js?v=101-music';
 const selectors=new Map();const $=s=>{if(!selectors.has(s))selectors.set(s,document.querySelector(s));return selectors.get(s)},STEP=1/120,RELAY='wss://tuber-racers-relay.onrender.com';
