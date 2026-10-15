@@ -6,7 +6,7 @@ import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=125';
 import{cinematicArrival,cinematicScenic}from'./cinematic-flight.js?v=56';
-import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=131';
+import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=132';
 import{shipAppearance}from'./ship-wire.js?v=72';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=69';

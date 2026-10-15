@@ -16,7 +16,7 @@ async function check(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&obstacleqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=131');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=132');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await page.locator('#obsOpen').click({timeout:35000});
