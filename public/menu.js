@@ -57,6 +57,12 @@ function renderGarageOptions(p){
  rail.innerHTML=tiles;rail.dataset.shownCategory=cat;rail.scrollLeft=same?scroll:0;
 }
 document.querySelector('#garageCategories').addEventListener('click',e=>{const b=e.target.closest('[data-garage-category]');if(!b)return;garageCategory=b.dataset.garageCategory;renderGarageOptions(readProgress());window.dispatchEvent(new CustomEvent('shiftline-garage-focus',{detail:{category:garageCategory}}));b.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
+document.querySelector('#garageLighting')?.addEventListener('click',e=>{
+ const b=e.target.closest('[data-garage-light]');
+ if(!b)return;
+ document.querySelectorAll('[data-garage-light]').forEach(item=>item.setAttribute('aria-pressed',String(item===b)));
+ window.dispatchEvent(new CustomEvent('shiftline-garage-light',{detail:{mode:b.dataset.garageLight}}));
+});
 document.querySelector('#garageOptionRail').addEventListener('click',e=>{
  const b=e.target.closest('[data-choice-kind]');if(!b||b.disabled)return;
  const kind=b.dataset.choiceKind,index=Number(b.dataset.choiceId);
