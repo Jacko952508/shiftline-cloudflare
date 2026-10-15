@@ -62,6 +62,9 @@ try{
   assert.ok(meta.texturedMeshes>=3,names[i]+' still lacks proper mapped surface materials: '+meta.texturedMeshes);
   assert.equal(meta.exhaustEmitters,2,names[i]+' has no proper paired rocket thrusters');
   assert.ok(meta.upgradeCounts&&typeof meta.upgradeSignature==='string',names[i]+' customisation kit missing');
+  assert.ok(meta.polishParts?.mechanics>=10,names[i]+' missing active wing/vent/nozzle mechanisms');
+  assert.ok(meta.polishParts?.cockpit>=2,names[i]+' missing exterior-visible cockpit seating');
+  assert.ok(meta.polishParts?.panels>=1,names[i]+' missing detailed bevelled bodywork');
   assert.ok(meta.insetContacts?.every(p=>p.attached),names[i]+' has an unsupported hovering armour plate: '+JSON.stringify(meta.insetContacts));
   assert.ok(meta.contacts?.length===mountCount&&meta.contacts.every(x=>x.shoeFin&&x.shoeHull),names[i]+' fin is physically disconnected from wing or fuselage: '+JSON.stringify(meta.contacts));
 
@@ -89,6 +92,7 @@ try{
  await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
  let kit=await page.evaluate(()=>window.__shiftlineModelQA);
  assert.ok(kit.upgradeCounts.wing>=7,'Crescent wing kit should add several substantial 3D panels');
+ assert.ok(kit.signatureKits?.count>=2,'SPECTRE must have its own special bodywork kit, not generic wings');
  assert.equal(kit.options.wing,4);
  await page.locator('[data-garage-category="canopy"]').click();
  await page.locator('[data-choice-kind="part"][data-choice-id="4"]').click();
@@ -106,6 +110,23 @@ try{
  await page.locator('[data-choice-kind="part"][data-choice-id="2"]').click();
  kit=await page.evaluate(()=>window.__shiftlineModelQA);
  assert.ok(kit.upgradeCounts.engine>=6,'Ion collar must add real glowing engine geometry');
+ // Three real lighting configurations, while retaining a visible render.
+ for(const mode of ['night','track','studio']){
+  await page.locator('[data-garage-light="'+mode+'"]').click();
+  await page.waitForTimeout(120);
+  const lighting=await page.evaluate(()=>window.__shiftlineLightingQA);
+  assert.equal(lighting?.mode,mode,'Showroom lighting option must change actual scene: '+mode);
+  assert.equal(await page.locator('[data-garage-light="'+mode+'"]').getAttribute('aria-pressed'),'true');
+  const pixels=await measure('120-light-'+mode);
+  assert.ok(pixels.pctBright>.020,'Ship must remain visible in '+mode+' showroom lighting');
+ }
+ await page.locator('[data-garage-category="canopy"]').click();
+ const inspect=await page.evaluate(()=>window.__shiftlineInspectQA);
+ assert.equal(inspect?.category,'canopy','Canopy tab must move inspection camera to nose');
+ await page.locator('[data-garage-category="cabin"]').click();
+ await page.waitForTimeout(850);
+ await page.screenshot({path:'garage-visible-artifacts/120-diegetic-cockpit.png'});
+ assert.equal((await page.evaluate(()=>window.__shiftlineInspectQA))?.cockpit,true,'Cabin tab shows real cockpit');
  await page.locator('[data-garage-category="trail"]').click();
  await page.waitForTimeout(950);
  const originalTrail=await page.evaluate(()=>window.__shiftlineTrailQA);
@@ -134,7 +155,7 @@ try{
   if(i===1||i===4||i===5)await page.locator('#craftDisplay').screenshot({path:'garage-visible-artifacts/120-'+names[i].toLowerCase()+'-attached-fins.png'});
  }
  assert.deepEqual(shaderErrors,[],'Plasma shaders must compile successfully in WebGL');
- console.log('PASS V119 3D kits, physical livery, engine modules, real animated paired rocket trails and five selectable colours',JSON.stringify({originalTrail,roseTrail,spans}));
+ console.log('PASS V120 six detailed ships, 3 lighting modes, real cockpit, distinctive kits and 5 animated trail profiles',JSON.stringify({originalTrail,roseTrail,spans}));
 
 
 }finally{await browser.close();}
