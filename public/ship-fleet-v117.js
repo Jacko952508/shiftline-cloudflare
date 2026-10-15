@@ -132,7 +132,9 @@ function builder(ship,index,c,m,high=true){
   const remap=points.map(([x,z])=>[x*wingScale,z+(x>.35?sweep*(x-.35):0)]);
   const o=layer(remap,mat,y,.040,side);o.userData.structuralHull=true;return o;
  };
- const finishDetail=(side)=>{
+ // In V119 the livery is a physically fitted paint/armour kit. Avoid leftover
+ // legacy vanes and lines positioned over the wing, which could hover in air.
+ const finishDetail=(side)=>{return;
   if(c.livery===0)return;
   const xx=side*(.16+(c.livery===2?.055:0));
   if(c.livery===1)line([[xx,.16,-.45],[xx*1.1,.17,.43]],paint,.011);
@@ -204,7 +206,7 @@ function builder(ship,index,c,m,high=true){
    for(let k=0;k<3;k++)vane(side*(.39+k*.09),.125,.30,.05);
    finishDetail(side);
   }
-  aftFins(.31,.46);break;
+  if(c.fin===0)aftFins(.31,.46);break;
  }
  case 1:{ // RAZOR: open trident channels with three complete, sharply forward prongs
   const red=(premium||c.finish!==0)?hull:polished;
@@ -212,11 +214,11 @@ function builder(ship,index,c,m,high=true){
   canopy(-.67,.38,.135,.105);
   for(const side of[-1,1]){
    wingPoly([[.20,-.18],[.60,-1.43],[.89,-1.51],[.92,-.32],[.89,.54],[.37,.63]],side,red,.035);
-   layer([[.38,-.24],[.71,-1.17],[.82,-1.35],[.75,-.07],[.65,.33],[.42,.45]],graphite,.106,.020,side);
+   const razorArmor=layer([[.38,-.24],[.71,-1.17],[.82,-1.35],[.75,-.07],[.65,.33],[.42,.45]],graphite,.063,.020,side);razorArmor.userData.recessedPanel=true;
    hullMesh([[-1.49,.003,.003,.04],[-1.20,.032,.055,.045],[-.72,.085,.068,.055],[-.25,.085,.063,.05],[.51,.10,.06,.03]],red,side*.70,0,12);
-   line([[side*.67,.117,-1.30],[side*.68,.12,-.88],[side*.73,.124,-.27],[side*.80,.12,.40]],glow,.009);
-   for(let k=0;k<4;k++)vane(side*(.42+k*.07),.13,.20+k*.13,.07);
-   mountedFin(side,.70,.54,.064,.21+finHeight*.68,red,.42,.14);
+   line([[side*.67,.078,-1.30],[side*.68,.080,-.88],[side*.73,.082,-.27],[side*.80,.080,.40]],glow,.006);
+   for(let k=0;k<4;k++)vane(side*(.42+k*.07),.070,.20+k*.13,.07);
+   if(c.fin===0)mountedFin(side,.70,.54,.064,.21+finHeight*.68,red,.42,.14);
    finishDetail(side);thruster(side*.46,.025,.85,.075,exhaust);
   }
   // Exposed mechanics behind the black canopy
@@ -230,11 +232,11 @@ function builder(ship,index,c,m,high=true){
   const plan=[[.07,-1.03],[.37,-.74],[1.03,.17],[1.02,.58],[.70,.72],[.35,.57],[.05,.85]];
   for(const side of[-1,1]){
    wingPoly(plan,side,stealthShell,.015);
-   layer([[.18,-.66],[.52,-.42],[.90,.22],[.74,.52],[.38,.24]],graphite,.080,.018,side);
-   layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.10,.011,side);
-   line([[side*.31,.11,-.46],[side*.70,.113,.04],[side*.99,.095,.50]],glow,.005);
-   for(let k=0;k<3;k++)vane(side*(.48+k*.085),.117,.37+k*.12,.10);
-   mountedFin(side,.70,.60,.055,.10+finHeight*.48,graphite,.31,.085);
+   const phantomInset=layer([[.18,-.66],[.52,-.42],[.90,.22],[.74,.52],[.38,.24]],graphite,.049,.018,side);phantomInset.userData.recessedPanel=true;
+   const phantomInsetTop=layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.059,.011,side);phantomInsetTop.userData.recessedPanel=true;
+   line([[side*.31,.069,-.46],[side*.70,.069,.04],[side*.99,.068,.50]],glow,.005);
+   for(let k=0;k<3;k++)vane(side*(.48+k*.085),.069,.37+k*.12,.10);
+   if(c.fin===0)mountedFin(side,.70,.60,.055,.10+finHeight*.48,graphite,.31,.085);
    finishDetail(side);
   }
   canopy(-.72,.21,.16,.078);
@@ -247,8 +249,9 @@ function builder(ship,index,c,m,high=true){
   for(const side of[-1,1]){
    const w=add(crescentGeometry(),(premium||c.finish!==0)?hull:ceramic,[0,.025,0]);w.scale.x=side*wingScale;w.userData.structuralHull=true;
    // The wing's concavity is deliberately left empty, unlike a normal delta wing.
-   const cavity=layer([[.39,-.14],[.60,-.30],[.72,.03],[.48,.34]],graphite,.069,.016,side);
-   cavity.visible=high;
+   // Keep the MANTA's signature crescent cutout genuinely open. A narrow
+   // structural spar sits below the smooth white arch instead of a floating flap.
+   const spar=bar([side*.36,.017,-.19],[side*.62,.028,-.02],.033,.029,graphite);spar.name='manta-wing-integrated-spar';
    const offset=side;
    line([[offset*.27,.092,-.30],[offset*.66,.10,-.73],[offset*.90,.07,-.83]],glow,.007);
    line([[offset*.60,.095,-.07],[offset*.73,.082,.25],[offset*.76,.07,.55]],glow,.006);
@@ -257,7 +260,7 @@ function builder(ship,index,c,m,high=true){
    finishDetail(side);
   }
   line([[0,.12,-1.28],[0,.18,-1.06],[0,.19,-.78]],glow,.008);
-  mountedFin(1,.09,.54,.108,.12+finHeight*.47,(premium||c.finish!==0)?hull:ceramic,.30,.045);
+  if(c.fin===0)mountedFin(1,.09,.54,.108,.12+finHeight*.47,(premium||c.finish!==0)?hull:ceramic,.30,.045);
   break;
  }
  case 4:{ // GEMINI: three boxier industrial hulls and exposed heavy-duty crossbeams
@@ -284,7 +287,7 @@ function builder(ship,index,c,m,high=true){
    line([[x,.24,-.76],[x,.265,-.20],[x,.255,.63]],glow,.006);
    finishDetail(side);
   }
-  aftFins(.18);break;
+  if(c.fin===0)aftFins(.18);break;
  }
  case 5:{ // SPECTRE: super-slim spear body between two truly vertical sword-like wings
   hullMesh([[-1.73,.003,.005,-.015],[-1.43,.045,.05,0],[-.78,.118,.09,.015],[-.14,.17,.14,.02],[.51,.165,.11,.018],[.93,.10,.06,0]],(premium||c.finish!==0)?hull:polished);
@@ -301,8 +304,8 @@ function builder(ship,index,c,m,high=true){
    const seat=add(new THREE.BoxGeometry(.20,.095,.35),graphite,[side*.47,.046,.03]);seat.name='spectre-blade-foot';
    finMounts.push({side,model:index,baseY:.045,shoeBottom:-.02,shoeTop:.115,footX:.45,footZ:.05,kind:'sword-blade'});
    line([[side*.32,.10,-.47],[side*.79,.67,.26],[side*.95,.1,.83]],glow,.013);
-   layer([[.30,-.25],[.81,-.60],[.77,.15],[.41,.21]],carbon,.073,.023,side);
-   for(let k=0;k<4;k++)vane(side*(.32+k*.09),.17,.32+k*.09,.063);
+   const spectreInset=layer([[.30,-.25],[.81,-.60],[.77,.15],[.41,.21]],carbon,.035,.023,side);spectreInset.userData.recessedPanel=true;
+   for(let k=0;k<4;k++)vane(side*(.32+k*.09),.059,.32+k*.09,.063);
    thruster(side*.28,.02,.88,.12,exhaust);
    finishDetail(side);
   }
