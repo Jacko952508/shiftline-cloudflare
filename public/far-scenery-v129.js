@@ -45,7 +45,7 @@ function trackIndex(track){
   let nearest=Infinity;
   for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++)for(let dz=-r;dz<=r;dz++)
    for(const p of map.get(key(x+dx,y+dy,z+dz))||[])nearest=Math.min(nearest,position.distanceTo(p));
-  return nearest-bound-14;
+  return (nearest===Infinity?9999:nearest-bound-14);
  };
 }
 function shapes(kind,quality){
@@ -202,12 +202,20 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   chunks.push({start,end,group,meshes,motions,count});
   total+=count;
  }
- world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,low,quality,
+ world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,low,quality,activeLow:low,
    materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
   window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,skipped,chunks:chunks.length,minClearance,
    dynamicCount,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:130};
  return world;
+}
+export function setFarSceneryQuality(world,quality){
+ const d=world?.farScenery;if(!d)return;
+ const low=quality==='low';if(d.activeLow===low)return;
+ d.activeLow=d.low=low;
+ const limit=d.quality==='low'?4:low?4:Infinity;
+ for(const chunk of d.chunks)for(const mesh of chunk.meshes)mesh.count=Math.min(chunk.count,limit);
+ d.motionStep=-1;
 }
 export function updateFarScenery(world,along,time=0){
  const d=world?.farScenery;if(!d)return;

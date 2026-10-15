@@ -41,3 +41,15 @@ for(let course=1;course<=6;course++){
  assert.ok(d.chunks.some(c=>c.group.visible));disposeFarScenery(world);
  console.log('PASS V130 AUTO course '+course+' '+d.total+' '+d.dynamicCount+' animated parts');
 }
+
+import {setFarSceneryQuality} from '../public/far-scenery-v129.js';
+for(const course of [2,4,6]){
+ const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
+ attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
+ const first=d.chunks.find(c=>c.count>4);
+ assert.ok(first,'No populated high-detail chunk');
+ const original=first.count;
+ setFarSceneryQuality(world,'low');assert.equal(d.low,true);assert.equal(first.meshes[0].count,4);
+ setFarSceneryQuality(world,'auto');assert.equal(d.low,false);assert.equal(first.meshes[0].count,original);
+ disposeFarScenery(world);console.log('PASS V131 live LOD switch course '+course);
+}

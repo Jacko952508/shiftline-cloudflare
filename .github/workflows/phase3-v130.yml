@@ -1,9 +1,10 @@
-name: SHIFTLINE V130 Phase 3 Distinct Worlds
+name: SHIFTLINE V131 Phase 3 Worldscapes
 on:
   push:
     branches: [main]
     paths:
       - 'public/far-scenery-v129.js'
+      - 'public/graphics-policy.js'
       - 'public/race-world.js'
       - 'public/race-engine.js'
       - 'public/index.html'

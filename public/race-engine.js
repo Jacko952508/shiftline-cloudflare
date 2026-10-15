@@ -6,7 +6,7 @@ import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=125';
 import{cinematicArrival,cinematicScenic}from'./cinematic-flight.js?v=56';
-import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=85';
+import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=131';
 import{shipAppearance}from'./ship-wire.js?v=72';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=69';
@@ -19,7 +19,7 @@ import{tuneTextureFiltering}from'./material-lab.js?v=38';
 import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=128';
-import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=130';
+import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=131';
 import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=123';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=126';
