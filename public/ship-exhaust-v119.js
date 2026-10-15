@@ -162,7 +162,8 @@ export function installShipExhaust(ship,root,index,custom,high=true){
   update(time,boost=false,reduced=false){
    if(!Number.isFinite(time))time=0;
    const targetPower=boost?1:.27;
-   const targetLen=(boost?4.35:(reduced?1.25:2.25))*style.length*engineProfile.length;
+   const raceView=!!this.racing;
+   const targetLen=(boost?(raceView?2.85:4.35):(reduced?1.25:raceView?1.65:2.25))*style.length*engineProfile.length;
    const dt=Math.min(.1,Math.max(.008,time-this.lastTime));this.lastTime=time;
    const response=1-Math.exp(-dt*(boost?17:10));
    this.length+=(targetLen-this.length)*response;
@@ -174,9 +175,9 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     a.outer.scale.z=this.length*flicker;
     a.inner.scale.z=this.length*.85*(1+Math.cos(time*32+e)*.035);
     a.core.scale.z=this.length*.70*flicker;
-    a.outer.scale.x=a.outer.scale.y=style.width*(boost?1.24:1);
-    a.inner.scale.x=a.inner.scale.y=style.width*.95;
-    a.core.scale.x=a.core.scale.y=style.width*(boost?1.04:.93);
+    a.outer.scale.x=a.outer.scale.y=style.width*(boost?1.15:1)*(raceView?.78:1);
+    a.inner.scale.x=a.inner.scale.y=style.width*.95*(raceView?.77:1);
+    a.core.scale.x=a.core.scale.y=style.width*(boost?1.04:.93)*(raceView?.82:1);
     // Short, shimmering nozzle glow, not an expensive fullscreen post-process.
     const throat=a.anchor.getObjectByName('lit-rocket-throat');
     if(throat){throat.material.opacity=(high?.65:.39)+(boost?.25:0);throat.scale.setScalar(style.width*(1+(boost?.15:0)));}
@@ -196,7 +197,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
     coords.needsUpdate=true;
    }
    if(high&&typeof location!=='undefined'&&location.search.includes('shipqa=1')){
-    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,style:style.name,engine:engineProfile.name,shockRings:this.actors[0]?.shockRings.length||0,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
+    window.__shiftlineTrailQA={ship:index,emitters:this.actors.length,colour:this.colour,style:style.name,engine:engineProfile.name,raceView:!!this.racing,shockRings:this.actors[0]?.shockRings.length||0,length:+this.length.toFixed(3),power:+this.power.toFixed(3),boost:this.boost,visible:true};
    }
   }
  };
