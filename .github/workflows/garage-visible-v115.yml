@@ -37,18 +37,18 @@ jobs:
         run: node test/garage-webkit-v115.mjs
       - name: Smoke test racing with an upgraded SPECTRE and saved progress
         run: node test/fleet-race-v117.mjs
-      - name: Wait for production Cloudflare to serve v123
+      - name: Wait for production Cloudflare to serve v124
         if: github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 60); do
-            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v123' | grep -q 'race-engine.js?v=122'; then
+            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v124' | grep -q 'race-engine.js?v=124'; then
               echo "PASS Cloudflare serving new game engine"
               exit 0
             fi
             echo "Cloudflare not yet updated, retry $i"
             sleep 10
           done
-          echo "FAIL Cloudflare did not deploy v123" >&2
+          echo "FAIL Cloudflare did not deploy v124" >&2
           exit 1
       - name: Check actual production ship pixels in Chromium
         if: github.ref == 'refs/heads/main'
