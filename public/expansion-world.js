@@ -1,10 +1,9 @@
-import{installGlassFittings}from'./tunnel-glass-v124.js?v=124';
 import{installWorldFinish}from'./world-finish.js?v=69';
-import{glassDetail}from'./surface-detail.js?v=124';
+import{glassDetail}from'./surface-detail.js?v=38';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
 import{EXPANSIONS,expansionShift,expansionAct}from'./expansion-courses.js?v=58';
-import{shell,makeRibbon}from'./tunnel-geometry.js?v=124';import{poseObject}from'./race-track.js?v=58';
+import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=58';
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
 const TAU=Math.PI*2;
 export function expansionGround(course,x,z,endZ){
@@ -14,13 +13,13 @@ export function expansionGround(course,x,z,endZ){
 }
 export function createExpansionWorld(scene,track){
  const course=track.course,p=EXPANSIONS[course],root=new THREE.Group(),environment=hdrEnvironment(false),metalMaps=acquirePBR('metal'),rockMaps=acquirePBR('rock');scene.environment=environment;scene.environmentIntensity=.42;scene.userData.underwater=false;scene.userData.heat=false;
- const steel=new THREE.MeshPhysicalMaterial({...metalMaps,color:p.metal,metalness:.65,roughness:.82,clearcoat:.08,envMapIntensity:.4,side:THREE.DoubleSide}),dark=new THREE.MeshStandardMaterial({...metalMaps,color:course===5?0x24352d:0x242e3b,roughness:.92,metalness:.4,side:THREE.DoubleSide}),rock=new THREE.MeshStandardMaterial({...rockMaps,color:p.ground,roughness:.97,metalness:0}),glow=new THREE.MeshBasicMaterial({color:p.colors[0],toneMapped:false}),glass=new THREE.MeshPhysicalMaterial({color:p.colors[0],transparent:true,opacity:.028,roughness:.3,depthWrite:false,side:THREE.DoubleSide});
+ const steel=new THREE.MeshPhysicalMaterial({...metalMaps,color:p.metal,metalness:.65,roughness:.82,clearcoat:.08,envMapIntensity:.4,side:THREE.DoubleSide}),dark=new THREE.MeshStandardMaterial({...metalMaps,color:course===5?0x24352d:0x242e3b,roughness:.92,metalness:.4,side:THREE.DoubleSide}),rock=new THREE.MeshStandardMaterial({...rockMaps,color:p.ground,roughness:.97,metalness:0}),glow=new THREE.MeshBasicMaterial({color:p.colors[0],toneMapped:false}),glass=new THREE.MeshPhysicalMaterial({color:p.colors[0],transparent:true,opacity:.025,roughness:.3,depthWrite:false,side:THREE.DoubleSide});
  glassDetail(glass);steel.roughness=.68;steel.clearcoat=.18;dark.color.setHex(course===5?0x283c30:course===6?0x29303e:0x2e3b4c);
  const clearance=trackClearance(track),sceneryBounds=[];const chunks=[],machines=[],dynamic=[],materials={steel,dark,rock,glow,glass};
  const add=(g,geo,mat,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=mat===steel||mat===dark;m.receiveShadow=true;g.add(m);return m;};
  for(let s=0;s<track.length;s+=84){const end=Math.min(track.length,s+84),idx=Math.min(3,Math.floor(s/track.length*4)),g=new THREE.Group(),closed=(idx===1||idx===3)&&s%420<170;root.add(g);
  for(let k=0;k<6;k++){const a=k*TAU/6;add(g,shell(track,s,end,a+.025,a+(closed?.74:course===5?.18:.22),7.6),k%2?steel:dark);if(!closed&&k%2===0)add(g,shell(track,s,end,a+(course===5?.21:.25),a+.98,7.65),glass);if(k%2===0)add(g,makeRibbon(track,s,end,a+.025,.014,7.43),glow);}
- const ribs=new THREE.InstancedMesh(new THREE.TorusGeometry(7.65,.105,6,48),steel,5),rim=new THREE.InstancedMesh(new THREE.TorusGeometry(7.5,.028,4,48),glow,5),dummy=new THREE.Object3D();let count=0;for(let at=s;at<end;at+=18){poseObject(dummy,track.frame(at));dummy.updateMatrix();ribs.setMatrixAt(count,dummy.matrix);rim.setMatrixAt(count,dummy.matrix);count++;}ribs.count=rim.count=count;ribs.instanceMatrix.needsUpdate=rim.instanceMatrix.needsUpdate=true;g.add(ribs,rim);installGlassFittings(g,track,glass,steel);chunks.push({g,start:s,end,idx});}
+ const ribs=new THREE.InstancedMesh(new THREE.TorusGeometry(7.65,.105,6,48),steel,5),rim=new THREE.InstancedMesh(new THREE.TorusGeometry(7.5,.028,4,48),glow,5),dummy=new THREE.Object3D();let count=0;for(let at=s;at<end;at+=18){poseObject(dummy,track.frame(at));dummy.updateMatrix();ribs.setMatrixAt(count,dummy.matrix);rim.setMatrixAt(count,dummy.matrix);count++;}ribs.count=rim.count=count;ribs.instanceMatrix.needsUpdate=rim.instanceMatrix.needsUpdate=true;g.add(ribs,rim);chunks.push({g,start:s,end,idx});}
  const bounds=new THREE.Box3().setFromPoints(track.frames.map(f=>f.p)),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),endZ=track.frames.at(-1).p.z,ground=(x,z)=>expansionGround(course,x,z,endZ);
  const terrain=new THREE.PlaneGeometry(size.x+3200,size.z+2200,80,180);terrain.rotateX(-Math.PI/2);terrain.translate(center.x,0,center.z);const pos=terrain.attributes.position;for(let i=0;i<pos.count;i++)pos.setY(i,ground(pos.getX(i),pos.getZ(i)));terrain.computeVertexNormals();add(root,terrain,rock);
  // Anchored foundations and full columns under each elevated tunnel span.

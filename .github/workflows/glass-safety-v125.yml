@@ -1,0 +1,55 @@
+name: SHIFTLINE V125 Safe Tunnel Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/race-world.js'
+      - 'public/leviathan-world.js'
+      - 'public/cinder-world.js'
+      - 'public/expansion-world.js'
+      - 'public/surface-detail.js'
+      - 'public/tunnel-geometry.js'
+      - 'public/race-engine.js'
+      - 'public/live-track-explorer.js'
+      - 'public/index.html'
+      - 'test/glass-safety-v125.mjs'
+      - '.github/workflows/glass-safety-v125.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-graphics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate module syntax and stable revision
+        run: |
+          node --check public/race-world.js
+          node --check public/leviathan-world.js
+          node --check public/cinder-world.js
+          node --check public/expansion-world.js
+          node --check public/surface-detail.js
+          node --check public/tunnel-geometry.js
+          node --check public/race-engine.js
+          node --check test/glass-safety-v125.mjs
+          grep -q 'race-engine.js?v=125' public/index.html
+      - name: Install real WebGL browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve game
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v125.log 2>&1 &
+          sleep 2
+      - name: Six-world iPhone-sized visual smoke and live race
+        run: node test/glass-safety-v125.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-glass-safe-v125
+          path: glass-v125-artifacts
+          if-no-files-found: ignore
