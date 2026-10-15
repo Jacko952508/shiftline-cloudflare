@@ -1,8 +1,15 @@
 import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test=105';
+const [indexSource,engineSource]=await Promise.all([
+ readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+ readFile(new URL('../public/race-engine.js',import.meta.url),'utf8')
+]);
+const expectedEngine=indexSource.match(/race-engine\.js\?v=\d+/)?.[0];
+const expectedCraft=engineSource.match(/race-craft\.js\?v=\d+/)?.[0];
+assert.ok(expectedEngine&&expectedCraft,'Could not discover the latest game asset versions');
+const url='https://shiftline-game.beyondthebox.workers.dev/?observatory-test='+encodeURIComponent(expectedEngine);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await mkdir('observatory-screenshots',{recursive:true});
 const browser=await chromium.launch({
@@ -23,20 +30,20 @@ try {
  let deployed=false;
  for(let attempt=1;attempt<=14;attempt++){
   await page.goto(url+'&revision='+attempt,{waitUntil:'domcontentloaded',timeout:35000});
-  try{await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:30000})}
+  try{await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:45000})}
   catch(e){console.log('Startup wait '+attempt+': '+e.message.slice(0,110));}
-  const markup=await page.evaluate(()=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="race-engine.js?v=105"]')}));
+  const markup=await page.evaluate(asset=>({button:!!document.getElementById('obsOpen'),legacy:!!document.querySelector('#trackExplorer summary'),ready:!!window.shiftlineReady,current:!!document.querySelector('script[src="'+asset+'"]')}),expectedEngine);
   console.log('Cloudflare deployment revision check '+attempt+': '+JSON.stringify(markup));
   if(markup.button&&markup.ready&&markup.current){deployed=true;break;}
   await wait(10000);
  }
  assert.ok(deployed,'Cloudflare has not served the new actual-map Observatory build after retries');
  console.log('PASS actual Three.js game initialises on Cloudflare with current Observatory');
- const tilt=await page.evaluate(async()=>{
-  const {steeringBank}=await import('./race-craft.js?v=100');
+ const tilt=await page.evaluate(async craftSrc=>{
+  const {steeringBank}=await import('./'+craftSrc);
   const simulate=(lateral,dt=1/120)=>{let bank=0;for(let i=0;i<180;i++)bank=steeringBank(bank,lateral,dt);return bank};
   return {hardLeft:simulate(-20),hardRight:simulate(20),lightLeft:simulate(-1.5),lightRight:simulate(1.5),centre:simulate(0)};
- });
+ },expectedCraft);
  console.log('BANKING TELEMETRY '+JSON.stringify(tilt));
  assert.ok(Math.abs(tilt.hardLeft)<=.441&&Math.abs(tilt.hardRight)<=.441,'Ship banking too strong');
  assert.ok(Math.abs(tilt.hardLeft+tilt.hardRight)<.001,'Banking is not symmetrical');
@@ -50,7 +57,7 @@ try {
    await wait(700);
   }
   await page.evaluate(()=>document.getElementById('obsOpen').click());
-  await page.waitForFunction(()=>!document.getElementById('observatory').classList.contains('off'),{timeout:20000});
+  await page.waitForFunction(()=>!document.getElementById('observatory').classList.contains('off'),null,{timeout:20000});
   const initial=await page.evaluate(()=>({
    title:document.getElementById('obsTitle').textContent,
    menuHidden:document.getElementById('menu').classList.contains('off'),
@@ -71,16 +78,16 @@ try {
    assert.equal(await page.locator('[data-obs-mode="'+mode+'"]').getAttribute('class'),'active');
   }
   await page.locator('[data-obs-chapter="2"]').click();
-  await page.waitForFunction(()=>Number.parseInt(document.getElementById('obsDistance').textContent,10)>45,{timeout:5000});
+  await page.waitForFunction(()=>Number.parseInt(document.getElementById('obsDistance').textContent,10)>45,null,{timeout:12000});
   await page.locator('#obsScrub').evaluate(el=>{el.value='800';el.dispatchEvent(new Event('input',{bubbles:true}))});
   assert.ok((await page.locator('#obsDistance').textContent()).includes('80'));
   await page.locator('#obsClose').click();
-  await page.waitForFunction(()=>document.getElementById('observatory').classList.contains('off')&&!document.getElementById('menu').classList.contains('off'),{timeout:10000});
+  await page.waitForFunction(()=>document.getElementById('observatory').classList.contains('off')&&!document.getElementById('menu').classList.contains('off'),null,{timeout:12000});
   console.log('PASS '+label+': actual world, four camera modes, chapter, scrub, return to menu');
   passed++;
  }
  await page.evaluate(()=>document.getElementById('launch').click());
- await page.waitForFunction(()=>!document.getElementById('count').classList.contains('off'),{timeout:25000});
+ await page.waitForFunction(()=>!document.getElementById('count').classList.contains('off'),null,{timeout:60000});
  console.log('PASS regular race still launches after Observatory');
  console.log('Browser errors: '+JSON.stringify(pageErrors.slice(0,12)));
  assert.equal(pageErrors.length,0,'Uncaught browser errors: '+pageErrors.join(' | '));
