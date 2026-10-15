@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
-import{installShipExhaust}from'./ship-exhaust-v119.js?v=121';
+import{installShipExhaust}from'./ship-exhaust-v119.js?v=123';
 import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
 import{installFleetPolish}from'./fleet-polish-v120.js?v=120';
 import{addSignatureKits}from'./fleet-signatures-v120.js?v=120';
