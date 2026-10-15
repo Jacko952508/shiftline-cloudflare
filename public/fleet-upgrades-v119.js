@@ -17,7 +17,11 @@ export function addFleetUpgrades(index,c,api){
  const counts={wing:0,engine:0,canopy:0,fin:0,livery:0},parts=[];
  const mark=(category,object,kind='shape')=>{
   if(!object)return object;
-  object.name='fleet-kit-'+category+'-'+(c[category]||0)+'-'+kind+'-'+counts[category];
+  const kitName='fleet-kit-'+category+'-'+(c[category]||0)+'-'+kind+'-'+counts[category];
+  // Keep the real fin's structural name so joint validation can identify it.
+  // The userData label still records which garage option added the component.
+  if(!(category==='fin'&&object.name.startsWith('connected-fin-')))object.name=kitName;
+  object.userData.kitName=kitName;
   object.userData.customisationCategory=category;
   counts[category]++;parts.push(object);return object;
  };
