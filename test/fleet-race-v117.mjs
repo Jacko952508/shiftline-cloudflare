@@ -20,6 +20,10 @@ try{
  });
  await page.waitForTimeout(520);
  const idleRocket=await page.evaluate(()=>window.__shiftlineTrailQA);
+ const idleMechanical=await page.evaluate(()=>window.__shiftlinePolishQA);
+ assert.equal(idleMechanical?.joints,2,'Player has live aerodynamic control surfaces');
+ assert.equal(idleMechanical?.louvers,2,'Player has two movable cooling vents');
+ assert.equal(idleMechanical?.petals,8,'Each engine has four articulating nozzle petals');
  assert.equal(idleRocket?.emitters,2,'Real race must have twin animated thrusters');
  assert.equal(idleRocket?.colour,0xbc8dff,'Race uses saved Violet Pulse exhaust');
  assert.ok(idleRocket.length>.50,'Normal race speed has persistent visible exhaust');
@@ -28,10 +32,14 @@ try{
  await page.locator('#boost').tap({timeout:18000});
  await page.waitForTimeout(1250);
  const boostedRocket=await page.evaluate(()=>window.__shiftlineTrailQA);
+ const boostedMechanical=await page.evaluate(()=>window.__shiftlinePolishQA);
  console.log('BOOST TRAILS',JSON.stringify({idleRocket,boostedRocket}));
  assert.equal(boostedRocket?.boost,true,'Boost input activates the actual rocket effect');
  assert.ok(boostedRocket.length>idleRocket.length+.25,'Rocket plume visibly lengthens under boost');
  assert.ok(boostedRocket.power>idleRocket.power+.10,'Boost changes real plasma intensity');
+ assert.equal(boostedMechanical?.boost,true,'Boost must actuate active mechanical parts');
+ assert.ok(boostedMechanical.vent>idleMechanical.vent+.05,'Radiator plates actually open under boost');
+ assert.ok(boostedMechanical.nozzle>idleMechanical.nozzle+.04,'Nozzle petals actually vector under boost');
  await page.screenshot({path:'garage-visible-artifacts/119-race-boost-trail.png'});
 
  const report=await page.evaluate(()=>{
@@ -48,5 +56,5 @@ try{
  assert.equal(report.game.contextLost,false,'WebGL context remains active');
  assert.equal(report.menuOff,true,'Start Race enters game');
  assert.equal(report.savedRecord,112000,'Saved race progress survives ship rebuild');
- console.log('PASS V119 race scene, actual violet plasma trail, stronger/longer boost rockets, GPU context and saved progress');
+ console.log('PASS V120 racing with animated control surfaces, radiator/nozzle boost transformation, strong violet trail and intact progress',JSON.stringify({idleMechanical,boostedMechanical}));
 }finally{await browser.close();}
