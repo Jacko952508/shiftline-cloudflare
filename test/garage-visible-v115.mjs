@@ -121,6 +121,7 @@ try{
  // the old fin set; render selected options to catch floating flaps.
  await page.locator('[data-garage-category="ship"]').click();
  for(let i=0;i<6;i++){
+  await page.locator('[data-garage-category="ship"]').click();
   const tile=page.locator('[data-choice-kind="ship"][data-choice-id="'+i+'"]');
   await tile.scrollIntoViewIfNeeded();await tile.click();
   await page.locator('[data-garage-category="fin"]').click();
