@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
-import{installShipExhaust}from'./ship-exhaust-v119.js?v=119';
+import{installShipExhaust}from'./ship-exhaust-v119.js?v=120';
 import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
 import{installFleetPolish}from'./fleet-polish-v120.js?v=120';
+import{addSignatureKits}from'./fleet-signatures-v120.js?v=120';
 // SHIFTLINE 117 — six deliberately different, complete airframes. All geometry
 // points toward local -Z; wingspan is normalised to 2.08 local units.
 // The gameplay collision envelope is controlled elsewhere and is unchanged.
@@ -344,6 +345,8 @@ function builder(ship,index,c,m,high=true){
  const installedKits=addFleetUpgrades(index,c,{add,layer,line,bar,mountedFin,hullMesh,owned,
   materials:{hull,carbon,trim,polished,graphite,ceramic,glass,glow,premium}});
  ship.userData.fleetUpgradeSignature=installedKits.signature;
+ const signatures=addSignatureKits(index,c,{add,bar,layer,line,hullMesh,materials:{hull,polished,graphite,carbon,glass,glow,premium},high});
+ ship.userData.signatureKits=signatures;
  installFleetPolish(ship,root,index,c,{materials:{hull,polished,graphite,carbon,glass,glow,premium},owned,high});
  // Accent paint remains visible even when livery = CLEAN, and is saved per ship.
  for(const side of[-1,1]){
@@ -382,7 +385,7 @@ function builder(ship,index,c,m,high=true){
   const testedPanels=root.children.filter(o=>o.userData.recessedPanel);
   const insetContacts=testedPanels.map(o=>({name:o.name||'inset',attached:structural.some(b=>b.intersectsBox(new THREE.Box3().setFromObject(o)))}));
   const customFins=finMounts.filter(x=>x.kind==='structural'&&c.fin!==0);
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,insetContacts,customFinCount:customFins.length,texturedMeshes:textured,upgradeCounts:installedKits.counts,upgradeSignature:installedKits.signature,exhaustEmitters:ship.userData.exhaustFX?.actors?.length||0,polishParts:ship.userData.fleetPolish?.added||{}};
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,insetContacts,customFinCount:customFins.length,texturedMeshes:textured,upgradeCounts:installedKits.counts,upgradeSignature:installedKits.signature,exhaustEmitters:ship.userData.exhaustFX?.actors?.length||0,polishParts:ship.userData.fleetPolish?.added||{},signatureKits:signatures};
  }
  return root;
 }
