@@ -28,7 +28,9 @@ try{
  assert.equal(state.save.records[1],112000,'saved records untouched');
  assert.ok(state.layout.width>100&&state.layout.height>100);
  await page.locator('#boost').tap();
- await page.waitForTimeout(1000);
+ // The old one-second fixed delay could extend past a real collision, which
+ // correctly disables boost and made this otherwise-valid test intermittent.
+ await page.waitForFunction(min=>window.__shiftlineTrailQA?.boost===true&&window.__shiftlineTrailQA.length>min+.18,state.rocket.length,{timeout:12000,polling:50});
  const after=await page.evaluate(()=>({view:window.__shiftlineRaceVisualQA,rocket:window.__shiftlineTrailQA}));
  assert.equal(after.rocket.boost,true);
  assert.ok(after.rocket.length>state.rocket.length+.18,'boost expands a visible plume');
