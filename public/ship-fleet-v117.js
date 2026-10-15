@@ -280,10 +280,10 @@ function builder(ship,index,c,m,high=true){
    const upper=layer([[.61,-.76],[.95,-.76],[.97,.65],[.65,.65]],carbon,.25,.025,side);
    // Open truss lattice connects the three bodies, not shallow shared wings.
    for(const z of[-.44,.10,.56]){
-    bar([side*.20,.035,z],[side*.59,.035,z],.085,.075,polished);
-    bar([side*.28,.03,z-.13],[side*.55,.12,z+.10],.028,.022,carbon);
+    const bridge=bar([side*.20,.035,z],[side*.59,.035,z],.085,.075,polished);bridge.userData.structuralHull=true;bridge.name='gemini-load-bearing-crossbeam';
+    const diagonal=bar([side*.28,.03,z-.13],[side*.55,.12,z+.10],.028,.022,carbon);diagonal.userData.structuralHull=true;diagonal.name='gemini-crossbeam-diagonal';
    }
-   bar([side*.33,.13,-.18],[side*.72,.13,-.18],.06,.055,graphite);
+   const upperBridge=bar([side*.33,.13,-.18],[side*.72,.13,-.18],.06,.055,graphite);upperBridge.userData.structuralHull=true;
    if(high)for(let k=0;k<6;k++){
     const z=-.53+k*.19;
     const tile=add(new THREE.BoxGeometry(.31,.009,.085),k%2?graphite:carbon,[x,.255,z]);
