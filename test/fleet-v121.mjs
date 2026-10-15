@@ -27,7 +27,7 @@ for(let index=0;index<6;index++){
  assert.ok(fx.length>1.15,'boost actually lengthens plasma');
  types.add(fx.engineProfile.name);
  for(const mat of owned)mat.dispose();
- for(const mat of Object.values(mats))mat.dispose();
+ for(const mat of Object.values(mats))mat?.dispose?.();
  const geometries=new Set(),materials=new Set();
  root.traverse(m=>{if(m.geometry)geometries.add(m.geometry);if(m.material)materials.add(m.material);});
  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
