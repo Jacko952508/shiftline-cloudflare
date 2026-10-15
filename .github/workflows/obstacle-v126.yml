@@ -1,0 +1,57 @@
+name: SHIFTLINE V126 Phase 2 Obstacle Visuals
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/obstacle-bodywork-v126.js'
+      - 'public/race-obstacles.js'
+      - 'public/race-impact.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/obstacle-v126.mjs'
+      - 'test/obstacle-browser-v126.mjs'
+      - '.github/workflows/obstacle-v126.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test source syntax
+        run: |
+          node --check public/obstacle-bodywork-v126.js
+          node --check public/race-obstacles.js
+          node --check public/race-impact.js
+          node --check public/race-engine.js
+      - name: Check six course collider invariants and mounted hardware
+        run: node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install mobile browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Start game server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v126.log 2>&1 &
+          sleep 2
+      - name: Verify all six world hazards and mobile races
+        run: node test/obstacle-browser-v126.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v126-obstacle-screenshots
+          path: obstacle-v126-artifacts
+          if-no-files-found: ignore
