@@ -1,6 +1,6 @@
-import{craft,disposeCraft}from'./race-craft.js?v=109';
+import{craft,disposeCraft}from'./race-craft.js?v=121';
 import * as THREE from 'three';
-import{appearance,MODELS}from'./ship-catalog.js?v=109';
+import{appearance,MODELS}from'./ship-catalog.js?v=112';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
@@ -44,6 +44,48 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
  const grip=mesh(a.stick===1?new THREE.BoxGeometry(.23,.06,.055):new THREE.CapsuleGeometry(.035,.075,3,8),rubber,0,.2,0,stick);if(a.stick!==1)grip.rotation.z=.18;
  if(a.stick===2)for(const side of[-1,1])mesh(new THREE.BoxGeometry(.035,.1,.045),trim,side*.065,.19,0,stick);
  const rightStick=stick.clone();rightStick.position.x=-stick.position.x;root.add(rightStick);
+ // Each cockpit is now built around its actual chassis identity: restrained
+ // diegetic hardware placed below eye level, never UI boxes across the view.
+ const cockpitDesign=['TWIN NACELLE','TRIDENT','STEALTH','ORGANIC','INDUSTRIAL','SPEAR'][model];
+ const dashDetails=new THREE.Group();dashDetails.name='cockpit-v120-'+cockpitDesign;root.add(dashDetails);
+ const modelPlate=(sx,sy,sz,x,y,z,mat=shell)=>mesh(new THREE.BoxGeometry(sx,sy,sz),mat,x,y,z,dashDetails);
+ if(model===0){
+  for(const side of[-1,1]){
+   modelPlate(.22,.07,.42,side*.53,-1.025,-1.66,metalInset);
+   modelPlate(.18,.018,.18,side*.53,-.984,-1.64,fineLight);
+   modelPlate(.032,.038,.29,side*.68,-.99,-1.80,rubber);
+  }
+ }else if(model===1){
+  for(const side of[-1,1]){
+   const prong=modelPlate(.23,.055,.53,side*.58,-1.035,-1.79,shell);prong.rotation.y=-side*.34;
+   const seam=modelPlate(.029,.018,.35,side*.62,-.991,-1.83,fineLight);seam.rotation.y=-side*.34;
+  }
+  modelPlate(.17,.028,.27,0,-1.005,-1.93,metalInset);
+ }else if(model===2){
+  for(const side of[-1,1]){
+   const eyebrow=modelPlate(.40,.055,.21,side*.58,-1.04,-1.93,metalInset);eyebrow.rotation.y=side*.29;
+   const slot=modelPlate(.24,.012,.041,side*.58,-1.003,-1.87,fineLight);slot.rotation.y=side*.29;
+  }
+ }else if(model===3){
+  for(const side of[-1,1]){
+   const wingConsole=mesh(new THREE.CapsuleGeometry(.063,.44,4,10),shell,side*.62,-1.005,-1.72,dashDetails);
+   wingConsole.rotation.x=Math.PI/2;wingConsole.rotation.z=side*.21;
+   modelPlate(.18,.018,.14,side*.59,-.979,-1.66,fineLight);
+  }
+ }else if(model===4){
+  for(const side of[-1,1]){
+   modelPlate(.30,.095,.51,side*.63,-1.00,-1.73,metalInset);
+   modelPlate(.20,.02,.27,side*.63,-.936,-1.73,rubber);
+   for(let k=0;k<3;k++)modelPlate(.11,.011,.014,side*.62,-.921,-1.81+k*.076,fineLight);
+  }
+ }else{
+  for(const side of[-1,1]){
+   const blade=modelPlate(.125,.085,.62,side*.49,-1.035,-1.95,metalInset);blade.rotation.y=side*.20;
+   const stripe=modelPlate(.019,.019,.49,side*.48,-.98,-1.95,fineLight);stripe.rotation.y=side*.20;
+  }
+  modelPlate(.12,.034,.42,0,-1.01,-2.02,metalInset);
+ }
+
  // Reuse the real chassis; the cockpit never invents a second ship shape.
  const nose=new THREE.Group();nose.position.set(0,-.61,-.22);scene.add(nose);
  const forebody=craft(nose,color,model,false,custom);nose.scale.setScalar(1);forebody.updateMatrixWorld(true);
