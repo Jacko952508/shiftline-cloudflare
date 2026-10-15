@@ -116,12 +116,25 @@ function builder(ship,index,c,m,high=true){
   return disk;
  };
  const vane=(x,y,z,width=.12)=>{
-  const o=add(new THREE.BoxGeometry(width,.013,.055),graphite,[x,y,z]);o.rotation.y=x<0?-.14:.14;return o;
+  // Inset ventilation slot with a tiny metal surround, laid flush onto the
+  // local aero surface. No raised decorative "flap" is permitted.
+  if(high){
+   const rim=add(new THREE.BoxGeometry(width+.013,.005,.064),polished,[x,y-.003,z]);
+   rim.rotation.y=x<0?-.14:.14;rim.name='flush-intake-gasket';
+  }
+  const o=add(new THREE.BoxGeometry(width,.004,.046),graphite,[x,y,z]);
+  o.rotation.y=x<0?-.14:.14;o.name='flush-intake-slot';return o;
  };
  const spine=(len=1.4,mat=polished)=>hullMesh([[-len,.006,.007,-.01],[-len*.78,.075,.05,.005],[-.54,.15,.11,.015],[-.12,.19,.14,.025],[.48,.16,.12,.01],[.82,.12,.07,.0],[.95,.02,.02,0]],mat);
  const canopy=(zFront=-.66,zBack=.43,width=.19,height=.13)=>{
   const arr=[[zFront,.01,.008,.18],[zFront+.16,width*.60,height*.63,.18],[zFront+.41,width,height,.19],[zBack-.17,width*.92,height*.93,.19],[zBack,.015,.008,.17]];
   const o=hullMesh(arr,glass,0,0,20);o.userData.partRole='canopy';
+  // Dark inset rubber cockpit seals and polished structural windscreen frame.
+  // These run along the lower glass edges and visibly join the body.
+  for(const side of[-1,1]){
+   line([[side*width*.45,.191,zFront+.17],[side*width*.86,.195,zFront+.38],[side*width*.94,.186,zBack-.18],[side*width*.26,.166,zBack-.01]],graphite,.012);
+   line([[side*width*.34,.205,zFront+.19],[side*width*.84,.21,zFront+.38],[side*width*.91,.202,zBack-.19]],polished,.004);
+  }
   line([[0,.22,zFront+.02],[0,.31,zFront+.40],[0,.30,zBack-.20]],polished,.005);
   return o;
  };
@@ -134,14 +147,9 @@ function builder(ship,index,c,m,high=true){
  };
  // In V119 the livery is a physically fitted paint/armour kit. Avoid leftover
  // legacy vanes and lines positioned over the wing, which could hover in air.
- const finishDetail=(side)=>{return;
-  if(c.livery===0)return;
-  const xx=side*(.16+(c.livery===2?.055:0));
-  if(c.livery===1)line([[xx,.16,-.45],[xx*1.1,.17,.43]],paint,.011);
-  else if(c.livery===2){for(let i=0;i<3;i++)vane(side*(.26+i*.035),.17,.32+i*.13,.05);}
-  else if(c.livery===3)line([[side*.23,.15,.13],[side*.45,.15,.52],[side*.29,.15,.76]],paint,.008);
-  else line([[side*.13,.18,-.65],[side*.15,.20,.55]],paint,.011);
- };
+ // Exterior striping and service panels are fitted by fleet-upgrades-v119.
+ // Remove legacy hovering livery vanes rather than layering duplicate meshes.
+ const finishDetail=()=>{};
  const finMounts=[];root.userData.finMounts=finMounts;
  const mountedFin=(side,x,z,baseY,height,skin=polished,chord=.36,lean=.10)=>{
   // Solid welded stabiliser: bottom edge starts WITHIN the wing/deck.
@@ -233,7 +241,7 @@ function builder(ship,index,c,m,high=true){
   for(const side of[-1,1]){
    wingPoly(plan,side,stealthShell,.015);
    const phantomInset=layer([[.18,-.66],[.52,-.42],[.90,.22],[.74,.52],[.38,.24]],graphite,.049,.018,side);phantomInset.userData.recessedPanel=true;
-   const phantomInsetTop=layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.059,.011,side);phantomInsetTop.userData.recessedPanel=true;
+   const phantomInsetTop=layer([[.26,-.55],[.58,-.21],[.82,.22],[.52,.06]],c.finish===0?stealth:hull,.059,.011,side);phantomInsetTop.userData.recessedPanel=true;phantomInset.userData.structuralHull=true;
    line([[side*.31,.069,-.46],[side*.70,.069,.04],[side*.99,.068,.50]],glow,.005);
    for(let k=0;k<3;k++)vane(side*(.48+k*.085),.069,.37+k*.12,.10);
    if(c.fin===0)mountedFin(side,.70,.60,.055,.10+finHeight*.48,graphite,.31,.085);
@@ -251,7 +259,7 @@ function builder(ship,index,c,m,high=true){
    // The wing's concavity is deliberately left empty, unlike a normal delta wing.
    // Keep the MANTA's signature crescent cutout genuinely open. A narrow
    // structural spar sits below the smooth white arch instead of a floating flap.
-   const spar=bar([side*.36,.017,-.19],[side*.62,.028,-.02],.033,.029,graphite);spar.name='manta-wing-integrated-spar';
+   const spar=bar([side*.36,.017,-.19],[side*.62,.028,-.02],.033,.029,graphite);spar.name='manta-wing-integrated-spar';spar.userData.structuralHull=true;
    const offset=side;
    line([[offset*.27,.092,-.30],[offset*.66,.10,-.73],[offset*.90,.07,-.83]],glow,.007);
    line([[offset*.60,.095,-.07],[offset*.73,.082,.25],[offset*.76,.07,.55]],glow,.006);
@@ -368,7 +376,11 @@ function builder(ship,index,c,m,high=true){
     const shoeBox=new THREE.Box3().setFromObject(shoe);
     return{side,shoeFin:shoeBox.intersectsBox(new THREE.Box3().setFromObject(fin)),shoeHull:members.some(o=>shoeBox.intersectsBox(new THREE.Box3().setFromObject(o)))};
   });
-  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,texturedMeshes:textured,upgradeCounts:installedKits.counts,upgradeSignature:installedKits.signature,exhaustEmitters:ship.userData.exhaustFX?.actors?.length||0};
+  const structural=root.children.filter(o=>o.userData.structuralHull).map(o=>new THREE.Box3().setFromObject(o));
+  const testedPanels=root.children.filter(o=>o.userData.recessedPanel);
+  const insetContacts=testedPanels.map(o=>({name:o.name||'inset',attached:structural.some(b=>b.intersectsBox(new THREE.Box3().setFromObject(o)))}));
+  const customFins=finMounts.filter(x=>x.kind==='structural'&&c.fin!==0);
+  window.__shiftlineModelQA={id:NAMES[index],span:SPAN,measuredSpan:actualSpan,unscaled:w,parts:root.children.length,options:ship.userData.designOptions,finMounts,finShoes,contacts,insetContacts,customFinCount:customFins.length,texturedMeshes:textured,upgradeCounts:installedKits.counts,upgradeSignature:installedKits.signature,exhaustEmitters:ship.userData.exhaustFX?.actors?.length||0};
  }
  return root;
 }
