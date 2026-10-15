@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
 // V120 manufactured airframe details. No gameplay physics or hitbox changes.
 const X=[.77,.46,.23,.39,.79,.28],Y=[.055,.025,-.02,-.03,.07,.02],Z=[.83,.85,.79,.75,.96,.88];
 const WY=[.064,.08,.073,.088,.28,.05],RX=[.41,.45,.49,.47,.45,.47];
@@ -19,11 +20,11 @@ export function installFleetPolish(ship,root,index,c,api){
  // Distant AI ships preserve their existing silhouettes without extra draw calls.
  if(!high)return rig;
  const trim=new THREE.MeshPhysicalMaterial({color:premium?hull.color.clone():new THREE.Color(PAL[index]),metalness:.88,roughness:.26,clearcoat:.91,clearcoatRoughness:.12,side:THREE.DoubleSide});
- const hot=new THREE.MeshPhysicalMaterial({color:HEAT[index],metalness:.75,roughness:.43,emissive:0x2b1211,emissiveIntensity:.02,side:THREE.DoubleSide});
+ const hot=new THREE.MeshPhysicalMaterial({...fleetSurfaceMaps('industrial'),bumpScale:.006,color:HEAT[index],metalness:.75,roughness:.43,emissive:0x2b1211,emissiveIntensity:.02,side:THREE.DoubleSide});
  const gasket=new THREE.MeshStandardMaterial({color:0x0e202e,metalness:.46,roughness:.63});
  owned.push(trim,hot,gasket);rig.heat=hot;
  const mesh=(geo,mat,pos,parent=root,name='')=>{
-  const m=new THREE.Mesh(geo,mat);m.position.set(...pos);m.name=name;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
+  const m=new THREE.Mesh(geo,mat);m.position.set(...pos);m.name=name;m.castShadow=name==='bevelled-hinged-control-surface'||name==='thermally-coated-hinged-radiator';m.receiveShadow=false;parent.add(m);return m;
  };
  const group=(name,pos)=>{const g=new THREE.Group();g.position.set(...pos);g.name=name;root.add(g);return g;};
  const rod=(start,end,r=.04,mat=trim,name='structural-brace')=>{
