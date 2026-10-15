@@ -1,0 +1,30 @@
+name: SHIFTLINE V121 craft regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/fleet-precision-v121.js'
+      - 'public/ship-fleet-v117.js'
+      - 'public/ship-exhaust-v119.js'
+      - 'public/race-craft.js'
+      - 'test/fleet-v121.mjs'
+      - 'test/three-loader.mjs'
+      - '.github/workflows/craft-v121.yml'
+  workflow_dispatch:
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse updated modules
+        run: |
+          node --check public/fleet-precision-v121.js
+          node --check public/ship-fleet-v117.js
+          node --check public/ship-exhaust-v119.js
+          node --check public/race-craft.js
+      - name: Exercise independent hull and plume components
+        run: node --no-warnings --experimental-loader ./test/three-loader.mjs ./test/fleet-v121.mjs
