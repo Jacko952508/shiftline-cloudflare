@@ -1,15 +1,27 @@
 // Physical material detail in the existing lighting pass: no additional lights,
 // render targets, or screen-space depth sampling.
 export function glassDetail(material){
+ // V124 clear-centre / grazing-angle reflection. Intentionally no real-time
+ // refraction or screen textures: both caused rendering risks on iOS devices.
+ material.transparent=true;
+ material.depthWrite=false;
+ material.depthTest=true;
+ material.forceSinglePass=true;
+ material.roughness=Math.min(material.roughness,.22);
+ material.metalness=0;
+ material.clearcoat=Math.max(material.clearcoat||0,.48);
+ material.clearcoatRoughness=.12;
+ material.userData.shiftlineGlass='v124';
  material.onBeforeCompile=shader=>{
   shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
-   float grazing=pow(1.-clamp(dot(normal,normalize(vViewPosition)),0.,1.),3.);
-   diffuseColor.a*=.55+grazing*2.4;
-   outgoingLight+=vec3(.035,.07,.085)*grazing;
+   float slFacing=abs(dot(normalize(normal),normalize(vViewPosition)));
+   float slFresnel=pow(1.0-clamp(slFacing,0.0,1.0),3.0);
+   // Central glass stays nearly invisible, edges and grazing views have sheen.
+   diffuseColor.a*=.48+2.1*slFresnel;
+   outgoingLight+=vec3(.018,.041,.058)*slFresnel;
    #include <opaque_fragment>`);
  };
- material.customProgramCacheKey=()=> 'shiftline-glass-v38';
- material.forceSinglePass=true;
+ material.customProgramCacheKey=()=> 'shiftline-glass-v124-clear-centre';
  return material;
 }
 export function hullDetail(material,uniforms){
