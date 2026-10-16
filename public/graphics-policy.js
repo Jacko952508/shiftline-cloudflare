@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {setFarSceneryQuality} from './far-scenery-v129.js?v=136';
+import {setFarSceneryQuality} from './far-scenery-v129.js?v=138';
 // Scale pixel workload gently; reduced mode saves scenery work instead of blurring the race.
 export function graphicsRatio(quality,width,height){const budget=quality==='high'?4500000:quality==='low'?2200000:3600000,preset=quality==='high'?2:quality==='low'?1.25:1.75;return Math.min(preset,Math.sqrt(budget/Math.max(1,width*height)));}
 export function adaptiveRatio(current,maximum,average){const minimum=maximum*.78;if(average>24)return Math.max(minimum,current-maximum*.06);if(average>19.5)return Math.max(minimum,current-maximum*.035);if(average<16.8)return Math.min(maximum,current+maximum*.012);return current;}

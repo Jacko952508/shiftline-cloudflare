@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import assert from 'node:assert/strict';
 import {createTrack} from '../public/race-track.js';
-import {attachFarScenery,updateFarScenery,disposeFarScenery} from '../public/far-scenery-v129.js';
+import {attachFarScenery,updateFarScenery,disposeFarScenery,atmosphereChapters} from '../public/far-scenery-v129.js';
 const signatures=[];
 for(let course=1;course<=6;course++){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
@@ -45,7 +45,16 @@ for(let course=1;course<=6;course++){
  updateFarScenery(world,430,12.37);
  if([2,6].includes(course)){assert.ok(d.dynamicCount>0);assert.ok(d.motionStep>before)}
  else assert.equal(d.dynamicCount,0);
- assert.ok(d.chunks.some(c=>c.group.visible));disposeFarScenery(world);
+ assert.ok(d.chunks.some(c=>c.group.visible));
+ const seam=.25*track.length,originalFog=scene.fog,colors=[];
+ for(const pos of[seam-70,seam-30,seam,seam+30,seam+70]){
+  updateFarScenery(world,pos,22);colors.push(d.materials[0].color.clone());
+  assert.equal(scene.fog,originalFog,'No fog is allowed across the flight path');
+ }
+ assert.ok(colors.every((color,i)=>i===0||color.distanceTo(colors[i-1])<.07),
+  'Chapter color jumps on course '+course);
+ assert.ok(colors[0].distanceTo(colors.at(-1))>.0008,'Missing chapter haze transition on '+course);
+ disposeFarScenery(world);
  console.log('PASS V130 AUTO course '+course+' '+d.total+' '+d.dynamicCount+' animated parts');
 }
 

@@ -7,12 +7,21 @@ function surface(material,course,terrain=false){
  shader.vertexShader='varying vec2 wfUv;varying vec3 wfWorld;varying vec3 wfNormal;\n'+shader.vertexShader;
  shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nwfUv=uv;vec4 wfP=vec4(transformed,1.);\n#ifdef USE_INSTANCING\nwfP=instanceMatrix*wfP;\n#endif\nwfWorld=(modelMatrix*wfP).xyz;wfNormal=inverseTransformDirection(transformedNormal,viewMatrix);');
  shader.fragmentShader='varying vec2 wfUv;varying vec3 wfWorld;varying vec3 wfNormal;\n'+noiseGLSL+'\n'+shader.fragmentShader;
- const terrainColor=course===3?'mix(vec3(.075,.073,.077),vec3(.25,.16,.10),wfRock*.55+wfStrata*.16)':course===4?'mix(mix(vec3(.18,.22,.26),vec3(.32,.37,.40),wfRock),vec3(.73,.79,.80),smoothstep(140.,330.,wfWorld.y)*smoothstep(.42,.9,wfNormal.y))':course===5?'mix(vec3(.23,.16,.105),mix(vec3(.10,.20,.105),vec3(.24,.32,.12),wfRock),smoothstep(.15,.8,wfNormal.y))':'mix(vec3(.20,.19,.22),vec3(.38,.36,.35),wfRock*.6+wfStrata*.22)';
+ // Geological variation reuses the pre-existing low-frequency noise.
+ const terrainColor=course===3
+  ?'mix(vec3(.072,.069,.078),vec3(.245,.143,.078),wfRock*.62+wfStrata*.21)+vec3(.085,.021,.006)*smoothstep(.61,.79,wfRock)*smoothstep(.52,.85,wfStrata)'
+  :course===4
+  ?'mix(mix(vec3(.13,.16,.21),vec3(.36,.39,.41),wfRock),vec3(.63,.69,.72),smoothstep(120.,310.,wfWorld.y)*smoothstep(.31,.84,wfNormal.y))'
+  :course===5
+  ?'mix(vec3(.085,.105,.073),mix(vec3(.085,.195,.092),vec3(.23,.31,.14),wfRock),smoothstep(.20,.79,wfNormal.y))*(.83+.17*wfStrata)'
+  :course===6
+  ?'mix(vec3(.135,.14,.20),vec3(.35,.32,.42),wfRock*.7+wfStrata*.23)+vec3(.024,.016,.048)*smoothstep(.63,.81,wfRock)*smoothstep(.52,.86,wfStrata)'
+  :'mix(vec3(.20,.19,.22),vec3(.38,.36,.35),wfRock*.6+wfStrata*.22)';
  const detail=terrain?`float wfRock=wfNoise(wfWorld.xz*.013)*.6+wfNoise(wfWorld.xz*.075)*.3+wfNoise(wfWorld.xz*.37)*.1;float wfStrata=.5+.5*sin(wfWorld.y*.15+wfNoise(wfWorld.xz*.016)*5.);diffuseColor.rgb=mix(diffuseColor.rgb,${terrainColor},.78);float wfGrain=mix(.5,wfNoise(wfWorld.xz*.8),1.-smoothstep(.35,1.,length(fwidth(wfWorld.xz*.8))));diffuseColor.rgb*=.83+.17*wfGrain;`:`vec2 wfGrid=wfUv*vec2(6.,3.);vec2 wfCell=fract(wfGrid);float wfAA=clamp(max(fwidth(wfGrid.x),fwidth(wfGrid.y)),.001,.5);float wfEdge=min(min(wfCell.x,1.-wfCell.x),min(wfCell.y,1.-wfCell.y));float wfPanel=mix(smoothstep(.012-wfAA,.035+wfAA,wfEdge),.94,smoothstep(.12,.35,wfAA));float wfBrushFade=1.-smoothstep(.1,.6,length(fwidth(wfUv*vec2(240.,14.))));float wfBrushed=mix(.5,wfNoise(wfUv*vec2(240.,14.)),wfBrushFade);float wfDirt=wfNoise(wfUv*vec2(7.,17.));diffuseColor.rgb*=mix(.52,1.,wfPanel)*(.91+.09*wfBrushed)*(.92+.08*wfDirt);diffuseColor.rgb+=vec3(.025)*wfPanel;`;
  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n'+detail);
  if(!terrain)shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor+(1.-wfPanel)*.15+(wfDirt-.5)*.08,.48,.98);');
  };
- material.customProgramCacheKey=()=> 'world-finish-68-'+course+'-'+terrain;
+ material.customProgramCacheKey=()=> 'world-finish-138-'+course+'-'+terrain;
 }
 export function installWorldFinish(root,track,course,materials,ground){
  for(const m of [materials.steel,materials.dark])if(m)surface(m,course);

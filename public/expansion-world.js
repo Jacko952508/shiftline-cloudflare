@@ -1,4 +1,4 @@
-import{installWorldFinish}from'./world-finish.js?v=69';
+import{installWorldFinish}from'./world-finish.js?v=138';
 import{glassDetail}from'./surface-detail.js?v=38';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';

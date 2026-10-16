@@ -33,6 +33,22 @@ const CHAPTER_LIGHT={
  5:[0xa0e79e,0x7bdfcd,0xe8d28c,0x9bbaff],
  6:[0xf4bf97,0x83b1ff,0xc5a5ff,0xffa1d9]
 };
+// Chapter ambience colours only the far scenery. No additional passes,
+// transparency, collision volumes, world fog or track lighting.
+const CHAPTER_HAZE={
+ 1:[0x6c9fbc,0x8f91bc,0xc3a080,0xc6827d],
+ 2:[0x337987,0x4f8f85,0x4b668b,0x70a493],
+ 3:[0x87949c,0xbb7451,0xcf8049,0xa95b45],
+ 4:[0x7898ac,0x9197b7,0x8bb5ca,0xa9b7c2],
+ 5:[0x537b53,0x478f7e,0xa3a16c,0x7e8c9e],
+ 6:[0x9e8b8f,0x8297bb,0xa28fc3,0xce91bc]
+};
+export function atmosphereChapters(progress){
+ const p=THREE.MathUtils.clamp(progress,0,.999999)*4,edge=Math.round(p);
+ if(edge>=1&&edge<=3&&Math.abs(p-edge)<.18)
+  return {from:edge-1,to:edge,t:THREE.MathUtils.smoothstep(p,edge-.18,edge+.18)};
+ const chapter=Math.min(3,Math.floor(p));return {from:chapter,to:chapter,t:0};
+}
 const TAU=Math.PI*2;
 const UP=new THREE.Vector3(0,1,0);
 const hash=(a,b)=>{const t=Math.sin(a*127.1+b*311.7)*43758.5453;return t-Math.floor(t)};
@@ -256,7 +272,10 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   total+=count;
  }
  world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,chapterCounts,low,quality,activeLow:low,
-   materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
+   materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4(),
+   length:track.length,lastAtmos:-Infinity,chapterBlend:{from:0,to:0,t:0},
+   baseColors:materials.map(m=>m.color.clone()),chapterHaze:CHAPTER_HAZE[course].map(hex=>new THREE.Color(hex)),
+   blendedHaze:new THREE.Color(),baseSky:world.kind==='expansion'&&world.skyMat?.uniforms.base?world.skyMat.uniforms.base.value.clone():null};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
   window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,chapterCounts,
    dynamicCount,stormMountainCount:course===4?total:0,stormPoleCount:0,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:136};
@@ -272,6 +291,15 @@ export function setFarSceneryQuality(world,quality){
 }
 export function updateFarScenery(world,along,time=0){
  const d=world?.farScenery;if(!d)return;
+ if(Math.abs(along-d.lastAtmos)>=10){
+  d.lastAtmos=along;
+  const blend=atmosphereChapters(along/d.length);d.chapterBlend=blend;
+  d.blendedHaze.copy(d.chapterHaze[blend.from]).lerp(d.chapterHaze[blend.to],blend.t);
+  for(const i of [0,1,2,4])d.materials[i].color.copy(d.baseColors[i]).lerp(d.blendedHaze,i===1?.095:i===2?.10:i===4?.10:.155);
+  if(d.baseSky&&world.skyMat?.uniforms.base)world.skyMat.uniforms.base.value.copy(d.baseSky).lerp(d.blendedHaze,.095);
+  if(typeof window!=='undefined'&&window.__shiftlineSceneryQA?.course===d.course)
+   window.__shiftlineSceneryQA.chapterBlend={...blend};
+ }
  const first=Math.max(0,Math.floor((along-240)/d.stride)),last=Math.min(d.chunks.length,Math.ceil((along+(world.renderAhead||700)+250)/d.stride));
  if(first!==d.first||last!==d.last){
   for(let i=0;i<d.chunks.length;i++)d.chunks[i].group.visible=i>=first&&i<last;
@@ -301,6 +329,7 @@ export function updateFarScenery(world,along,time=0){
 export function disposeFarScenery(world){
  const d=world?.farScenery;if(!d)return;
  d.root.parent?.remove(d.root);
+ if(d.baseSky&&world.skyMat?.uniforms.base)world.skyMat.uniforms.base.value.copy(d.baseSky);
  d.geometries.forEach(g=>g.dispose());d.materials.forEach(m=>m.dispose());
  world.farScenery=null;
 }

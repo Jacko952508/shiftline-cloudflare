@@ -1,8 +1,8 @@
-import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=137';
-import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=136';
+import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=138';
+import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=138';
 import{attachTunnelDetails,updateTunnelDetails,disposeTunnelDetails}from'./tunnel-detail.js?v=100';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=38';
-import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=100';
+import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=138';
 import{freezeWorld}from'./scene-performance.js';
 import{createHorizon,updateHorizon}from'./eclipse-horizon.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
