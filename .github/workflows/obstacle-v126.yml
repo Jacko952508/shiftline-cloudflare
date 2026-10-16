@@ -8,6 +8,8 @@ on:
       - 'public/race-impact.js'
       - 'public/race-engine.js'
       - 'public/index.html'
+      - 'public/race-recovery.js'
+      - 'test/racing-polish-v146.mjs'
       - 'test/obstacle-v126.mjs'
       - 'test/obstacle-browser-v126.mjs'
       - '.github/workflows/obstacle-v126.yml'
@@ -29,6 +31,8 @@ jobs:
           node --check public/race-obstacles.js
           node --check public/race-impact.js
           node --check public/race-engine.js
+      - name: Verify centred recoveries and pooled impacts
+        run: node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
       - name: Check six course collider invariants and mounted hardware
         run: node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
   browsers:

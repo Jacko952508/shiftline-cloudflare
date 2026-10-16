@@ -49,3 +49,7 @@ Open [/diagnostics.html](https://shiftline-game.beyondthebox.workers.dev/diagnos
 ## V145 final stability pass
 
 Corrects high-DPI iPhone race viewport scaling, avoids unused HDR target allocation in Low quality, clears captured steering/fire/keys on pause and restart, pauses solo countdowns on interruption, resets stale race notifications, and aligns Observatory chapter jumps with authored act boundaries. Existing fleet, course scenery, saves and controls are retained.
+
+## V146 recovery and mobile workload
+
+Centred collision-checked recovery now resets lateral velocity, steering, bank and camera follow for both the player and AI, with skipped gates excluded from clean-pass rewards. Distant opponents keep racing but their meshes and animations are culled beyond the useful track view. Impact bursts reuse their particle vectors and palette colour.

@@ -12,18 +12,17 @@ const IMPACT_PALETTE={
 
 export function createImpacts(scene){
  const slots=[],dummy=new THREE.Object3D(),shardGeo=new THREE.BoxGeometry(.07,.025,.12);
- for(let k=0;k<8;k++){const p=new Float32Array(48*3),colors=new Float32Array(48*3),geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(p,3));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));const material=new THREE.PointsMaterial({vertexColors:true,size:.085,transparent:true,opacity:1,depthWrite:false,blending:THREE.AdditiveBlending});const sparks=new THREE.Points(geo,material);sparks.frustumCulled=false;const shards=new THREE.InstancedMesh(shardGeo,new THREE.MeshStandardMaterial({color:0x8aa7b7,roughness:.7,metalness:.65,transparent:true,depthWrite:false}),12);shards.frustumCulled=false;sparks.visible=shards.visible=false;scene.add(sparks,shards);slots.push({sparks,shards,p,colors,particles:[],started:-10,origin:new THREE.Vector3()})}
- return{slots,dummy,scratch:new THREE.Vector3(),next:0};
+ for(let k=0;k<8;k++){const p=new Float32Array(48*3),colors=new Float32Array(48*3),geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(p,3));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));const material=new THREE.PointsMaterial({vertexColors:true,size:.085,transparent:true,opacity:1,depthWrite:false,blending:THREE.AdditiveBlending});const sparks=new THREE.Points(geo,material);sparks.frustumCulled=false;const shards=new THREE.InstancedMesh(shardGeo,new THREE.MeshStandardMaterial({color:0x8aa7b7,roughness:.7,metalness:.65,transparent:true,depthWrite:false}),12);shards.frustumCulled=false;sparks.visible=shards.visible=false;scene.add(sparks,shards);slots.push({sparks,shards,p,colors,particles:Array.from({length:48},()=>new THREE.Vector3()),started:-10,origin:new THREE.Vector3()})}
+ return{slots,dummy,scratch:new THREE.Vector3(),color:new THREE.Color(),next:0};
 }
 export function burstImpact(pool,position,frame,time,underwater=false,course=underwater?2:1){
  const slot=pool.slots[pool.next++%pool.slots.length],palette=IMPACT_PALETTE[course]||IMPACT_PALETTE[1];
- slot.started=time;slot.course=course;slot.origin.copy(position);slot.particles=[];
+ slot.started=time;slot.course=course;slot.origin.copy(position);
  slot.shards.material.color.setHex(palette.shard);
  slot.sparks.material.size=course===2?.105:course===3?.1:.085;
  for(let i=0;i<48;i++){
-  const a=i*2.399963,r=1+(i%7)*.36,v=frame.r.clone().multiplyScalar(Math.cos(a)*r).addScaledVector(frame.u,Math.sin(a)*r).addScaledVector(frame.f,-2-(i%5));
-  slot.particles.push(v);
-  const color=new THREE.Color((i%3===0)?palette.b:palette.a);
+  const a=i*2.399963,r=1+(i%7)*.36,v=slot.particles[i].copy(frame.r).multiplyScalar(Math.cos(a)*r).addScaledVector(frame.u,Math.sin(a)*r).addScaledVector(frame.f,-2-(i%5));
+  const color=pool.color.setHex((i%3===0)?palette.b:palette.a);
   slot.colors.set([color.r*2,color.g*2,color.b*2],i*3);
   slot.p.set([position.x,position.y,position.z],i*3);
  }
