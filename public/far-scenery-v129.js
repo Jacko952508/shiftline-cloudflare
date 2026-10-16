@@ -13,9 +13,9 @@ const PROFILES={
  3:{name:'CINDER CALDERA / volcanic spires, chimneys and molten vents',kind:'forge',
     primary:0x514447,secondary:0x986451,accent:0xff8b52,shade:0x302b32,
     base:53,height:95,spread:13},
- 4:{name:'STORM FRONT / suspended platforms, wind turbines and beacons',kind:'storm',
-    primary:0x62778d,secondary:0x9bafbd,accent:0x8bbfec,shade:0x394e64,
-    base:55,height:110,spread:13},
+ 4:{name:'TEMPEST / grounded mountain ridges and rare turbines',kind:'storm',
+    primary:0x647788,secondary:0xc5d1d6,accent:0x83b6cc,shade:0x384e61,
+    base:55,height:103,spread:54},
  5:{name:'ANCIENT CANOPY / giant trunks, boughs, crowns and glowing spores',kind:'forest',
     primary:0x42674e,secondary:0x578b58,accent:0x9edc8c,shade:0x2e4b39,
     base:45,height:94,spread:14},
@@ -58,6 +58,23 @@ function trackIndex(track){
   return (nearest===Infinity?9999:nearest-bound-14);
  };
 }
+// Ground-rooted jagged landscape volume, with irregular ridges; no towers.
+function mountainGeometry(){
+ const sides=11,rings=[[0,1.16],[.30,.88],[.62,.53],[.84,.25],[1,.015]];
+ const vertices=[],index=[];
+ for(let r=0;r<rings.length;r++)for(let i=0;i<sides;i++){
+  const a=i*Math.PI*2/sides,noise=1+.15*Math.sin(i*2.83+r*1.67)+.08*Math.cos(i*4.12-r*.9);
+  vertices.push(Math.cos(a)*rings[r][1]*noise,rings[r][0]+.025*Math.sin(i*1.3+r),Math.sin(a)*rings[r][1]*noise);
+ }
+ for(let r=0;r<rings.length-1;r++)for(let i=0;i<sides;i++){
+  const a=r*sides+i,b=r*sides+(i+1)%sides,c=(r+1)*sides+i,d=(r+1)*sides+(i+1)%sides;
+  index.push(a,b,c,b,d,c);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setIndex(index);geo.computeVertexNormals();return geo;
+}
+
 function shapes(kind,quality){
  const low=quality==='low';
  const cylinder=(a,b,s=8)=>new THREE.CylinderGeometry(a,b,1,low?5:s,1);
@@ -80,10 +97,9 @@ function shapes(kind,quality){
   new THREE.OctahedronGeometry(1,0),
   cylinder(.38,.44,7)];
  case 'storm':return [
-  new THREE.BoxGeometry(1,1,1),
-  cylinder(.14,.62,7),new THREE.TorusGeometry(1,.16,low?4:6,low?12:20),
-  new THREE.BoxGeometry(1,1,1),
-  new THREE.BoxGeometry(1,1,1)];
+  mountainGeometry(),new THREE.IcosahedronGeometry(1,0),
+  new THREE.IcosahedronGeometry(1,0),new THREE.OctahedronGeometry(1,0),
+  new THREE.IcosahedronGeometry(1,0)];
  case 'forest':return [
   cylinder(.34,.72,7),
   new THREE.IcosahedronGeometry(1,low?0:1),
@@ -122,11 +138,12 @@ function recipes(profile,anchor,width,height,seed,chapter){
    a(0,height*.87,0,width*.77,height*.15,width*.77),
    a(0,height*1.00,0,width*.36,height*.16,width*.36)];
  }else if(kind==='storm'){
+  // Irregular Alpine rock mass; its lowest ring follows terrain height.
   parts=[
-   a(0,height*.12,0,width*1.7,height*.24,width*1.7),
-   a(0,height*.55,0,width*.48,height*.95,width*.48),
-   a(0,height*.87,0,width*.73,width*.73,width*.73,Math.PI/2),
-   a(0,height*1.05,0,width*.18,height*.33,width*.18)];
+   a(0,0,0,width,height,width),
+   a(-width*.09,height*.83,0,width*.28,height*.23,width*.28),
+   a(width*.64,height*.18,-width*.1,width*.52,height*.32,width*.60,-.16),
+   a(width*.15,height*.56,width*.48,width*.16,height*.14,width*.17)];
  }else if(kind==='forest'){
   parts=[
    a(0,height*.39,0,width*.55,height*.8,width*.55),
@@ -145,7 +162,7 @@ function recipes(profile,anchor,width,height,seed,chapter){
  if(kind==='city')parts.push(a(0,height*(chapter===2?.62:.90),width*.12,width*(chapter===2?1.45:.82),width*(chapter===2?1.45:.85),width*.55,Math.PI/2));
  else if(kind==='reef')parts.push(a(-width*.53,height*.66,width*.25,width*.20,height*.62,width*.20,chapter===2?.55:.37));
  else if(kind==='forge')parts.push(a(width*.25,height*.90,0,width*.22,height*.45,width*.22,.16));
- else if(kind==='storm')parts.push(a(0,height*.87,0,width*.15,height*(chapter===1?.62:.48),width*.12,Math.PI/2));
+ else if(kind==='storm')parts.push(a(-width*.54,height*.14,width*.36,width*.40,height*.26,width*.42,-.28));
  else if(kind==='forest')parts.push(a(-width*.72,height*.65,width*.15,width*.22,height*.78,width*.22,-.68));
  else parts.push(a(width*.92,height*(chapter===2?.92:.74),width*.16,width*.33,height*.52,width*.35,.36));
  return {parts,variations:[color(0,1),color(1,2),color(2,3),color(3,4),color(4,5)]};
@@ -159,7 +176,7 @@ function makeMatrix(dummy,part,out=new THREE.Matrix4()){
 }
 export function attachFarScenery(scene,world,track,course,quality='auto'){
  const profile=PROFILES[course];if(!profile)throw Error('Unknown scenery course '+course);
- const low=quality==='low',high=quality==='high',stride=low?265:high?165:205,perChunk=low?4:high?11:8;
+ const low=quality==='low',high=quality==='high',stride=course===4?(low?280:245):low?265:high?165:205,perChunk=course===4?(low?2:3):low?4:high?11:8;
  const root=new THREE.Group();root.name='V130 / WORLD-SPECIFIC FARSCAPE';scene.add(root);
  const geometries=shapes(profile.kind,quality);
  const materials=[
@@ -191,11 +208,11 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    // A close foreground band, a middle skyline, and occasional distant
    // silhouettes. Rejected close placements move outward instead of being
    // silently dropped; nearby crossing tracks remain absolutely protected.
-   const baseDistance=(j%4===0?82:j%3===0?215:115)+67*hash(seed,3);
-   const width=profile.spread*(.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
+   const baseDistance=course===4?(130+80*hash(seed,3)):(j%4===0?82:j%3===0?215:115)+67*hash(seed,3);
+   const width=profile.spread*(course===4?.8+.45*hash(seed,4):.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
    const chapterHeight=[1,.83,1.22,.94][chapter];
    const height=profile.height*chapterHeight*(.53+.75*hash(seed,5))*(hero?1.36:1);
-   const boundsRadius=Math.hypot(width*2.5,height*.65);
+   const boundsRadius=course===4?Math.hypot(width*1.45,height*.58):Math.hypot(width*2.5,height*.65);
    let margin=-Infinity,distance=baseDistance,candidate=null;
    for(let attempt=0;attempt<3;attempt++){
     distance=baseDistance+attempt*82;
@@ -203,7 +220,8 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
     let floor=f.p.y-(course===6?30:course===1?65:course===4?105:80)+35*(hash(seed,6)-.5);
     if(course>=4&&course!==6&&typeof world.ground==='function'){
      const grounded=world.ground(point.x,point.z);
-     if(Number.isFinite(grounded)&&Math.abs(grounded-f.p.y)<330)floor=grounded-2;
+     if(course===4&&Number.isFinite(grounded))floor=grounded-5;
+     else if(Number.isFinite(grounded)&&Math.abs(grounded-f.p.y)<330)floor=grounded-2;
     }
     if(course===6)floor=f.p.y-height*.32+65*(hash(seed,7)-.5);
     point.y=floor;
@@ -222,8 +240,8 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
     else tint.setRGB(candidate.variations[k],candidate.variations[k],candidate.variations[k]);
     mesh.setColorAt(count,tint);
    }
-   if(!low&&(course===4||course===6||course===2)&&j%2===0){
-    const target=course===4?2:course===6?1:3;
+   if(!low&&(course===6||course===2)&&j%2===0){
+    const target=course===6?1:3;
     motions.push({index:count,target,part:candidate.parts[target],phase:seed*.34});
     dynamicCount++;
    }
@@ -241,14 +259,14 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
   window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,chapterCounts,
-   dynamicCount,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:133};
+   dynamicCount,stormMountainCount:course===4?total:0,stormPoleCount:0,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:135};
  return world;
 }
 export function setFarSceneryQuality(world,quality){
  const d=world?.farScenery;if(!d)return;
  const low=quality==='low';if(d.activeLow===low)return;
  d.activeLow=d.low=low;
- const limit=d.quality==='low'?4:low?4:Infinity;
+ const limit=d.quality==='low'?(d.course===4?2:4):low?(d.course===4?2:4):Infinity;
  for(const chunk of d.chunks)for(let k=0;k<chunk.meshes.length;k++)chunk.meshes[k].count=(k===4&&low)?0:Math.min(chunk.count,limit);
  d.motionStep=-1;
 }
@@ -261,7 +279,7 @@ export function updateFarScenery(world,along,time=0){
  }
  // 8 Hz distant mechanics: subtle rotor, coral and floating crystal motion.
  // Only currently visible instances are re-uploaded; no mesh allocation.
- if(d.low||!(d.course===2||d.course===4||d.course===6))return;
+ if(d.low||!(d.course===2||d.course===6))return;
  const step=Math.floor(time*8);
  if(step===d.motionStep)return;d.motionStep=step;
  const dummy=d.dummy;
