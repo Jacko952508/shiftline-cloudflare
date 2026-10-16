@@ -1,4 +1,4 @@
-name: SHIFTLINE V140 Ground and Landscape Detail
+name: SHIFTLINE V141 Biome Terrain and Geology
 on:
   push:
     branches: [main]
@@ -12,6 +12,7 @@ on:
       - 'public/style.css'
       - 'public/race-engine.js'
       - 'public/index.html'
+      - 'test/terrain-v141.mjs'
       - 'test/biome-floor-v140.mjs'
       - 'test/far-scenery-v130.mjs'
       - 'test/phase3-browser-v130.mjs'
@@ -35,10 +36,12 @@ jobs:
           node --check public/race-engine.js
           node --check public/biome-floor-v140.js
           node --check public/world-finish.js
+          node --check public/expansion-world.js
       - name: Six-world geometry, clearance, animation and quality tests
         run: |
           node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
           node --experimental-loader ./test/three-loader.mjs test/biome-floor-v140.mjs
+          node --experimental-loader ./test/three-loader.mjs test/terrain-v141.mjs
   browsers:
     runs-on: ubuntu-latest
     timeout-minutes: 20

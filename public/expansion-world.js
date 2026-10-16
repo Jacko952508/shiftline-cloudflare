@@ -1,4 +1,4 @@
-import{installWorldFinish}from'./world-finish.js?v=140';
+import{installWorldFinish}from'./world-finish.js?v=141';
 import{glassDetail}from'./surface-detail.js?v=38';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
@@ -7,9 +7,26 @@ import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'.
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
 const TAU=Math.PI*2;
 export function expansionGround(course,x,z,endZ){
- if(course===4)return 55+220*Math.exp(-(((x-420*Math.sin(z*.0015))/380)**2))+100*Math.sin(z*.002)**2-550*THREE.MathUtils.smoothstep(-z,-endZ-950,-endZ-350);
- if(course===5){const cavern=THREE.MathUtils.smoothstep(-z,-endZ-950,-endZ-350);return -20+30*Math.sin(x*.002)*Math.sin(z*.003)-280*cavern;}
- const shaft=Math.exp(-((Math.hypot(x,z+1050)/430)**4));return 280-480*shaft-600*THREE.MathUtils.smoothstep(-z,650,1400)+30*Math.sin(x*.003)*Math.cos(z*.002)-250*THREE.MathUtils.smoothstep(-z,-endZ-1300,-endZ-600);
+ // V141: carve into the *existing* heightfield rather than raising it.
+ // Everything attached to ground(x,z), including tree trunks and bridge feet,
+ // follows the exact same depressions. The tunnel and obstacle meshes do not move.
+ if(course===4){
+  const base=55+220*Math.exp(-(((x-420*Math.sin(z*.0015))/380)**2))+100*Math.sin(z*.002)**2-550*THREE.MathUtils.smoothstep(-z,-endZ-950,-endZ-350);
+  const erosion=5+10*Math.sin(x*.010+Math.sin(z*.004)*1.7)**2*Math.sin(z*.008)**2;
+  return base-erosion;
+ }
+ if(course===5){
+  const cavern=THREE.MathUtils.smoothstep(-z,-endZ-950,-endZ-350);
+  const base=-20+30*Math.sin(x*.002)*Math.sin(z*.003)-280*cavern;
+  const creekX=160*Math.sin(z*.0038);
+  const stream=26*Math.exp(-(((x-creekX)/95)**2));
+  const gulley=17*Math.sin(x*.011+Math.sin(z*.005)*1.4)**2*Math.sin(z*.007)**2;
+  return base-stream-gulley;
+ }
+ const shaft=Math.exp(-((Math.hypot(x,z+1050)/430)**4));
+ const base=280-480*shaft-600*THREE.MathUtils.smoothstep(-z,650,1400)+30*Math.sin(x*.003)*Math.cos(z*.002)-250*THREE.MathUtils.smoothstep(-z,-endZ-1300,-endZ-600);
+ const craters=11*Math.sin(x*.006+z*.007)**2+5*Math.sin(x*.019-z*.014)**2;
+ return base-craters;
 }
 export function createExpansionWorld(scene,track){
  const course=track.course,p=EXPANSIONS[course],root=new THREE.Group(),environment=hdrEnvironment(false),metalMaps=acquirePBR('metal'),rockMaps=acquirePBR('rock');scene.environment=environment;scene.environmentIntensity=.42;scene.userData.underwater=false;scene.userData.heat=false;
