@@ -272,7 +272,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   total+=count;
  }
  world.farScenery={root,chunks,course,name:profile.name,total,minClearance,skipped,dynamicCount,nearCount,chapterCounts,low,quality,activeLow:low,
-   materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4(),
+   materials,geometries,checkClearance:candidates,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4(),
    length:track.length,lastAtmos:-Infinity,chapterBlend:{from:0,to:0,t:0},
    baseColors:materials.map(m=>m.color.clone()),chapterHaze:CHAPTER_HAZE[course].map(hex=>new THREE.Color(hex)),
    blendedHaze:new THREE.Color(),baseSky:world.kind==='expansion'&&world.skyMat?.uniforms.base?world.skyMat.uniforms.base.value.clone():null};

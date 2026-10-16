@@ -1,8 +1,10 @@
-name: SHIFTLINE V141 Biome Terrain and Geology
+name: SHIFTLINE V143 Worldscapes and Signature Landmarks
 on:
   push:
     branches: [main]
     paths:
+      - 'public/chapter-landmarks-v143.js'
+      - 'test/chapter-landmarks-v143.mjs'
       - 'public/biome-floor-v140.js'
       - 'public/world-finish.js'
       - 'public/far-scenery-v129.js'
@@ -32,6 +34,7 @@ jobs:
       - name: Syntax validation
         run: |
           node --check public/far-scenery-v129.js
+          node --check public/chapter-landmarks-v143.js
           node --check public/race-world.js
           node --check public/race-engine.js
           node --check public/biome-floor-v140.js
@@ -40,6 +43,7 @@ jobs:
       - name: Six-world geometry, clearance, animation and quality tests
         run: |
           node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+          node --experimental-loader ./test/three-loader.mjs test/chapter-landmarks-v143.mjs
           node --experimental-loader ./test/three-loader.mjs test/biome-floor-v140.mjs
           node --experimental-loader ./test/three-loader.mjs test/terrain-v141.mjs
   browsers:

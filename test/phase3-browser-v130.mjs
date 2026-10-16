@@ -14,15 +14,24 @@ async function run(kind,courses){
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|Shader Error|VALIDATE_STATUS/i.test(e.text()))shaders.push(e.text())});
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
-  await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1',{waitUntil:'domcontentloaded',timeout:65000});
+  await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1&landmarkqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=142');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=143');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
    await page.waitForFunction(c=>window.__shiftlineSceneryQA?.course===c&&window.__shiftlineSceneryQA.version===136,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
    const atmosphere=await page.evaluate(()=>window.__shiftlineAtmosphereQA);
+   const landmark=await page.evaluate(()=>window.__shiftlineChapterLandmarkQA);
+   assert.equal(landmark?.version,143,'Signature landmarks not loaded '+course);
+   assert.equal(landmark.course,course);
+   assert.ok(landmark.sites>=8,'Chapter world set pieces missing '+course);
+   assert.ok(landmark.chapterCounts.every(n=>n>0),'Chapter scene missing landmarks '+course);
+   assert.ok(landmark.minClearance>=24,'Landmark fails whole-track collision clearance '+course);
+   assert.equal(landmark.collisionObjects,0);
+   assert.equal(landmark.transparent,0);
+   assert.equal(landmark.shadowCasters,0);
    assert.equal(atmosphere?.version,142,'Atmosphere module missing on course '+course);
    assert.equal(atmosphere.course,course);
    assert.ok(atmosphere.density>0&&atmosphere.density<.002);

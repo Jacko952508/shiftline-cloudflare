@@ -1,0 +1,36 @@
+name: SHIFTLINE V143 Signature Landmarks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/chapter-landmarks-v143.js'
+      - 'public/far-scenery-v129.js'
+      - 'public/race-world.js'
+      - 'public/cinder-world.js'
+      - 'public/graphics-policy.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/chapter-landmarks-v143.mjs'
+      - '.github/workflows/chapter-landmarks-v143.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check new modules and existing world source
+        run: |
+          node --check public/chapter-landmarks-v143.js
+          node --check public/far-scenery-v129.js
+          node --check public/race-world.js
+          node --check public/cinder-world.js
+          node --check public/graphics-policy.js
+          node --check public/race-engine.js
+      - name: Six-course signature landmarks, clearance and LOD
+        run: node --experimental-loader ./test/three-loader.mjs test/chapter-landmarks-v143.mjs
