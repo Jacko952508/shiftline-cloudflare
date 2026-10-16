@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import assert from 'node:assert/strict';
-import {createTrack} from '../public/race-track.js';
+import {createTrack,actAt} from '../public/race-track.js';
 import {attachChapterLandmarks,updateChapterLandmarks,setChapterLandmarkQuality,disposeChapterLandmarks} from '../public/chapter-landmarks-v143.js';
 import {attachFarScenery,disposeFarScenery} from '../public/far-scenery-v129.js';
 for(let course=1;course<=6;course++){
@@ -16,6 +16,12 @@ for(let course=1;course<=6;course++){
  assert.ok(d.chapterCounts.every(n=>n>0),'A chapter has no special landmarks in '+course);
  assert.ok(d.minClearance>=24,'Signature object clips another branch in '+course);
  assert.ok(d.sites.every(s=>s.meshes.length===3));
+ for(const site of d.sites){
+  const authored=actAt(track.length*(site.chapter+.5)/4,track.length,course);
+  assert.ok(Math.abs(site.actStart-authored.start)<1e-10);
+  assert.ok(Math.abs(site.actEnd-authored.end)<1e-10);
+  assert.ok(site.s/track.length>=authored.start&&site.s/track.length<=authored.end,'Landmark outside actual act '+course+' / '+site.chapter);
+ }
  assert.ok(d.sites.every(s=>s.meshes.every(m=>m.isInstancedMesh&&m.castShadow===false&&m.material.transparent===false)));
  assert.ok(d.totalParts>=d.sites.length*5);
  const original=d.sites[0].counts.slice();
@@ -32,5 +38,5 @@ for(let course=1;course<=6;course++){
  disposeChapterLandmarks(w);disposeFarScenery(w);
  assert.equal(w.chapterLandmarks,null);assert.equal(scene.children.length,1);
  assert.equal(root.children.length,0);
- console.log('PASS V143 '+course+' signature landmarks='+expected+', parts='+d.totalParts+', clearance='+d.minClearance.toFixed(1));
+ console.log('PASS V144 '+course+' signature landmarks='+expected+', parts='+d.totalParts+', clearance='+d.minClearance.toFixed(1));
 }

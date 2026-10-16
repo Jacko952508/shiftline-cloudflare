@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import {actAt} from './race-track.js?v=58';
 
-// V143: deliberately recognisable exterior set pieces instead of repeated
+// V144: deliberately recognisable exterior set pieces instead of repeated
 // skyline clutter. Nothing created here participates in track physics.
 // All parts are opaque; every section has a strict visibility window.
 const PROFILES={
@@ -104,7 +105,9 @@ export function attachChapterLandmarks(world,track,course,quality='auto'){
  const v=new THREE.Vector3(),dir=new THREE.Vector3(),centre=new THREE.Vector3();
  let totalParts=0,skipped=0,minClearance=Infinity;
  for(let chapter=0;chapter<4;chapter++)for(let n=0;n<groupCount;n++){
-  const s=track.length*((chapter+(n+.5)/groupCount)/4),frame=track.frame(s);
+  // Follow actual authored act spans: early courses do not have equal chapters.
+  const act=actAt(track.length*(chapter+.5)/4,track.length,course);
+  const s=track.length*(act.start+(act.end-act.start)*(n+.5)/groupCount),frame=track.frame(s);
   dir.copy(frame.r).setY(0);
   if(dir.lengthSq()<.025)dir.set(frame.f.z,0,-frame.f.x);
   if(dir.lengthSq()<.025)dir.set(1,0,0);
@@ -139,7 +142,7 @@ export function attachChapterLandmarks(world,track,course,quality='auto'){
   });
   const tint=new THREE.Color(profile.glow[chapter]);for(let i=0;i<parts[2].length;i++)meshes[2].setColorAt(i,tint);
   if(meshes[2].instanceColor)meshes[2].instanceColor.needsUpdate=true;
-  sites.push({s,chapter,g,meshes,counts:parts.map(p=>p.length)});
+  sites.push({s,chapter,actName:act.name,actStart:act.start,actEnd:act.end,g,meshes,counts:parts.map(p=>p.length)});
   chapterCounts[chapter]++;minClearance=Math.min(minClearance,margin);
   totalParts+=parts.reduce((a,b)=>a+b.length,0);
  }
@@ -148,7 +151,7 @@ export function attachChapterLandmarks(world,track,course,quality='auto'){
  world.chapterLandmarks=detail;
  setChapterLandmarkQuality(world,quality);
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('landmarkqa=1'))
-  window.__shiftlineChapterLandmarkQA={course,version:143,chapterCounts:[...chapterCounts],
+  window.__shiftlineChapterLandmarkQA={course,version:144,actBoundaries:sites.map(s=>({chapter:s.chapter,position:s.s/track.length,start:s.actStart,end:s.actEnd,name:s.actName})),chapterCounts:[...chapterCounts],
    sites:sites.length,parts:totalParts,minClearance,skipped,drawCallsPerSite:3,
    transparent:0,shadowCasters:0,collisionObjects:0,low};
  return world;

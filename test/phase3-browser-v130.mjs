@@ -16,7 +16,7 @@ async function run(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1&landmarkqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=143');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=144');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -24,8 +24,9 @@ async function run(kind,courses){
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
    const atmosphere=await page.evaluate(()=>window.__shiftlineAtmosphereQA);
    const landmark=await page.evaluate(()=>window.__shiftlineChapterLandmarkQA);
-   assert.equal(landmark?.version,143,'Signature landmarks not loaded '+course);
+   assert.equal(landmark?.version,144,'Signature landmarks not loaded '+course);
    assert.equal(landmark.course,course);
+   assert.ok(landmark.actBoundaries.every(a=>a.position>=a.start&&a.position<=a.end),'Signature markers outside chapter boundaries');
    assert.ok(landmark.sites>=8,'Chapter world set pieces missing '+course);
    assert.ok(landmark.chapterCounts.every(n=>n>0),'Chapter scene missing landmarks '+course);
    assert.ok(landmark.minClearance>=24,'Landmark fails whole-track collision clearance '+course);
