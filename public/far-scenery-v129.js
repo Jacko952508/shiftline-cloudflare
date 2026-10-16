@@ -68,7 +68,7 @@ function mountainGeometry(){
  }
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<sides;i++){
   const a=r*sides+i,b=r*sides+(i+1)%sides,c=(r+1)*sides+i,d=(r+1)*sides+(i+1)%sides;
-  index.push(a,b,c,b,d,c);
+  index.push(a,c,b,b,c,d);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
@@ -259,7 +259,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    materials,geometries,stride,first:-1,last:-1,motionStep:-1,dummy:new THREE.Object3D(),transform:new THREE.Matrix4()};
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('sceneryqa=1'))
   window.__shiftlineSceneryQA={course,name:profile.name,landmarks:total,nearCount,skipped,chunks:chunks.length,minClearance,chapterCounts,
-   dynamicCount,stormMountainCount:course===4?total:0,stormPoleCount:0,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:135};
+   dynamicCount,stormMountainCount:course===4?total:0,stormPoleCount:0,low,collisionObjects:0,glassSurfaces:0,shadows:0,version:136};
  return world;
 }
 export function setFarSceneryQuality(world,quality){

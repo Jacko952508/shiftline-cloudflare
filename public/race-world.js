@@ -1,5 +1,5 @@
-import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=135';
-import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=135';
+import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=136';
+import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=136';
 import{attachTunnelDetails,updateTunnelDetails,disposeTunnelDetails}from'./tunnel-detail.js?v=100';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=38';
 import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=100';
