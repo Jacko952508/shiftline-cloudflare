@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {canopyGeometry} from './race-finish-v147.js?v=147';
 import{installBiomeFloor}from'./biome-floor-v140.js?v=140';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 const noiseGLSL=`float wfHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float wfNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(wfHash(i),wfHash(i+vec2(1.,0.)),f.x),mix(wfHash(i+vec2(0.,1.)),wfHash(i+1.),f.x),f.y);}`;
@@ -37,7 +38,7 @@ export function installWorldFinish(root,track,course,materials,ground){
  for(let i=0;i<72;i++){const F=track.frame(track.length*(i+.5)/72),a=i*2.399963,r=(course===4?230:course===3?120:75)+(i%7)*28,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),width=course===4?65+i%4*24:course===3?16+i%4*8:course===5?12+i%4*5:23+i%4*12,height=course===4?120+i%5*32:course===3?35+i%5*15:course===5?15+i%4*7:35+i%5*18;
  const box=clearance.bounds(x,y+height*.4,z,width*1.25,height*.85,width*1.25);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+height*.28,z);dummy.rotation.set(0,i*1.71,0);dummy.scale.set(width,height*.58,width*.8);dummy.updateMatrix();rocks.setMatrixAt(count++,dummy.matrix);}
  rocks.count=count;rocks.instanceMatrix.needsUpdate=true;rocks.receiveShadow=true;detail.add(rocks);
- if(course===5){const leaf=new THREE.MeshStandardMaterial({color:0x416b35,roughness:.94}),bark=new THREE.MeshStandardMaterial({color:0x40372c,roughness:.97}),crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2),leaf,144),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1.6,1,9),bark,48);let trees=0,c=0;
+ if(course===5){const leaf=new THREE.MeshStandardMaterial({color:0x416b35,vertexColors:true,roughness:.94}),bark=new THREE.MeshStandardMaterial({color:0x40372c,roughness:.97}),crowns=new THREE.InstancedMesh(canopyGeometry(),leaf,144),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1.6,1,9),bark,48);let trees=0,c=0;
  for(let i=0;i<48;i++){const F=track.frame(track.length*(i+.5)/48),a=i*2.399963,r=95+i%5*23,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),h=65+i%5*10,box=clearance.bounds(x,y+h*.5,z,30,h*.55+12,30);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+h*.5,z);dummy.rotation.set(0,i,0);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(trees++,dummy.matrix);for(let k=0;k<3;k++){dummy.position.set(x+Math.sin(i+k*2)*9,y+h-8+k*4,z+Math.cos(i+k*2)*9);dummy.scale.set(14+k*2,8+k,12+k*2);dummy.updateMatrix();crowns.setMatrixAt(c++,dummy.matrix);}}
  crowns.count=c;trunks.count=trees;crowns.instanceMatrix.needsUpdate=trunks.instanceMatrix.needsUpdate=true;detail.add(crowns,trunks);
  }

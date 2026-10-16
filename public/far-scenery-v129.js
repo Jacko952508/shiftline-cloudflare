@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {canopyGeometry} from './race-finish-v147.js?v=147';
 
 // V133 / Phase 3 worldscapes: six independent distant silhouettes.
 // Keep every scenic mesh opaque, unlit by shadow maps, and separate from
@@ -118,7 +119,7 @@ function shapes(kind,quality){
   new THREE.IcosahedronGeometry(1,0)];
  case 'forest':return [
   cylinder(.34,.72,7),
-  new THREE.IcosahedronGeometry(1,low?0:1),
+  canopyGeometry(low?0:1),
   cylinder(.45,.6,6),new THREE.IcosahedronGeometry(1,0),
   cylinder(.24,.40,6)];
  default:return [
@@ -202,6 +203,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,depthWrite:true}),
   new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
+ if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;}
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
  const tint=new THREE.Color();const chapterCounts=[0,0,0,0];let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;

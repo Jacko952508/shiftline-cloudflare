@@ -1,15 +1,15 @@
-import{installWorldFinish}from'./world-finish.js?v=141';
-import{glassDetail,fixtureLighting}from'./surface-detail.js?v=38';
+import{installWorldFinish}from'./world-finish.js?v=147';
+import{glassDetail,fixtureLighting}from'./surface-detail.js?v=147';
 import * as THREE from 'three';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
 import{poseObject}from'./race-track.js?v=58';
-import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';
+import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';
 import{freezeWorld}from'./scene-performance.js';
 import{cinderAct,cinderShift}from'./cinder-colliders.js?v=58';
 const TAU=Math.PI*2;
 export function cinderGround(x,z){const r=Math.hypot(x,z+750);return -155+540*Math.exp(-(((r-610)/130)**2))+24*Math.sin(x*.006)*Math.sin(z*.005)*Math.min(1,r/420)}
 export function createCinderWorld(scene,track){
- const root=new THREE.Group(),maps=acquirePBR('metal'),rockMaps=acquirePBR('rock'),environment=hdrEnvironment(false);for(const t of [rockMaps.map,rockMaps.normalMap,rockMaps.roughnessMap,rockMaps.aoMap])t.repeat.set(128,168);scene.environment=environment;scene.environmentIntensity=.34;scene.userData.underwater=false;scene.userData.heat=true;
+ const root=new THREE.Group(),maps=acquirePBR('metal'),rockMaps=acquirePBR('rock'),environment=hdrEnvironment(false,3);for(const t of [rockMaps.map,rockMaps.normalMap,rockMaps.roughnessMap,rockMaps.aoMap])t.repeat.set(128,168);scene.environment=environment;scene.environmentIntensity=.34;scene.userData.underwater=false;scene.userData.heat=true;
  const steel=new THREE.MeshPhysicalMaterial({...maps,color:0x51535b,roughness:.77,metalness:.7,clearcoat:.12,envMapIntensity:.4,side:THREE.DoubleSide}),dark=new THREE.MeshStandardMaterial({...maps,color:0x22262e,roughness:.91,metalness:.5,side:THREE.DoubleSide}),rock=new THREE.MeshStandardMaterial({...rockMaps,color:0x44403f,roughness:.96,metalness:.03}),glass=new THREE.MeshPhysicalMaterial({color:0x88b5c1,roughness:.28,transparent:true,opacity:.018,depthWrite:false,side:THREE.DoubleSide}),glow=new THREE.MeshBasicMaterial({color:new THREE.Color(0x72ced9).multiplyScalar(1.65),toneMapped:false}),amber=new THREE.MeshBasicMaterial({color:new THREE.Color(0xff9454).multiplyScalar(1.4),toneMapped:false});glassDetail(glass);
  const chunks=[],machines=[],supports=[],dynamic=[];const add=(g,geo,mat,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=mat===steel||mat===dark;g.add(m);return m};
  // A single textured crater surface gives every exterior structure a visible foundation.

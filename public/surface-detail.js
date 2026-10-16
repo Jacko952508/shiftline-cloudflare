@@ -38,6 +38,6 @@ hullWorld=(modelMatrix*detailPosition).xyz;\n#include <project_vertex>`);
 // at a fixture boundary. Reuses the existing local light and shadow budget.
 export function fixtureLighting(w,s,base,spacing=48){
  const phase=s/spacing*Math.PI*2;
- w.key.intensity=base*(.88+.12*Math.cos(phase));
+ w.key.intensity=base*(w.fixturePower||1)*(.88+.12*Math.cos(phase));
  w.fill.intensity=(w.kind==='leviathan'?17:w.kind==='cinder'?9:14)*(.8+.2*Math.sin(phase-.7));
 }

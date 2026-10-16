@@ -1,10 +1,11 @@
-import{installWorldFinish}from'./world-finish.js?v=141';
-import{glassDetail}from'./surface-detail.js?v=38';
+import{installWorldFinish}from'./world-finish.js?v=147';
+import{glassDetail}from'./surface-detail.js?v=147';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
+import {canopyGeometry} from './race-finish-v147.js?v=147';
 import{EXPANSIONS,expansionShift,expansionAct}from'./expansion-courses.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=58';
-import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=100';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
+import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
 const TAU=Math.PI*2;
 export function expansionGround(course,x,z,endZ){
  // V141: carve into the *existing* heightfield rather than raising it.
@@ -29,7 +30,7 @@ export function expansionGround(course,x,z,endZ){
  return base-craters;
 }
 export function createExpansionWorld(scene,track){
- const course=track.course,p=EXPANSIONS[course],root=new THREE.Group(),environment=hdrEnvironment(false),metalMaps=acquirePBR('metal'),rockMaps=acquirePBR('rock');scene.environment=environment;scene.environmentIntensity=.42;scene.userData.underwater=false;scene.userData.heat=false;
+ const course=track.course,p=EXPANSIONS[course],root=new THREE.Group(),environment=hdrEnvironment(false,course),metalMaps=acquirePBR('metal'),rockMaps=acquirePBR('rock');scene.environment=environment;scene.environmentIntensity=.42;scene.userData.underwater=false;scene.userData.heat=false;
  const steel=new THREE.MeshPhysicalMaterial({...metalMaps,color:p.metal,metalness:.65,roughness:.82,clearcoat:.08,envMapIntensity:.4,side:THREE.DoubleSide}),dark=new THREE.MeshStandardMaterial({...metalMaps,color:course===5?0x24352d:0x242e3b,roughness:.92,metalness:.4,side:THREE.DoubleSide}),rock=new THREE.MeshStandardMaterial({...rockMaps,color:p.ground,roughness:.97,metalness:0}),glow=new THREE.MeshBasicMaterial({color:p.colors[0],toneMapped:false}),glass=new THREE.MeshPhysicalMaterial({color:p.colors[0],transparent:true,opacity:.025,roughness:.3,depthWrite:false,side:THREE.DoubleSide});
  glassDetail(glass);steel.roughness=.68;steel.clearcoat=.18;dark.color.setHex(course===5?0x283c30:course===6?0x29303e:0x2e3b4c);
  const clearance=trackClearance(track),sceneryBounds=[];const chunks=[],machines=[],dynamic=[],materials={steel,dark,rock,glow,glass};
@@ -51,9 +52,9 @@ export function createExpansionWorld(scene,track){
  // V139: replace thousands of paper-thin billboards with true spatial,
  // faceted crowns. Instance count is ~1/6 of the original 32-leaf-per-tree system.
  const bark=new THREE.MeshStandardMaterial({...rockMaps,color:0x51463a,roughness:1});
- const leaf=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.91,metalness:0,side:THREE.FrontSide});
+ const leaf=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.91,metalness:0,side:THREE.FrontSide});
  const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.85,1.55,1,7),bark,180);
- const foliage=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),leaf,180*5);
+ const foliage=new THREE.InstancedMesh(canopyGeometry(),leaf,180*5);
  const foliagePalette=[0x3c6638,0x4d8045,0x69924c,0x567d48,0x7d9750,0x3d7054];
  const tint=new THREE.Color();let n=0,l=0;
  for(let i=0;i<180;i++){

@@ -53,3 +53,8 @@ Corrects high-DPI iPhone race viewport scaling, avoids unused HDR target allocat
 ## V146 recovery and mobile workload
 
 Centred collision-checked recovery now resets lateral velocity, steering, bank and camera follow for both the player and AI, with skipped gates excluded from clean-pass rewards. Distant opponents keep racing but their meshes and animations are culled beyond the useful track view. Impact bursts reuse their particle vectors and palette colour.
+
+
+## V147 graphics finish
+
+Native-framebuffer anti-aliasing smooths iPhone race edges while retaining the safe direct WebKit renderer. Six smaller, course-specific HDR reflection fields, coated-alloy response and filtered specular detail balance metal highlights and shadows. Rounded, shaded, opaque canopy lobes retain existing instancing, tree placement and clearance bounds. No extra lights, draw calls or post-processing passes are introduced by the material finish.
