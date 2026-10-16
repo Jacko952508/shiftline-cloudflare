@@ -35,7 +35,7 @@ try{
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
  assert.equal(engineURL,'race-engine.js?v=136','fresh game engine URL');
- assert.equal(cssURL,'style.css?v=121','fresh garage stylesheet URL');
+ assert.equal(cssURL,'style.css?v=135','fresh garage stylesheet URL');
  await page.locator('[data-tab="garage"]').click();
  const first=await measure('01-razor-gold');
  await page.locator('[data-choice-kind="ship"][data-choice-id="0"]').click();
