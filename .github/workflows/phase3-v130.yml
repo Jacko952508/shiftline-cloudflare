@@ -1,4 +1,4 @@
-name: SHIFTLINE V134 Phase 3 Worldscapes
+name: SHIFTLINE V135 TEMPEST Landscape Recovery
 on:
   push:
     branches: [main]
@@ -6,6 +6,8 @@ on:
       - 'public/far-scenery-v129.js'
       - 'public/graphics-policy.js'
       - 'public/race-world.js'
+      - 'public/expansion-world.js'
+      - 'public/style.css'
       - 'public/race-engine.js'
       - 'public/index.html'
       - 'test/far-scenery-v130.mjs'

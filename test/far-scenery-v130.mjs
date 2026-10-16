@@ -11,7 +11,7 @@ for(let course=1;course<=6;course++){
  assert.ok(d.minClearance>=24,'Scenery crosses another piece of the route: '+d.minClearance);
  assert.equal(d.root.parent,scene);
  assert.ok(d.geometries.length===5);
- assert.ok(d.chunks.every(c=>c.meshes.length===5&&c.count<=4&&c.meshes[4].count===0));
+ assert.ok(d.chunks.every(c=>c.meshes.length===5&&c.count<=(course===4?2:4)&&c.meshes[4].count===0));
  for(const c of d.chunks)for(const mesh of c.meshes){
   assert.ok(mesh.isInstancedMesh);assert.equal(mesh.castShadow,false);
   assert.equal(mesh.material.transparent,false);assert.equal(mesh.material.depthWrite,true);
@@ -32,15 +32,16 @@ assert.ok(new Set(signatures.map(s=>s[5])).size>=3,'Biomes insufficiently unique
 for(let course=1;course<=6;course++){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
  attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
- assert.ok(d.total>25,'Auto detail unexpectedly sparse');
+ assert.ok(d.total>(course===4?12:25),'Auto detail unexpectedly sparse');
+ if(course===4){assert.equal(d.geometries[0].type,'BufferGeometry');assert.equal(d.dynamicCount,0);assert.ok(d.total<150,'Storm skyline remains overcrowded');}
  assert.ok(d.chapterCounts.every(c=>c>0),'Not all four chapters have distinct scenery on course '+course);
  assert.ok(d.chunks.some(c=>c.meshes[4].count>0),'Course-specific form was not instanced');
- assert.ok(d.nearCount>8,'Foreground band not visible on '+course+': '+d.nearCount);
+ assert.ok(d.nearCount>(course===4?3:8),'Foreground band not visible on '+course+': '+d.nearCount);
  assert.ok(d.minClearance>=24);
  updateFarScenery(world,400,12.125);const before=d.motionStep;
  updateFarScenery(world,430,12.20);assert.equal(d.motionStep,before);
  updateFarScenery(world,430,12.37);
- if([2,4,6].includes(course)){assert.ok(d.dynamicCount>0);assert.ok(d.motionStep>before)}
+ if([2,6].includes(course)){assert.ok(d.dynamicCount>0);assert.ok(d.motionStep>before)}
  else assert.equal(d.dynamicCount,0);
  assert.ok(d.chunks.some(c=>c.group.visible));disposeFarScenery(world);
  console.log('PASS V130 AUTO course '+course+' '+d.total+' '+d.dynamicCount+' animated parts');
@@ -50,10 +51,10 @@ import {setFarSceneryQuality} from '../public/far-scenery-v129.js';
 for(const course of [2,4,6]){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
  attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
- const first=d.chunks.find(c=>c.count>4);
+ const first=d.chunks.find(c=>c.count>(course===4?1:4));
  assert.ok(first,'No populated high-detail chunk');
  const original=first.count;
- setFarSceneryQuality(world,'low');assert.equal(d.low,true);assert.equal(first.meshes[0].count,4);assert.equal(first.meshes[4].count,0);
+ setFarSceneryQuality(world,'low');assert.equal(d.low,true);assert.equal(first.meshes[0].count,course===4?2:4);assert.equal(first.meshes[4].count,0);
  setFarSceneryQuality(world,'auto');assert.equal(d.low,false);assert.equal(first.meshes[0].count,original);assert.equal(first.meshes[4].count,original);
- disposeFarScenery(world);console.log('PASS V131 live LOD switch course '+course);
+ disposeFarScenery(world);console.log('PASS V135 live LOD switch course '+course);
 }
