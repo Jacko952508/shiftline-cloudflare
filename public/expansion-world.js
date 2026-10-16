@@ -1,4 +1,4 @@
-import{installWorldFinish}from'./world-finish.js?v=138';
+import{installWorldFinish}from'./world-finish.js?v=139';
 import{glassDetail}from'./surface-detail.js?v=38';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
@@ -31,9 +31,45 @@ export function createExpansionWorld(scene,track){
  for(let i=0;i<stationCount;i++){const s=track.length*(course===4?(.065+i*.10):(.025+i*.032)),F=track.frame(s),side=i%2?1:-1,x=F.p.x+side*(55+i%4*18),z=F.p.z,y=ground(x,z),g=new THREE.Group();g.position.set(x,y,z);root.add(g);const h=Math.max(28,Math.min(course===4?72:210,F.p.y-y+28));add(g,new THREE.BoxGeometry(32,3,28),steel,0,1.5);add(g,new THREE.BoxGeometry(18,h,16),dark,0,h/2+3);for(let k=0;k<5;k++){add(g,new THREE.BoxGeometry(22,.7,20),steel,0,8+k*h/5);add(g,new THREE.BoxGeometry(14,.18,.12),glow,0,9+k*h/5,10.2);}for(const side of[-1,1])add(g,new THREE.CylinderGeometry(.5,.7,h+8,8),steel,side*12,(h+8)/2);
  const rotor=new THREE.Group();rotor.position.set(0,h+13,0);g.add(rotor);add(rotor,new THREE.TorusGeometry(8,.42,8,48),steel);add(rotor,new THREE.CylinderGeometry(1.2,1.2,1.2,12),dark).rotation.x=Math.PI/2;for(let k=0;k<3;k++){const a=k*TAU/3,m=add(rotor,new THREE.BoxGeometry(6,.55,.25),steel,Math.cos(a)*4.3,Math.sin(a)*4.3,0);m.rotation.z=a;}let clear=false;for(let attempt=0;attempt<16;attempt++){if(clearance.objectClear(g)){clear=true;break;}const a=attempt*2.39996,r=130+attempt*35;g.position.set(F.p.x+Math.cos(a)*r,0,F.p.z+Math.sin(a)*r);g.position.y=ground(g.position.x,g.position.z);}if(clear){sceneryBounds.push(new THREE.Box3().setFromObject(g));machines.push({g:rotor,s,base:rotor.quaternion.clone(),phase:i});}else{root.remove(g);g.traverse(o=>o.geometry?.dispose());}}
  if(course===5){
- const bark=new THREE.MeshStandardMaterial({...rockMaps,color:0x5c4738,roughness:1}),leaf=new THREE.MeshStandardMaterial({color:0x528945,roughness:.95,side:THREE.DoubleSide}),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.65,1.4,1,8),bark,180),leafShape=new THREE.Shape();leafShape.moveTo(0,0);leafShape.quadraticCurveTo(-.55,.6,0,2.2);leafShape.quadraticCurveTo(.55,.6,0,0);const foliage=new THREE.InstancedMesh(new THREE.ShapeGeometry(leafShape,8),leaf,180*32);let n=0,l=0;
- for(let i=0;i<180;i++){const s=track.length*(i/180),F=track.frame(s),a=i*2.39996,r=35+i%7*16,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),h=28+i%5*6;if(!clearance.boxClear(clearance.bounds(x,y+h/2+5,z,20,h/2+15,20)))continue;sceneryBounds.push(clearance.bounds(x,y+h/2+5,z,20,h/2+15,20));dummy.position.set(x,y+h/2,z);dummy.rotation.set(0,0,0);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(n++,dummy.matrix);for(let k=0;k<32;k++){const a=k*2.4,rr=3+k%4*2;dummy.position.set(x+Math.cos(a)*rr,y+h-4+k%5*1.5,z+Math.sin(a)*rr);dummy.rotation.set(-.35-k%3*.3,a,Math.sin(k)*.4);dummy.scale.set(3.2,4,3.2);dummy.updateMatrix();foliage.setMatrixAt(l++,dummy.matrix);}}trunks.count=n;foliage.count=l;trunks.instanceMatrix.needsUpdate=foliage.instanceMatrix.needsUpdate=true;root.add(trunks,foliage);
- const wind={value:0};leaf.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x += sin(windTime*1.2+transformed.y*.8)*.08*transformed.y;');};leaf.customProgramCacheKey=()=> 'verdant-leaf-wind-v49';materials.leaf=leaf;dynamic.push(foliage);
+ // V139: replace thousands of paper-thin billboards with true spatial,
+ // faceted crowns. Instance count is ~1/6 of the original 32-leaf-per-tree system.
+ const bark=new THREE.MeshStandardMaterial({...rockMaps,color:0x51463a,roughness:1});
+ const leaf=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.91,metalness:0,side:THREE.FrontSide});
+ const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.85,1.55,1,7),bark,180);
+ const foliage=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),leaf,180*5);
+ const foliagePalette=[0x3c6638,0x4d8045,0x69924c,0x567d48,0x7d9750,0x3d7054];
+ const tint=new THREE.Color();let n=0,l=0;
+ for(let i=0;i<180;i++){
+  const s=track.length*(i/180),F=track.frame(s),a=i*2.39996,r=65+i%7*22;
+  const x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z);
+  const h=30+i%6*5,wide=11+i%4*1.35;
+  const bound=clearance.bounds(x,y+h*.63,z,25,h*.61+14,25);
+  if(!clearance.boxClear(bound))continue;
+  sceneryBounds.push(bound);
+  dummy.position.set(x,y+h/2,z);dummy.rotation.set(0,i*.24,0);
+  dummy.scale.set(1.45+(i%3)*.25,h,1.45+(i%3)*.25);
+  dummy.updateMatrix();trunks.setMatrixAt(n++,dummy.matrix);
+  for(let k=0;k<5;k++){
+   const outer=k>0,angle=k*TAU/4+i*1.41;
+   const rr=outer?wide*.57:0;
+   const heightOffset=outer?((k%2)*5-4):4;
+   dummy.position.set(x+Math.cos(angle)*rr,y+h+heightOffset,z+Math.sin(angle)*rr);
+   dummy.rotation.set(.08*Math.sin(i+k),angle,Math.sin(k+i*.3)*.08);
+   const crownWidth=outer?wide*.78:wide*1.05;
+   dummy.scale.set(crownWidth,outer?9+(i+k)%3*2:13+(i%3)*2,crownWidth*.9);
+   dummy.updateMatrix();foliage.setMatrixAt(l,dummy.matrix);
+   tint.setHex(foliagePalette[(i*3+k)%foliagePalette.length]);
+   foliage.setColorAt(l++,tint);
+  }
+ }
+ trunks.count=n;foliage.count=l;
+ trunks.instanceMatrix.needsUpdate=foliage.instanceMatrix.needsUpdate=true;
+ foliage.instanceColor.needsUpdate=true;
+ trunks.castShadow=false;foliage.castShadow=false;
+ root.add(trunks,foliage);
+ if(typeof window!=='undefined'&&location.search.includes('sceneryqa=1'))
+  window.__shiftlineFoliageQA={version:139,trees:n,crowns:l,partsPerTree:5,geometry:foliage.geometry.type,usesInstancedColors:true,collisionObjects:0};
+ const wind={value:0};leaf.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x += sin(windTime*.8+transformed.y*.7)*.018*transformed.y;');};leaf.customProgramCacheKey=()=> 'verdant-leaf-wind-v139';materials.leaf=leaf;dynamic.push(foliage);
  // Waterfalls are sheets tied to rock escarpments, with scrolling surface texture.
  for(let i=0;i<5;i++){const s=track.length*(.27+i*.035),F=track.frame(s),x=F.p.x+65,z=F.p.z,y=ground(x,z),wallBox=clearance.bounds(x,y+75,z,17,75,11);if(!clearance.boxClear(wallBox))continue;sceneryBounds.push(wallBox);const wall=add(root,new THREE.BoxGeometry(34,150,20),rock,x,y+75,z);const water=new THREE.MeshPhysicalMaterial({color:0x83c9d4,roughness:.32,transparent:true,opacity:.45,metalness:.05,side:THREE.DoubleSide});const sheet=add(root,new THREE.PlaneGeometry(28,145,4,16),water,x,y+75,z+10.2);machines.push({g:sheet,s,water:true,phase:i});}materials.wind=wind;
  }

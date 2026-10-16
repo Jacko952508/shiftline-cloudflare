@@ -16,7 +16,7 @@ async function run(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=138');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=139');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -29,6 +29,16 @@ async function run(kind,courses){
    assert.ok(info.nearCount>(course===4?3:8),'Foreground landmarks missing on course '+course);
    if(course===4){assert.ok(info.stormMountainCount>12,'TEMPEST ridges missing');assert.equal(info.stormPoleCount,0,'Floating pole forest returned');}
    assert.equal(info.collisionObjects,0);assert.equal(info.glassSurfaces,0);assert.equal(info.shadows,0);
+   if(course===5){
+    const forest=await page.evaluate(()=>window.__shiftlineFoliageQA);
+    assert.equal(forest?.version,139,'New VERDANT canopies did not load');
+    assert.ok(forest.trees>=20,'Not enough trees survived course clearance tests');
+    assert.equal(forest.crowns,forest.trees*5);
+    assert.equal(forest.geometry,'IcosahedronGeometry');
+    assert.equal(forest.usesInstancedColors,true);
+    assert.equal(forest.collisionObjects,0);
+    console.log('PASS V139 foliage '+JSON.stringify(forest));
+   }
    const ss=await page.locator('#game').screenshot({timeout:65000});
    const png=PNG.sync.read(ss);
    let colored=0,bright=0;

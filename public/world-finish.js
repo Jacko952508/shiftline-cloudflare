@@ -13,15 +13,16 @@ function surface(material,course,terrain=false){
   :course===4
   ?'mix(mix(vec3(.13,.16,.21),vec3(.36,.39,.41),wfRock),vec3(.63,.69,.72),smoothstep(120.,310.,wfWorld.y)*smoothstep(.31,.84,wfNormal.y))'
   :course===5
-  ?'mix(vec3(.085,.105,.073),mix(vec3(.085,.195,.092),vec3(.23,.31,.14),wfRock),smoothstep(.20,.79,wfNormal.y))*(.83+.17*wfStrata)'
+  ?'mix(mix(vec3(.092,.137,.069),vec3(.197,.272,.107),smoothstep(.23,.78,wfMacro)),mix(vec3(.155,.103,.071),vec3(.25,.174,.104),wfRock),clamp((.65-wfNormal.y)*.65+(wfRock-.57)*.9,0.,.63))*(.86+.14*wfStrata)'
   :course===6
   ?'mix(vec3(.135,.14,.20),vec3(.35,.32,.42),wfRock*.7+wfStrata*.23)+vec3(.024,.016,.048)*smoothstep(.63,.81,wfRock)*smoothstep(.52,.86,wfStrata)'
   :'mix(vec3(.20,.19,.22),vec3(.38,.36,.35),wfRock*.6+wfStrata*.22)';
- const detail=terrain?`float wfRock=wfNoise(wfWorld.xz*.013)*.6+wfNoise(wfWorld.xz*.075)*.3+wfNoise(wfWorld.xz*.37)*.1;float wfStrata=.5+.5*sin(wfWorld.y*.15+wfNoise(wfWorld.xz*.016)*5.);diffuseColor.rgb=mix(diffuseColor.rgb,${terrainColor},.78);float wfGrain=mix(.5,wfNoise(wfWorld.xz*.8),1.-smoothstep(.35,1.,length(fwidth(wfWorld.xz*.8))));diffuseColor.rgb*=.83+.17*wfGrain;`:`vec2 wfGrid=wfUv*vec2(6.,3.);vec2 wfCell=fract(wfGrid);float wfAA=clamp(max(fwidth(wfGrid.x),fwidth(wfGrid.y)),.001,.5);float wfEdge=min(min(wfCell.x,1.-wfCell.x),min(wfCell.y,1.-wfCell.y));float wfPanel=mix(smoothstep(.012-wfAA,.035+wfAA,wfEdge),.94,smoothstep(.12,.35,wfAA));float wfBrushFade=1.-smoothstep(.1,.6,length(fwidth(wfUv*vec2(240.,14.))));float wfBrushed=mix(.5,wfNoise(wfUv*vec2(240.,14.)),wfBrushFade);float wfDirt=wfNoise(wfUv*vec2(7.,17.));diffuseColor.rgb*=mix(.52,1.,wfPanel)*(.91+.09*wfBrushed)*(.92+.08*wfDirt);diffuseColor.rgb+=vec3(.025)*wfPanel;`;
+ const macro=course===5?'float wfMacro=wfNoise(wfWorld.xz*.0027);':'';
+ const detail=terrain?`float wfRock=wfNoise(wfWorld.xz*.013)*.6+wfNoise(wfWorld.xz*.075)*.3+wfNoise(wfWorld.xz*.37)*.1;float wfStrata=.5+.5*sin(wfWorld.y*.15+wfNoise(wfWorld.xz*.016)*5.);${macro}diffuseColor.rgb=mix(diffuseColor.rgb,${terrainColor},.82);float wfGrain=mix(.5,wfNoise(wfWorld.xz*.8),1.-smoothstep(.35,1.,length(fwidth(wfWorld.xz*.8))));diffuseColor.rgb*=.83+.17*wfGrain;`:`vec2 wfGrid=wfUv*vec2(6.,3.);vec2 wfCell=fract(wfGrid);float wfAA=clamp(max(fwidth(wfGrid.x),fwidth(wfGrid.y)),.001,.5);float wfEdge=min(min(wfCell.x,1.-wfCell.x),min(wfCell.y,1.-wfCell.y));float wfPanel=mix(smoothstep(.012-wfAA,.035+wfAA,wfEdge),.94,smoothstep(.12,.35,wfAA));float wfBrushFade=1.-smoothstep(.1,.6,length(fwidth(wfUv*vec2(240.,14.))));float wfBrushed=mix(.5,wfNoise(wfUv*vec2(240.,14.)),wfBrushFade);float wfDirt=wfNoise(wfUv*vec2(7.,17.));diffuseColor.rgb*=mix(.52,1.,wfPanel)*(.91+.09*wfBrushed)*(.92+.08*wfDirt);diffuseColor.rgb+=vec3(.025)*wfPanel;`;
  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n'+detail);
  if(!terrain)shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor+(1.-wfPanel)*.15+(wfDirt-.5)*.08,.48,.98);');
  };
- material.customProgramCacheKey=()=> 'world-finish-138-'+course+'-'+terrain;
+ material.customProgramCacheKey=()=> 'world-finish-139-'+course+'-'+terrain;
 }
 export function installWorldFinish(root,track,course,materials,ground){
  for(const m of [materials.steel,materials.dark])if(m)surface(m,course);
