@@ -32,6 +32,16 @@ Once the original Hatchable site is accessible, open [SHIFTLINE save export](htt
 - The app is static, with no Hatchable API functions or database required.
 - `public/_headers` adds Cloudflare caching and security headers.
 
+## Workers Builds verification
+
+A successful GitHub Actions source test does **not** prove the Worker deployed.
+The Cloudflare GitHub check named **Workers Builds: shiftline-game** must
+finish successfully, and the production HTML must serve the same versioned
+`race-engine.js?v=...` reference as `public/index.html`. If the check fails
+before uploading assets, use **Cloudflare → Workers & Pages → shiftline-game →
+Deployments / Builds** to inspect and retry that deployment. Do not rely on a
+cache-busting query parameter alone; it cannot publish missing files.
+
 ## Troubleshooting
 
 Open [/diagnostics.html](https://shiftline-game.beyondthebox.workers.dev/diagnostics.html) on the deployed site to check whether Cloudflare actually serves HTML, JS modules, the Three.js engine, and MP3 assets with correct MIME types. If a file returns a 200 HTML page instead of JavaScript, check Workers Builds **Deploy command** is `npx wrangler deploy`, root is repo root, and `wrangler.jsonc` contains `assets.directory: "./public"`. The main page displays a module-load error with a link to diagnostics if startup fails. The origin cannot be live-tested from the current GitHub tool connection.
