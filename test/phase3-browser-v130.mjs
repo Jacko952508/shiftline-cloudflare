@@ -14,14 +14,19 @@ async function run(kind,courses){
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|Shader Error|VALIDATE_STATUS/i.test(e.text()))shaders.push(e.text())});
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
-  await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1',{waitUntil:'domcontentloaded',timeout:65000});
+  await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=141');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=142');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
    await page.waitForFunction(c=>window.__shiftlineSceneryQA?.course===c&&window.__shiftlineSceneryQA.version===136,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
+   const atmosphere=await page.evaluate(()=>window.__shiftlineAtmosphereQA);
+   assert.equal(atmosphere?.version,142,'Atmosphere module missing on course '+course);
+   assert.equal(atmosphere.course,course);
+   assert.ok(atmosphere.density>0&&atmosphere.density<.002);
+   assert.equal(atmosphere.addedPasses,0);assert.equal(atmosphere.addedGeometry,0);
    assert.ok(info.minClearance>=24);
    assert.ok(info.landmarks>20);
    assert.equal(info.chapterCounts.reduce((a,b)=>a+b,0),info.landmarks);

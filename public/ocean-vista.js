@@ -30,7 +30,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varyi
     chunks.push({g,s});
   }
   // A luminous water gradient replaces the flat dark void beyond distant scenery.
-  const waterMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{time:{value:0}},vertexShader:`varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 direction;uniform float time;void main(){vec3 d=normalize(direction);float top=smoothstep(-.45,.75,d.y);vec3 c=mix(vec3(.006,.026,.065),vec3(.065,.24,.31),top);float shaft=pow(max(0.,sin(d.x*24.+d.z*16.+time*.015)),18.)*top*.035;c+=shaft*vec3(.25,.6,.55);gl_FragColor=vec4(c,1.);}`});
+  const waterMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{time:{value:0},chapterTint:{value:new THREE.Color(0x145369)}},vertexShader:`varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 direction;uniform float time;uniform vec3 chapterTint;void main(){vec3 d=normalize(direction);float top=smoothstep(-.45,.75,d.y);vec3 c=mix(vec3(.006,.026,.065),vec3(.065,.24,.31),top);float shaft=pow(max(0.,sin(d.x*24.+d.z*16.+time*.015)),18.)*top*.035;c+=shaft*vec3(.25,.6,.55);gl_FragColor=vec4(mix(c,chapterTint,.12),1.);}`});
   const water=new THREE.Mesh(new THREE.SphereGeometry(900,40,24),waterMat);water.frustumCulled=false;water.renderOrder=-10;root.add(water);
   return{chunks,kelp,water,track,seabed};
 }

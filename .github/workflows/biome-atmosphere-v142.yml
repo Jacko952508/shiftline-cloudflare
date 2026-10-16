@@ -1,0 +1,35 @@
+name: SHIFTLINE V142 Chapter Atmosphere
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/biome-atmosphere-v142.js'
+      - 'public/race-world.js'
+      - 'public/cinder-world.js'
+      - 'public/ocean-vista.js'
+      - 'public/leviathan-world.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/biome-atmosphere-v142.mjs'
+      - '.github/workflows/biome-atmosphere-v142.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atmosphere:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check syntax
+        run: |
+          node --check public/biome-atmosphere-v142.js
+          node --check public/race-world.js
+          node --check public/cinder-world.js
+          node --check public/ocean-vista.js
+          node --check public/race-engine.js
+      - name: Run six-course fog and sky tests
+        run: node --experimental-loader ./test/three-loader.mjs test/biome-atmosphere-v142.mjs
