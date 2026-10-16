@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import{installBiomeFloor}from'./biome-floor-v140.js?v=140';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 const noiseGLSL=`float wfHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float wfNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(wfHash(i),wfHash(i+vec2(1.,0.)),f.x),mix(wfHash(i+vec2(0.,1.)),wfHash(i+1.),f.x),f.y);}`;
 function surface(material,course,terrain=false){
@@ -39,5 +40,6 @@ export function installWorldFinish(root,track,course,materials,ground){
  for(let i=0;i<48;i++){const F=track.frame(track.length*(i+.5)/48),a=i*2.399963,r=95+i%5*23,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),h=65+i%5*10,box=clearance.bounds(x,y+h*.5,z,30,h*.55+12,30);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+h*.5,z);dummy.rotation.set(0,i,0);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(trees++,dummy.matrix);for(let k=0;k<3;k++){dummy.position.set(x+Math.sin(i+k*2)*9,y+h-8+k*4,z+Math.cos(i+k*2)*9);dummy.scale.set(14+k*2,8+k,12+k*2);dummy.updateMatrix();crowns.setMatrixAt(c++,dummy.matrix);}}
  crowns.count=c;trunks.count=trees;crowns.instanceMatrix.needsUpdate=trunks.instanceMatrix.needsUpdate=true;detail.add(crowns,trunks);
  }
- return{bounds,detail};
+ const floor=installBiomeFloor(detail,track,course,ground,clearance);
+ return{bounds,detail,floor};
 }

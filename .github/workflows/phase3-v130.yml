@@ -1,8 +1,10 @@
-name: SHIFTLINE V139 Verdant Forest Canopies
+name: SHIFTLINE V140 Ground and Landscape Detail
 on:
   push:
     branches: [main]
     paths:
+      - 'public/biome-floor-v140.js'
+      - 'public/world-finish.js'
       - 'public/far-scenery-v129.js'
       - 'public/graphics-policy.js'
       - 'public/race-world.js'
@@ -10,6 +12,7 @@ on:
       - 'public/style.css'
       - 'public/race-engine.js'
       - 'public/index.html'
+      - 'test/biome-floor-v140.mjs'
       - 'test/far-scenery-v130.mjs'
       - 'test/phase3-browser-v130.mjs'
       - '.github/workflows/phase3-v130.yml'
@@ -30,8 +33,12 @@ jobs:
           node --check public/far-scenery-v129.js
           node --check public/race-world.js
           node --check public/race-engine.js
+          node --check public/biome-floor-v140.js
+          node --check public/world-finish.js
       - name: Six-world geometry, clearance, animation and quality tests
-        run: node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+          node --experimental-loader ./test/three-loader.mjs test/biome-floor-v140.mjs
   browsers:
     runs-on: ubuntu-latest
     timeout-minutes: 20

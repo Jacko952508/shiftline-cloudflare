@@ -14,9 +14,9 @@ async function run(kind,courses){
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|Shader Error|VALIDATE_STATUS/i.test(e.text()))shaders.push(e.text())});
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
-  await page.goto(base+'/?shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
+  await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=139');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=140');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -29,6 +29,14 @@ async function run(kind,courses){
    assert.ok(info.nearCount>(course===4?3:8),'Foreground landmarks missing on course '+course);
    if(course===4){assert.ok(info.stormMountainCount>12,'TEMPEST ridges missing');assert.equal(info.stormPoleCount,0,'Floating pole forest returned');}
    assert.equal(info.collisionObjects,0);assert.equal(info.glassSurfaces,0);assert.equal(info.shadows,0);
+   if(course>=3){
+    const floor=await page.evaluate(()=>window.__shiftlineGroundQA);
+    assert.equal(floor?.version,140,'V140 ground details have not loaded on '+course);
+    assert.equal(floor.course,course);assert.ok(floor.clusters>25);
+    assert.equal(floor.drawCalls,2);assert.equal(floor.collisionObjects,0);
+    assert.equal(floor.transparentSurfaces,0);assert.equal(floor.shadows,0);
+    console.log('PASS V140 floor '+JSON.stringify(floor));
+   }
    if(course===5){
     const forest=await page.evaluate(()=>window.__shiftlineFoliageQA);
     assert.equal(forest?.version,139,'New VERDANT canopies did not load');
