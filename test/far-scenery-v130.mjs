@@ -51,9 +51,9 @@ for(let course=1;course<=6;course++){
   updateFarScenery(world,pos,22);colors.push(d.materials[0].color.clone());
   assert.equal(scene.fog,originalFog,'No fog is allowed across the flight path');
  }
- assert.ok(colors.every((color,i)=>i===0||color.distanceTo(colors[i-1])<.07),
+ assert.ok(colors.every((color,i)=>i===0||Math.hypot(color.r-colors[i-1].r,color.g-colors[i-1].g,color.b-colors[i-1].b)<.07),
   'Chapter color jumps on course '+course);
- assert.ok(colors[0].distanceTo(colors.at(-1))>.0008,'Missing chapter haze transition on '+course);
+ assert.ok(Math.hypot(colors[0].r-colors.at(-1).r,colors[0].g-colors.at(-1).g,colors[0].b-colors.at(-1).b)>.0008,'Missing chapter haze transition on '+course);
  disposeFarScenery(world);
  console.log('PASS V130 AUTO course '+course+' '+d.total+' '+d.dynamicCount+' animated parts');
 }
