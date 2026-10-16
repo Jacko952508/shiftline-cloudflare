@@ -23,6 +23,7 @@ try{
  let state=await page.evaluate(()=>({view:window.__shiftlineRaceVisualQA,rocket:window.__shiftlineTrailQA,layout:{width:document.querySelector('#game').width,height:document.querySelector('#game').height},save:JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1'))}));
  assert.equal(state.view.safeMobile,true);
  assert.equal(state.view.offscreenPasses,0,'iPhone race must avoid offscreen HDR tiles');
+ assert.deepEqual(state.view.viewport,[390,844],'High-DPI race viewport must use logical pixels');
  assert.equal(state.rocket.raceView,true,'race-only compact trails activated');
  assert.ok(state.rocket.length<2.8,'idle exhaust cannot cover the whole race view');
  assert.equal(state.save.records[1],112000,'saved records untouched');

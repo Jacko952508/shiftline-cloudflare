@@ -1,4 +1,4 @@
-name: SHIFTLINE V144 Worldscapes and Signature Landmarks
+name: SHIFTLINE V145 Final Regression
 on:
   push:
     branches: [main]
@@ -40,6 +40,8 @@ jobs:
           node --check public/biome-floor-v140.js
           node --check public/world-finish.js
           node --check public/expansion-world.js
+      - name: Final stability regressions
+        run: node --experimental-loader ./test/three-loader.mjs test/final-polish-v145.mjs
       - name: Six-world geometry, clearance, animation and quality tests
         run: |
           node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
@@ -62,6 +64,8 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v130.log 2>&1 &
           sleep 2
+      - name: High-DPI iPhone viewport, cockpit and race
+        run: node test/race-visual-v123.mjs
       - name: Inspect all six maps and race in Chromium and iPhone WebKit
         run: node test/phase3-browser-v130.mjs
       - uses: actions/upload-artifact@v4
