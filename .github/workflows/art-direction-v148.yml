@@ -89,7 +89,7 @@ jobs:
             sleep 6
           done
           cmp public/index.html /tmp/live.html
-          for file in art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js; do
+          for file in art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js far-scenery-v129.js; do
             curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=148" -o /tmp/live-module.js
             cmp "public/$file" /tmp/live-module.js
             echo "PASS public source matches $file"

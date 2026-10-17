@@ -10,8 +10,8 @@ for(const [w,h,d,b]of [[1,1,1,.055],[.12,1.45,5.2,.025],[.09,.13,.22,.02]]){
  }
  assert.ok(p.count<400,'Decorative hardware triangle budget');g.dispose();
 }
-for(const detail of [0,1]){
- const g=weatheredRock(detail),p=g.attributes.position;
+for(const detail of [0,1,2])for(const smooth of [false,true]){
+ const g=weatheredRock(detail,smooth),p=g.attributes.position;
  for(let i=0;i<p.count;i++)assert.ok(Math.hypot(p.getX(i),p.getY(i),p.getZ(i))<=1+1e-6,'Rock escapes clearance sphere');
  g.dispose();
 }

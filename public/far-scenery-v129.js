@@ -115,9 +115,9 @@ function shapes(kind,quality){
   new THREE.OctahedronGeometry(1,0),
   cylinder(.38,.44,7)];
  case 'storm':return [
-  mountainGeometry(),new THREE.IcosahedronGeometry(1,0),
-  new THREE.IcosahedronGeometry(1,0),new THREE.OctahedronGeometry(1,0),
-  new THREE.IcosahedronGeometry(1,0)];
+  mountainGeometry(),weatheredRock(low?0:2,true),
+  weatheredRock(low?0:2,true),new THREE.OctahedronGeometry(1,0),
+  weatheredRock(low?0:2,true)];
  case 'forest':return [
   cylinder(.34,.72,7),
   canopyGeometry(low?0:1),
@@ -205,6 +205,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
  if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;finishSurface(materials[1],'canopy',course);}
+ if(course===4)for(const i of [0,1,2,4])materials[i].flatShading=false;
  for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':'landscape',course);
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();

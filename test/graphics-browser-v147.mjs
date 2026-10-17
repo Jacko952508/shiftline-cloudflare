@@ -34,6 +34,7 @@ async function check(kind,courses){
    console.log('PASS V147 '+kind.name()+' course '+course+' '+JSON.stringify(info));
    await page.locator('#obsClose').click();
   }
+  if(process.env.SHIFTLINE_ART_SKIP_RACE==='1'){assert.deepEqual(errors,[]);assert.deepEqual(shaders,[]);return;}
   await page.evaluate(()=>document.querySelector('[data-course="1"]').click());
   await page.locator('#launch').click({timeout:25000});
   await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off'),null,{timeout:170000});
@@ -53,5 +54,6 @@ async function check(kind,courses){
   console.log('PASS V147 native race, MSAA, cockpit and saved record '+kind.name()+' '+JSON.stringify(state));
  }finally{await browser.close()}
 }
-await check(chromium,[1,2,3,4,5,6]);
-await check(webkit,[1,5]);
+const selected=process.env.SHIFTLINE_ART_COURSES?.split(',').map(Number);
+await check(chromium,selected||[1,2,3,4,5,6]);
+await check(webkit,selected||[1,5]);

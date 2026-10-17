@@ -101,14 +101,14 @@ export function bevelBox(width,height,depth,bevel=.04){
  g.translate(0,0,-depth*.5+b);g.computeBoundingBox();return g;
 }
 
-export function weatheredRock(detail=1){
+export function weatheredRock(detail=1,smooth=false){
  const g=new THREE.IcosahedronGeometry(1,detail),p=g.attributes.position;
  for(let i=0;i<p.count;i++){
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i),r=Math.hypot(x,y,z);
   const k=(.86+.075*Math.sin(x*9+y*4)*Math.cos(z*7)+.05*Math.sin(y*13-z*5))/r;
   p.setXYZ(i,x*k,y*k,z*k);
  }
- g.computeVertexNormals();g.computeBoundingSphere();return g;
+ g.computeVertexNormals();if(smooth){const n=g.attributes.normal;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),r=Math.hypot(x,y,z);n.setXYZ(i,x/r,y/r,z/r);}}g.computeBoundingSphere();return g;
 }
 
 export function skylineBlock(){
