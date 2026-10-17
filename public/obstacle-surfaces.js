@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishSurface,bevelBox} from './art-direction-v148.js?v=148';
 
 // Compact, procedural PBR atlases for the race hazards. One 256px atlas per
 // course, plus a separate organic finish for Leviathan's reef structure.
@@ -85,7 +86,7 @@ export function makeObstacleMaterial(obstacle){
  const course=obstacle.course,organic=course===2&&obstacle.kind==='reef',t=THEMES[course]||THEMES[1],maps=atlas(course,organic);
  obstacle.surfaceAtlasKey=course+(organic?':reef':'');
  const mat=new THREE.MeshStandardMaterial({...maps,color:organic?0xb69d87:t.base,metalness:organic?.13:t.metalness,roughness:organic?.94:t.roughness,normalScale:new THREE.Vector2(organic?.32:.48,organic?.32:.48),emissive:t.accent,emissiveIntensity:course===6?.23:course===3?.20:.14,side:THREE.FrontSide});
- return mat;
+ finishSurface(mat,organic?'organic':'obstacle',course);return mat;
 }
 export function releaseObstacleSurface(obstacle){
  const key=obstacle.surfaceAtlasKey;if(!key)return;obstacle.surfaceAtlasKey=null;
@@ -112,7 +113,7 @@ export function detailObstacleSolid(obstacle,mesh,shape){
  }
 }
 export function makeInstancedRingClamps(obstacle,shape){
- const count=18,geo=new THREE.BoxGeometry(shape.tube*.46,shape.tube*.24,shape.tube*.22);
+ const count=18,geo=bevelBox(shape.tube*.46,shape.tube*.24,shape.tube*.22,.012);
  const metal=THEMES[obstacle.course]||THEMES[1],mat=new THREE.MeshStandardMaterial({color:metal.base,roughness:.48,metalness:.8});
  const band=new THREE.InstancedMesh(geo,mat,count),dummy=new THREE.Object3D();
  for(let j=0;j<count;j++){const a=j*TAU/count;dummy.position.set((shape.x||0)+Math.cos(a)*shape.R,(shape.y||0)+Math.sin(a)*shape.R,shape.tube*.98);dummy.rotation.z=a;dummy.updateMatrix();band.setMatrixAt(j,dummy.matrix)}

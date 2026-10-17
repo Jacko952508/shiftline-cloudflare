@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishSurface} from './art-direction-v148.js?v=148';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
 import{installBiomeFloor}from'./biome-floor-v140.js?v=140';
 import{trackClearance}from'./scenery-clearance.js?v=51';
@@ -29,7 +30,7 @@ function surface(material,course,terrain=false){
 }
 export function installWorldFinish(root,track,course,materials,ground){
  for(const m of [materials.steel,materials.dark])if(m)surface(m,course);
- if(materials.rock)surface(materials.rock,course,true);
+ if(materials.rock){surface(materials.rock,course,true);finishSurface(materials.rock,'landscape',course);}
  const detail=new THREE.Group();detail.name='biome-exterior-detail';root.add(detail);
  const clearance=trackClearance(track),bounds=[],dummy=new THREE.Object3D(),rockMat=materials.rock;
  const rockGeo=new THREE.IcosahedronGeometry(1,2),positions=rockGeo.attributes.position;
@@ -40,7 +41,7 @@ export function installWorldFinish(root,track,course,materials,ground){
  rocks.count=count;rocks.instanceMatrix.needsUpdate=true;rocks.receiveShadow=true;detail.add(rocks);
  if(course===5){const leaf=new THREE.MeshStandardMaterial({color:0x416b35,vertexColors:true,roughness:.94}),bark=new THREE.MeshStandardMaterial({color:0x40372c,roughness:.97}),crowns=new THREE.InstancedMesh(canopyGeometry(),leaf,144),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1.6,1,9),bark,48);let trees=0,c=0;
  for(let i=0;i<48;i++){const F=track.frame(track.length*(i+.5)/48),a=i*2.399963,r=95+i%5*23,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),h=65+i%5*10,box=clearance.bounds(x,y+h*.5,z,30,h*.55+12,30);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+h*.5,z);dummy.rotation.set(0,i,0);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(trees++,dummy.matrix);for(let k=0;k<3;k++){dummy.position.set(x+Math.sin(i+k*2)*9,y+h-8+k*4,z+Math.cos(i+k*2)*9);dummy.scale.set(14+k*2,8+k,12+k*2);dummy.updateMatrix();crowns.setMatrixAt(c++,dummy.matrix);}}
- crowns.count=c;trunks.count=trees;crowns.instanceMatrix.needsUpdate=trunks.instanceMatrix.needsUpdate=true;detail.add(crowns,trunks);
+ finishSurface(leaf,'canopy',course);finishSurface(bark,'organic',course);crowns.count=c;trunks.count=trees;crowns.instanceMatrix.needsUpdate=trunks.instanceMatrix.needsUpdate=true;detail.add(crowns,trunks);
  }
  const floor=installBiomeFloor(detail,track,course,ground,clearance);
  return{bounds,detail,floor};

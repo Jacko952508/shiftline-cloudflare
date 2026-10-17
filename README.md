@@ -58,3 +58,8 @@ Centred collision-checked recovery now resets lateral velocity, steering, bank a
 ## V147 graphics finish
 
 Native-framebuffer anti-aliasing smooths iPhone race edges while retaining the safe direct WebKit renderer. Six smaller, course-specific HDR reflection fields, coated-alloy response and filtered specular detail balance metal highlights and shadows. Rounded, shaded, opaque canopy lobes retain existing instancing, tree placement and clearance bounds. No extra lights, draw calls or post-processing passes are introduced by the material finish.
+
+
+## V148 complete surface art pass
+
+Adds fitted procedural panel seams, vents, stencil markings and filtered wear to tunnel and obstacle surfaces; bevels the existing service and obstacle hardware inside its original bounds. All six ship families receive layered coatings and manufactured surface detail while preserving their silhouettes and cosmetic selections. Distant orbital façades gain filtered window lights and stepped crowns; rock relief, leaf mottling and rounded hero canopies improve the six world backgrounds. The material shaders add no lights or rendering passes. Public-source verification compares deployed asset hashes with this commit.

@@ -1,7 +1,7 @@
 name: SHIFTLINE V147 Graphics Finish
 on:
   push:
-    branches: [graphics-v147, main]
+    branches: [graphics-v147]
     paths: ['public/**', 'test/graphics-*.mjs', '.github/workflows/graphics-v147.yml']
   workflow_dispatch:
 permissions:

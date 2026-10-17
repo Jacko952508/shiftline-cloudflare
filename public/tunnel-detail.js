@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {bevelBox} from './art-direction-v148.js?v=148';
 // Single-instance-draw architectural detail for all six worlds. All geometry sits
 // outside the playable flight radius; no changes to obstacles or hit boxes.
 const PALETTE={1:0x58c6ec,2:0x5bc9c3,3:0xe69b69,4:0x90bdfc,5:0x8bc99b,6:0xb4a1ff};
@@ -7,7 +8,7 @@ export function attachTunnelDetails(w,track,course){
  if(!w?.root||!count)return w;
  const frame=new THREE.Matrix4(),dummy=new THREE.Object3D(),to=new THREE.Vector3(),radial=new THREE.Vector3();
  const metal=w.materials?.titanium||w.materials?.bronze||w.materials?.steel||w.materials?.dark;
- const panel=new THREE.InstancedMesh(new THREE.BoxGeometry(.12,1.45,5.2),metal,count);
+ const panel=new THREE.InstancedMesh(bevelBox(.12,1.45,5.2,.025),metal,count);
  const stripeMat=new THREE.MeshBasicMaterial({color:PALETTE[course]||PALETTE[1],toneMapped:false});
  const stripe=new THREE.InstancedMesh(new THREE.BoxGeometry(.035,.07,3.65),stripeMat,count);
  const bolts=new THREE.InstancedMesh(new THREE.BoxGeometry(.09,.13,.22),metal,count*2);

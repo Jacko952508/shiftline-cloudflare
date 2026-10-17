@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=148';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
 
 // V133 / Phase 3 worldscapes: six independent distant silhouettes.
@@ -99,7 +100,7 @@ function shapes(kind,quality){
  // beacon and a distinct biome accent (disabled on Low quality).
  switch(kind){
  case 'city':return [
-  new THREE.BoxGeometry(1,1,1),
+  skylineBlock(),
   cylinder(.83,1,8),new THREE.BoxGeometry(1,1,1),
   new THREE.BoxGeometry(1,1,1),
   new THREE.TorusGeometry(1,.12,low?4:6,low?12:20)];
@@ -109,7 +110,7 @@ function shapes(kind,quality){
   new THREE.IcosahedronGeometry(1,0),
   cylinder(.12,.32,6)];
  case 'forge':return [
-  new THREE.IcosahedronGeometry(1,0),
+  weatheredRock(low?0:1),
   cylinder(.12,1,7),cylinder(.65,.83,8),
   new THREE.OctahedronGeometry(1,0),
   cylinder(.38,.44,7)];
@@ -203,7 +204,8 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,depthWrite:true}),
   new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
- if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;}
+ if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;finishSurface(materials[1],'canopy',course);}
+ for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':'landscape',course);
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
  const tint=new THREE.Color();const chapterCounts=[0,0,0,0];let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {installShipFinish} from './art-direction-v148.js?v=148';
 import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
 import{installShipExhaust}from'./ship-exhaust-v119.js?v=123';
 import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
@@ -354,6 +355,7 @@ function builder(ship,index,c,m,high=true){
  for(const side of[-1,1]){
   line([[side*.21,.14,-.42],[side*.29,.15,.14],[side*.35,.13,.45]],paint,.008);
  }
+ installShipFinish(ship,root,index,c,{...m,polished,graphite,ceramic},high);
  // Equal-width garage/race geometry independent of wing option or chosen airframe.
  root.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(root);

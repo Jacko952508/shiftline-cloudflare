@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishSurface,bevelBox} from './art-direction-v148.js?v=148';
 
 // V126: phase-two surface equipment. Everything follows an existing obstacle
 // motion group but NEVER participates in its shared physics/collider data.
@@ -99,7 +100,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
  }
  const add=(matrices,material,name)=>{
   if(!matrices.length){material.dispose();return null}
-  const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),material,matrices.length);
+  const mesh=new THREE.InstancedMesh(bevelBox(1,1,1,.055),material,matrices.length);
   for(let i=0;i<matrices.length;i++)mesh.setMatrixAt(i,matrices[i]);
   mesh.instanceMatrix.needsUpdate=true;
   mesh.frustumCulled=false; // Parent group follows its moving gameplay bounds.
@@ -107,6 +108,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
   mesh.name=name;mesh.userData.obstacleDecoration=true;
   obstacle.motion.add(mesh);return mesh;
  };
+ finishSurface(metalMaterial,'obstacle',obstacle.course);
  const solid=add(metal,metalMaterial,'V126 / forged mountings');
  const lights=add(light,trimMaterial,'V126 / hazard indicator pins');
  if(lights)obstacle.trim.push(trimMaterial);

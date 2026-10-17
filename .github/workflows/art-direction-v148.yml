@@ -1,0 +1,94 @@
+name: SHIFTLINE V148 Complete Art Pass
+on:
+  push:
+    branches: [graphics-v148, main]
+    paths: ['public/**', 'test/**', '.github/workflows/art-direction-v148.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  worlds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Geometry, materials and physics regressions
+        run: |
+          node --check public/art-direction-v148.js
+          node --experimental-loader ./test/three-loader.mjs test/art-direction-v148.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/chapter-landmarks-v143.mjs
+          node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
+      - name: Install browser dependencies
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-art.log 2>&1 &
+          sleep 2
+      - name: Inspect all six worlds, obstacles, native iPhone race and cockpit
+        env:
+          SHIFTLINE_GRAPHICS_OUTPUT: art-v148-frames
+        run: node test/graphics-browser-v147.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v148-worlds
+          path: art-v148-frames
+          if-no-files-found: ignore
+  fleet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate all six craft assemblies and exhaust
+        run: node --experimental-loader ./test/three-loader.mjs test/fleet-v121.mjs
+      - name: Install mobile browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve fleet candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-fleet.log 2>&1 &
+          sleep 2
+      - name: Verify and capture all six garage ships and paint choices
+        run: node test/garage-visible-v115.mjs
+      - name: Check iPhone WebKit showroom
+        run: node test/garage-webkit-v115.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v148-fleet
+          path: garage-visible-artifacts
+          if-no-files-found: ignore
+  production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact deployed public source
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://shiftline-game.beyondthebox.workers.dev'
+          for i in $(seq 1 30); do
+            if curl -fsSL --connect-timeout 8 --max-time 15 "$base/?release=148-$i" -o /tmp/live.html && grep -q 'race-engine.js?v=148' /tmp/live.html; then
+              break
+            fi
+            sleep 6
+          done
+          cmp public/index.html /tmp/live.html
+          for file in art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js; do
+            curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=148" -o /tmp/live-module.js
+            cmp "public/$file" /tmp/live-module.js
+            echo "PASS public source matches $file"
+          done
+          echo 'PASS Cloudflare V148 HTML and all four graphics systems match tested source'

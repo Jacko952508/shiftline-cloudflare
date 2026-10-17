@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const args=['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox'];
-const output='graphics-v147-frames';await mkdir(output,{recursive:true});
+const output=process.env.SHIFTLINE_GRAPHICS_OUTPUT||'graphics-v147-frames';await mkdir(output,{recursive:true});
 async function check(kind,courses){
  const browser=await kind.launch(kind===chromium?{headless:true,args}:{headless:true});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,
@@ -16,13 +16,14 @@ async function check(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?graphicsqa=1&shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=147');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=148');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await page.locator('#obsOpen').click({timeout:35000});
    await page.waitForFunction(n=>window.__shiftlineGraphicsQA?.course===n,course,{timeout:80000});
    const info=await page.evaluate(()=>window.__shiftlineGraphicsQA);
    assert.equal(info.version,147);assert.equal(info.addedPasses,0);assert.equal(info.addedLights,0);
+   const art=await page.evaluate(()=>window.__shiftlineArtQA);assert.equal(art?.version,148);assert.equal(art.course,course);assert.equal(art.addedPasses,0);
    assert.equal(info.contextAntialias,true,'Native-framebuffer anti-aliasing unavailable');
    await page.screenshot({path:output+'/'+kind.name()+'-course-'+course+'.png',timeout:65000});
    await page.locator('#obsScrub').evaluate(el=>{el.value='520';el.dispatchEvent(new Event('input',{bubbles:true}));});
