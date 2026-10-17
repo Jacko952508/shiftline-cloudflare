@@ -231,7 +231,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    const width=profile.spread*(course===4?.8+.45*hash(seed,4):.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
    const chapterHeight=[1,.83,1.22,.94][chapter];
    const height=profile.height*chapterHeight*(.53+.75*hash(seed,5))*(hero?1.36:1);
-   const boundsRadius=course===4?Math.hypot(width*1.45,height*.65):Math.hypot(width*2.5,height*(course===1?.86:.65));
+   const boundsRadius=course===4?Math.hypot(width*1.45,height*.90):Math.hypot(width*2.5,height*(course===1?.86:.65));
    let margin=-Infinity,distance=baseDistance,candidate=null;
    for(let attempt=0;attempt<3;attempt++){
     distance=baseDistance+attempt*82;

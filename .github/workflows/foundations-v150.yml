@@ -1,0 +1,41 @@
+name: SHIFTLINE V150 Mountain Foundations
+on:
+  push:
+    branches: [graphics-v150-foundations]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Whole-course clearance and geometry regressions
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/alpine-v150.mjs
+          node --experimental-loader ./test/three-loader.mjs test/chapter-landmarks-v143.mjs
+          node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+      - name: Install mobile browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-mountain.log 2>&1 &
+          sleep 2
+      - name: Review TEMPEST near and distant mountains in Chromium and WebKit
+        env:
+          SHIFTLINE_ART_COURSES: '4'
+          SHIFTLINE_ART_SKIP_RACE: '1'
+          SHIFTLINE_GRAPHICS_OUTPUT: foundation-v150-frames
+        run: node test/graphics-browser-v147.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v150-foundations
+          path: foundation-v150-frames
+          if-no-files-found: ignore

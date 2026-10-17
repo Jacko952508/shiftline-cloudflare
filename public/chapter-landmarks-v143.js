@@ -73,8 +73,8 @@ function recipe(course,chapter,base,w,h,seed){
    add(2,0,h*.51,0,w*.2,h*.2,w*.20);
    add(2,w*.50,h*1.08,0,w*.16,h*.22,w*.16);break;
   case 4: // Mountain observatory: low mountain mass, snow cap, lookout.
-   add(0,0,h*.44,0,w*1.2,h*.92,w*1.22);
-   add(0,w*.85,h*.29,w*.31,w*.68,h*.59,w*.70);
+   add(0,0,h*.44,0,w*1.2,h*.48,w*1.22);
+   add(0,w*.85,h*.29,w*.31,w*.68,h*.34,w*.70);
    add(1,-w*.18,h*.73,0,w*.65,h*.06,w*.67);
    add(1,0,h*.82,0,w*.14,h*.24,w*.14);
    add(1,0,h*.96,0,w*.52,h*.055,w*.12,0,turn);

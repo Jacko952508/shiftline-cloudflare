@@ -7,7 +7,7 @@ for(const low of [false,true])for(const grounded of[false,true]){
  let peaks=0;
  for(let i=0;i<p.count;i++){
   assert.ok(Math.abs(p.getX(i))<=1&&Math.abs(p.getZ(i))<=1,'Ridge footprint exceeds existing clearance volume');
-  assert.ok(p.getY(i)>=(grounded?0:-.481)&&p.getY(i)<=1.001,'Ridge height exceeds existing clearance volume');
+  assert.ok(p.getY(i)>=(grounded?-.251:-1.251)&&p.getY(i)<=1.001,'Ridge height exceeds existing clearance volume');
   assert.ok(n.getY(i)>0&&Number.isFinite(n.getX(i)+n.getZ(i)),'Heightfield has an inverted or invalid face');
   if(p.getY(i)>.6)peaks++;
  }

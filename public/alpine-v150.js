@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 // Shared indexed ridge mesh. Its footprint and top stay inside the existing
 // clearance envelopes; only the interior silhouette changes.
-export function alpineRidgeGeometry(low=false,grounded=false){
+export function alpineRidgeGeometry(low=false,grounded=false,base=grounded?-.25:-1.25){
  const segments=low?18:32,vertices=[],uv=[],indices=[];
  for(let z=0;z<=segments;z++)for(let x=0;x<=segments;x++){
   const px=x/segments*2-1,pz=z/segments*2-1;
@@ -10,7 +10,7 @@ export function alpineRidgeGeometry(low=false,grounded=false){
   const peaks=Math.max(Math.exp(-((px-.23)**2/.17+spine**2/.12)),.77*Math.exp(-((px+.43)**2/.19+(spine+.12)**2/.18)));
   const erosion=(.025*Math.sin(px*29+pz*19)+.018*Math.sin(px*47-pz*31))*edge;
   const h=THREE.MathUtils.clamp((.25*edge+.76*peaks)*edge+erosion,0,1);
-  vertices.push(px,grounded?h:-.48+h*1.48,pz);uv.push(x/segments,z/segments);
+  vertices.push(px,base+h*(1-base),pz);uv.push(x/segments,z/segments);
  }
  for(let z=0;z<segments;z++)for(let x=0;x<segments;x++){
   const a=z*(segments+1)+x,b=a+1,c=a+segments+1,d=c+1;

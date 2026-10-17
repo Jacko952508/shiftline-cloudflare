@@ -34,7 +34,7 @@ export function installWorldFinish(root,track,course,materials,ground){
  if(materials.rock){surface(materials.rock,course,true);finishSurface(materials.rock,'landscape',course);}
  const detail=new THREE.Group();detail.name='biome-exterior-detail';root.add(detail);
  const clearance=trackClearance(track),bounds=[],dummy=new THREE.Object3D(),rockMat=materials.rock;
- const rockGeo=course===4?alpineRidgeGeometry():new THREE.IcosahedronGeometry(1,2),positions=rockGeo.attributes.position;
+ const rockGeo=course===4?alpineRidgeGeometry(false,false,-1.25):new THREE.IcosahedronGeometry(1,2),positions=rockGeo.attributes.position;
  if(course!==4)for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i),k=1+.14*Math.sin(x*9+y*7+z*11)+.07*Math.sin(y*17-z*13);positions.setXYZ(i,x*k,y*k,z*k);}rockGeo.computeVertexNormals();
  const rocks=new THREE.InstancedMesh(rockGeo,rockMat,72);let count=0;
  for(let i=0;i<72;i++){const F=track.frame(track.length*(i+.5)/72),a=i*2.399963,r=(course===4?230:course===3?120:75)+(i%7)*28,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),width=course===4?65+i%4*24:course===3?16+i%4*8:course===5?12+i%4*5:23+i%4*12,height=course===4?120+i%5*32:course===3?35+i%5*15:course===5?15+i%4*7:35+i%5*18;
