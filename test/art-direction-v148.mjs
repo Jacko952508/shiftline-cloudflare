@@ -38,11 +38,13 @@ for(const role of ['ship','tunnel','obstacle','landscape','canopy','organic','ci
 for(let model=0;model<6;model++){
  const ship=new THREE.Group(),root=new THREE.Group(),hull=new THREE.MeshPhysicalMaterial(),glass=new THREE.MeshPhysicalMaterial({transparent:true,opacity:.88}),premium=model===5;
  root.add(new THREE.Mesh(new THREE.BoxGeometry(),hull),new THREE.Mesh(new THREE.BoxGeometry(),glass));
+ if(premium){hull.metalness=1;hull.roughness=.095;}
  const before=new THREE.Box3().setFromObject(root),count=root.children.length;
  installShipFinish(ship,root,model,{finish:0},{hull,glass,premium},true);
  assert.equal(root.children.length,count);assert.ok(before.equals(new THREE.Box3().setFromObject(root)),'Ship silhouette altered');
  assert.equal(glass.userData.art148,undefined,'Windscreen opacity/shader changed');assert.equal(glass.opacity,.88);
  assert.equal(ship.userData.artFinish.version,148);assert.equal(ship.userData.artFinish.materials,1);
+ if(premium){const shader={vertexShader:THREE.ShaderLib.physical.vertexShader,fragmentShader:THREE.ShaderLib.physical.fragmentShader,uniforms:{}};hull.onBeforeCompile(shader,{});assert.ok(shader.fragmentShader.includes(',.07,.96)'),'Chrome lost its mirror finish');}
  root.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});
 }
 console.log('PASS V148 hardware/rock bounds, shader composition, seven surface roles, six ship finishes and unchanged glass/silhouettes');

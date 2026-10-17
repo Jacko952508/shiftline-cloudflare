@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: art-v148-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   worlds:
     runs-on: ubuntu-latest

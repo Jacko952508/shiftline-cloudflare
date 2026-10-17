@@ -11,7 +11,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
 
 export function finishSurface(material,role='tunnel',course=1){
  if(!material||material.isMeshBasicMaterial||material.isShaderMaterial)return material;
- const signature=role+'-'+course;
+ const mirror=role==='ship'&&material.metalness>.96&&material.roughness<.2;
+ const signature=role+'-'+course+(mirror?'-mirror':'');
  if(material.userData.art148===signature)return material;
  if(material.userData.art148)throw Error('Material has incompatible art roles');
  material.userData.art148=signature;
@@ -80,7 +81,7 @@ export function finishSurface(material,role='tunnel',course=1){
     diffuseColor.rgb+=vec3(.027)*adBevel;
     diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*${tint},adMark*${ship?'.24':'.36'});
     diffuseColor.rgb*=.95+.05*adWear;`;
-   normal=`roughnessFactor=clamp(roughnessFactor+adSeam*adFade*.10+(adWear-.5)*.055,${ship?'.22':'.40'},.96);`;
+   normal=`roughnessFactor=clamp(roughnessFactor+adSeam*adFade*.10+(adWear-.5)*.055,${ship?(mirror?'.07':'.22'):'.40'},.96);`;
   }
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n'+color);
   if(normal)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+normal);
