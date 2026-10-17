@@ -40,7 +40,21 @@ function recipe(course,chapter,base,w,h,seed){
    add(1,0,h*.9,0,w*1.8,w*1.8,w*.65,0,turn);
    add(1,0,h*.56,0,w*1.1,w*1.1,w*.48,.33,turn);
    add(2,0,h*1.02,0,w*.17,h*.21,w*.17);
-   add(2,w*.74,h*.80,0,w*.08,h*.14,w*.08);break;
+   add(2,w*.74,h*.80,0,w*.08,h*.14,w*.08);
+   // A common inhabited deck joins the towers; four engine bells support it.
+   add(0,0,h*.025,0,w*2.35,h*.10,w*1.65);
+   add(0,0,h*.07,w*.90,w*1.65,h*.045,w*.28);
+   add(0,0,h*.07,-w*.90,w*1.65,h*.045,w*.28);
+   for(const x of[-w*.78,w*.78])for(const z of[-w*.48,w*.48]){
+    add(0,x,-h*.045,z,w*.30,h*.11,w*.30);
+    add(1,x,-h*.105,z,w*.23,w*.23,w*.13,Math.PI/2);
+    add(2,x,-h*.145,z,w*.15,h*.07,w*.15);
+   }
+   for(const x of[-w*1.03,w*1.03]){
+    add(0,x,h*.17,0,w*.12,h*.28,w*.14,0,0,x>0?-.32:.32);
+    add(2,x,h*.085,w*.93,w*.08,h*.035,w*.16);
+   }
+   break;
   case 2: // Undersea pressure gardens: reef arches, arms and spore pearls.
    add(0,-w*.5,h*.35,0,w*.32,h*.7,w*.32,0,0,-.13);
    add(0,w*.5,h*.35,0,w*.32,h*.7,w*.32,0,0,.13);

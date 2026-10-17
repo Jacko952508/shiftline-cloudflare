@@ -14,7 +14,7 @@ try{
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:90000});
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
- assert.equal(engineURL,'race-engine.js?v=148','fresh game engine URL');
+ assert.equal(engineURL,'race-engine.js?v=149','fresh game engine URL');
  assert.equal(cssURL,'style.css?v=135','fresh garage stylesheet URL');
  await page.locator('[data-tab="garage"]').click();
  await page.waitForTimeout(2000);

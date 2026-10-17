@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {updateWorld} from './race-world.js?v=148';
+import {updateWorld} from './race-world.js?v=149';
 import {updateObstacles} from './race-obstacles.js?v=148';
 
 // SHIFTLINE Observatory: independently directed camera over the exact ACTIVE

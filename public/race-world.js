@@ -1,7 +1,7 @@
 import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=148';
-import{attachChapterLandmarks,updateChapterLandmarks,disposeChapterLandmarks}from'./chapter-landmarks-v143.js?v=148';
+import{attachChapterLandmarks,updateChapterLandmarks,disposeChapterLandmarks}from'./chapter-landmarks-v143.js?v=149';
 import{attachBiomeAtmosphere,updateBiomeAtmosphere,disposeBiomeAtmosphere}from'./biome-atmosphere-v142.js?v=148';
-import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=148';
+import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=149';
 import{attachTunnelDetails,updateTunnelDetails,disposeTunnelDetails}from'./tunnel-detail.js?v=148';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=147';
 import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=148';

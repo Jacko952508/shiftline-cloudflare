@@ -1,3 +1,4 @@
+import {orbitalCityShapes} from './orbital-city-v149.js?v=149';
 import * as THREE from 'three';
 import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=148';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
@@ -6,7 +7,7 @@ import {canopyGeometry} from './race-finish-v147.js?v=147';
 // Keep every scenic mesh opaque, unlit by shadow maps, and separate from
 // glass, hitboxes, tunnel physics, WorldFinish and the game's save format.
 const PROFILES={
- 1:{name:'ORBITAL HARBOUR / city towers, transfer decks and antennae',kind:'city',
+ 1:{name:'ORBITAL HARBOUR / engine-supported city platforms and docking decks',kind:'city',
     primary:0x536c83,secondary:0x7896ad,accent:0x5db0d3,shade:0x324657,
     base:53,height:90,spread:14},
  2:{name:'ABYSSAL GARDENS / basalt reefs, coral branches and bioluminescence',kind:'reef',
@@ -99,11 +100,7 @@ function shapes(kind,quality){
  // Five optional instanced forms: silhouette, crown, support, a chapter-coloured
  // beacon and a distinct biome accent (disabled on Low quality).
  switch(kind){
- case 'city':return [
-  skylineBlock(),
-  cylinder(.83,1,8),new THREE.BoxGeometry(1,1,1),
-  new THREE.BoxGeometry(1,1,1),
-  new THREE.TorusGeometry(1,.12,low?4:6,low?12:20)];
+ case 'city':return orbitalCityShapes(low);
  case 'reef':return [
   new THREE.IcosahedronGeometry(1,low?0:1),
   cylinder(.32,1,7),new THREE.IcosahedronGeometry(1,low?0:1),
@@ -139,10 +136,10 @@ function recipes(profile,anchor,width,height,seed,chapter){
  let parts;
  if(kind==='city'){
   parts=[
-   a(0,height*.47,0,width*.9,height*.94,width*.85),
-   a(0,height*.98,0,width*1.26,height*.1,width*1.26),
-   a(width*.25,height*.53,0,width*.12,height*.75,width*.14),
-   a(0,height*1.12,0,width*.24,height*.18,width*.24)];
+   a(0,height*.50,0,width*2.1,height*.88,width*2.1),
+   a(0,height*.035,0,width*2.8,height*.12,width*2.8),
+   a(0,-height*.055,0,width*2.1,height*.13,width*2.1),
+   a(0,-height*.15,0,width*2.1,height*.07,width*2.1)];
  }else if(kind==='reef'){
   parts=[
    a(0,height*.21,0,width*1.15,height*.45,width*1.2),
@@ -177,7 +174,7 @@ function recipes(profile,anchor,width,height,seed,chapter){
  }
  // Unique fifth silhouette attached to each structure; it is not a second
  // free-floating skyline layer and uses the same verified clearance.
- if(kind==='city')parts.push(a(0,height*(chapter===2?.62:.90),width*.12,width*(chapter===2?1.45:.82),width*(chapter===2?1.45:.85),width*.55,Math.PI/2));
+ if(kind==='city')parts.push(a(0,height*.16,0,width*1.28,width*1.28,width*.28,Math.PI/2));
  else if(kind==='reef')parts.push(a(-width*.53,height*.66,width*.25,width*.20,height*.62,width*.20,chapter===2?.55:.37));
  else if(kind==='forge')parts.push(a(width*.25,height*.90,0,width*.22,height*.45,width*.22,.16));
  else if(kind==='storm')parts.push(a(-width*.54,height*.14,width*.36,width*.40,height*.26,width*.42,-.28));
@@ -233,7 +230,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    const width=profile.spread*(course===4?.8+.45*hash(seed,4):.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
    const chapterHeight=[1,.83,1.22,.94][chapter];
    const height=profile.height*chapterHeight*(.53+.75*hash(seed,5))*(hero?1.36:1);
-   const boundsRadius=course===4?Math.hypot(width*1.45,height*.58):Math.hypot(width*2.5,height*.65);
+   const boundsRadius=course===4?Math.hypot(width*1.45,height*.58):Math.hypot(width*2.5,height*(course===1?.86:.65));
    let margin=-Infinity,distance=baseDistance,candidate=null;
    for(let attempt=0;attempt<3;attempt++){
     distance=baseDistance+attempt*82;
