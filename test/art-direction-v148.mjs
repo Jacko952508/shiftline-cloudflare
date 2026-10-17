@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {finishSurface,bevelBox,weatheredRock,skylineBlock,installShipFinish} from '../public/art-direction-v148.js';
+import {finishSurface,bevelBox,weatheredRock,skylineBlock,installShipFinish,refineAlpineGeology} from '../public/art-direction-v148.js';
 
 for(const [w,h,d,b]of [[1,1,1,.055],[.12,1.45,5.2,.025],[.09,.13,.22,.02]]){
  const g=bevelBox(w,h,d,b),p=g.attributes.position,n=g.attributes.normal;
@@ -47,4 +47,5 @@ for(let model=0;model<6;model++){
  if(premium){const shader={vertexShader:THREE.ShaderLib.physical.vertexShader,fragmentShader:THREE.ShaderLib.physical.fragmentShader,uniforms:{}};hull.onBeforeCompile(shader,{});assert.ok(shader.fragmentShader.includes(',.07,.96)'),'Chrome lost its mirror finish');}
  root.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});
 }
+const alpine=new THREE.Group(),stone=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshLambertMaterial({flatShading:true}));alpine.add(stone);const beforeRock=new Float32Array(stone.geometry.attributes.position.array);refineAlpineGeology(alpine);assert.deepEqual(stone.geometry.attributes.position.array,beforeRock,'Rock positions and clearance changed');assert.equal(stone.material.flatShading,false);stone.geometry.dispose();stone.material.dispose();
 console.log('PASS V148 hardware/rock bounds, shader composition, seven surface roles, six ship finishes and unchanged glass/silhouettes');

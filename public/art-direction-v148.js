@@ -120,6 +120,23 @@ export function skylineBlock(){
  g.computeVertexNormals();return g;
 }
 
+export function refineAlpineGeology(root){
+ const seen=new Set();
+ root.traverse(o=>{
+  const g=o.geometry,m=o.material;
+  if(!g||g.type!=='IcosahedronGeometry'||!m||m.isMeshBasicMaterial||m.isShaderMaterial)return;
+  if(!seen.has(g)){
+   seen.add(g);const p=g.attributes.position,n=g.attributes.normal;
+   for(let i=0;i<p.count;i++){
+    const x=p.getX(i),y=p.getY(i),z=p.getZ(i),r=Math.max(1.e-6,Math.hypot(x,y,z));
+    n.setXYZ(i,x/r,y/r,z/r);
+   }
+   n.needsUpdate=true;
+  }
+  m.flatShading=false;m.needsUpdate=true;
+ });
+}
+
 export function installShipFinish(ship,root,index,cosmetics,materials,high){
  const seen=new Set();
  root.traverse(o=>{for(const m of (Array.isArray(o.material)?o.material:[o.material])){
