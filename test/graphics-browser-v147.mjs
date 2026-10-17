@@ -16,7 +16,7 @@ async function check(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?graphicsqa=1&shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=149');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=150');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await page.locator('#obsOpen').click({timeout:35000});
@@ -31,11 +31,16 @@ async function check(kind,courses){
    const png=PNG.sync.read(await page.screenshot({path:output+'/'+kind.name()+'-midcourse-'+course+'.png',timeout:65000}));
    let varied=0;for(let i=0;i<png.width*png.height;i+=19){const p=i*4;if(Math.max(png.data[p],png.data[p+1],png.data[p+2])-Math.min(png.data[p],png.data[p+1],png.data[p+2])>14)varied++;}
    assert.ok(varied>500,'Blank course view '+course);
+   if(course===4&&process.env.SHIFTLINE_ALPINE_REVIEW==='1')for(const progress of[300,820]){
+    await page.locator('#obsScrub').evaluate((el,p)=>{el.value=String(p);el.dispatchEvent(new Event('input',{bubbles:true}));},progress);
+    await page.waitForTimeout(350);
+    await page.screenshot({path:output+'/'+kind.name()+'-chapter-'+progress+'-course-4.png',timeout:65000});
+   }
    console.log('PASS V147 '+kind.name()+' course '+course+' '+JSON.stringify(info));
    await page.locator('#obsClose').click();
   }
   if(process.env.SHIFTLINE_ART_SKIP_RACE==='1'){assert.deepEqual(errors,[]);assert.deepEqual(shaders,[]);return;}
-  await page.evaluate(()=>document.querySelector('[data-course="1"]').click());
+  await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),Number(process.env.SHIFTLINE_ART_RACE_COURSE||1));
   await page.locator('#launch').click({timeout:25000});
   await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off'),null,{timeout:170000});
   await page.waitForFunction(()=>window.__shiftlineRaceVisualQA?.path==='native-webkit',null,{timeout:45000});

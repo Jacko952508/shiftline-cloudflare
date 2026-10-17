@@ -6,8 +6,8 @@ export function solidDistance(p,x,y,z){return sharedSolidDistance(p,x,y,z)}
 export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,x,y,z)}
 import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-colliders.js?v=67';
 const RACING_LINES=[];for(let r=0;r<=5.8;r+=.65)for(let k=0;k<24;k++){const a=k*Math.PI*2/24;RACING_LINES.push({x:Math.cos(a)*r,y:Math.sin(a)*r})}
-import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=148';
-import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=148';
+import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=150';
+import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=150';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=67';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js';

@@ -77,7 +77,7 @@ export function finishSurface(material,role='tunnel',course=1){
     float adSlots=.5+.5*cos(adCell.x*75.4);
     adVent*=smoothstep(.52,.70,adSlots)*adFade;
     float adMark=adLine(adCell.x-.15,.016)*adLine(adCell.y-.30,.15)*adFade;
-    diffuseColor.rgb*=1.-adSeam*adFade*.24-adVent*.16;
+    diffuseColor.rgb*=1.-adSeam*adFade*${ship?'.09':'.24'}-adVent*${ship?'.07':'.16'};
     diffuseColor.rgb+=vec3(.027)*adBevel;
     diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*${tint},adMark*${ship?'.24':'.36'});
     diffuseColor.rgb*=.95+.05*adWear;`;

@@ -1,6 +1,7 @@
+import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import {orbitalCityShapes} from './orbital-city-v149.js?v=149';
 import * as THREE from 'three';
-import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=148';
+import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
 
 // V133 / Phase 3 worldscapes: six independent distant silhouettes.
@@ -112,7 +113,7 @@ function shapes(kind,quality){
   new THREE.OctahedronGeometry(1,0),
   cylinder(.38,.44,7)];
  case 'storm':return [
-  mountainGeometry(),weatheredRock(low?0:2,true),
+  alpineRidgeGeometry(low,true),weatheredRock(low?0:2,true),
   weatheredRock(low?0:2,true),new THREE.OctahedronGeometry(1,0),
   weatheredRock(low?0:2,true)];
  case 'forest':return [
@@ -156,7 +157,7 @@ function recipes(profile,anchor,width,height,seed,chapter){
   // Irregular Alpine rock mass; its lowest ring follows terrain height.
   parts=[
    a(0,0,0,width,height,width),
-   a(-width*.09,height*.83,0,width*.28,height*.23,width*.28),
+   a(-width*.18,height*.42,0,width*.18,height*.14,width*.20),
    a(width*.64,height*.18,-width*.1,width*.52,height*.32,width*.60,-.16),
    a(width*.15,height*.56,width*.48,width*.16,height*.14,width*.17)];
  }else if(kind==='forest'){
@@ -202,7 +203,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
  if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;finishSurface(materials[1],'canopy',course);}
- if(course===4)for(const i of [0,1,2,4])materials[i].flatShading=false;
+ if(course===4)for(const i of [0,1,2,4]){materials[i].flatShading=false;alpineSurface(materials[i]);}
  for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':'landscape',course);
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
@@ -230,7 +231,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
    const width=profile.spread*(course===4?.8+.45*hash(seed,4):.57+.55*hash(seed,4)),hero=(Math.floor(start/stride)%9===5&&j===1);
    const chapterHeight=[1,.83,1.22,.94][chapter];
    const height=profile.height*chapterHeight*(.53+.75*hash(seed,5))*(hero?1.36:1);
-   const boundsRadius=course===4?Math.hypot(width*1.45,height*.58):Math.hypot(width*2.5,height*(course===1?.86:.65));
+   const boundsRadius=course===4?Math.hypot(width*1.45,height*.65):Math.hypot(width*2.5,height*(course===1?.86:.65));
    let margin=-Infinity,distance=baseDistance,candidate=null;
    for(let attempt=0;attempt<3;attempt++){
     distance=baseDistance+attempt*82;

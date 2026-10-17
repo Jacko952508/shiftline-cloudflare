@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
+import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=150';
 // V120 manufactured airframe details. No gameplay physics or hitbox changes.
 const X=[.77,.46,.23,.39,.79,.28],Y=[.055,.025,-.02,-.03,.07,.02],Z=[.83,.85,.79,.75,.96,.88];
 const WY=[.064,.08,.073,.088,.28,.05],RX=[.41,.45,.49,.47,.45,.47];

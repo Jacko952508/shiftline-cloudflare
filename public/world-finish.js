@@ -1,5 +1,6 @@
+import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import * as THREE from 'three';
-import {finishSurface} from './art-direction-v148.js?v=148';
+import {finishSurface} from './art-direction-v148.js?v=150';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
 import{installBiomeFloor}from'./biome-floor-v140.js?v=140';
 import{trackClearance}from'./scenery-clearance.js?v=51';
@@ -33,8 +34,8 @@ export function installWorldFinish(root,track,course,materials,ground){
  if(materials.rock){surface(materials.rock,course,true);finishSurface(materials.rock,'landscape',course);}
  const detail=new THREE.Group();detail.name='biome-exterior-detail';root.add(detail);
  const clearance=trackClearance(track),bounds=[],dummy=new THREE.Object3D(),rockMat=materials.rock;
- const rockGeo=new THREE.IcosahedronGeometry(1,2),positions=rockGeo.attributes.position;
- for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i),k=1+.14*Math.sin(x*9+y*7+z*11)+.07*Math.sin(y*17-z*13);positions.setXYZ(i,x*k,y*k,z*k);}rockGeo.computeVertexNormals();
+ const rockGeo=course===4?alpineRidgeGeometry():new THREE.IcosahedronGeometry(1,2),positions=rockGeo.attributes.position;
+ if(course!==4)for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i),k=1+.14*Math.sin(x*9+y*7+z*11)+.07*Math.sin(y*17-z*13);positions.setXYZ(i,x*k,y*k,z*k);}rockGeo.computeVertexNormals();
  const rocks=new THREE.InstancedMesh(rockGeo,rockMat,72);let count=0;
  for(let i=0;i<72;i++){const F=track.frame(track.length*(i+.5)/72),a=i*2.399963,r=(course===4?230:course===3?120:75)+(i%7)*28,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),width=course===4?65+i%4*24:course===3?16+i%4*8:course===5?12+i%4*5:23+i%4*12,height=course===4?120+i%5*32:course===3?35+i%5*15:course===5?15+i%4*7:35+i%5*18;
  const box=clearance.bounds(x,y+height*.4,z,width*1.25,height*.85,width*1.25);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+height*.28,z);dummy.rotation.set(0,i*1.71,0);dummy.scale.set(width,height*.58,width*.8);dummy.updateMatrix();rocks.setMatrixAt(count++,dummy.matrix);}
@@ -43,6 +44,7 @@ export function installWorldFinish(root,track,course,materials,ground){
  for(let i=0;i<48;i++){const F=track.frame(track.length*(i+.5)/48),a=i*2.399963,r=95+i%5*23,x=F.p.x+Math.cos(a)*r,z=F.p.z+Math.sin(a)*r,y=ground(x,z),h=65+i%5*10,box=clearance.bounds(x,y+h*.5,z,30,h*.55+12,30);if(!clearance.boxClear(box))continue;bounds.push(box);dummy.position.set(x,y+h*.5,z);dummy.rotation.set(0,i,0);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(trees++,dummy.matrix);for(let k=0;k<3;k++){dummy.position.set(x+Math.sin(i+k*2)*9,y+h-8+k*4,z+Math.cos(i+k*2)*9);dummy.scale.set(14+k*2,8+k,12+k*2);dummy.updateMatrix();crowns.setMatrixAt(c++,dummy.matrix);}}
  finishSurface(leaf,'canopy',course);finishSurface(bark,'organic',course);crowns.count=c;trunks.count=trees;crowns.instanceMatrix.needsUpdate=trunks.instanceMatrix.needsUpdate=true;detail.add(crowns,trunks);
  }
+ if(course===4)alpineSurface(rockMat);
  const floor=installBiomeFloor(detail,track,course,ground,clearance);
  return{bounds,detail,floor};
 }

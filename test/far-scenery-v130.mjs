@@ -35,7 +35,7 @@ for(let course=1;course<=6;course++){
  assert.ok(d.total>(course===4?12:25),'Auto detail unexpectedly sparse');
  if(course===4){assert.equal(d.geometries[0].type,'BufferGeometry');assert.equal(d.dynamicCount,0);
    const positions=d.geometries[0].getAttribute('position'),normals=d.geometries[0].getAttribute('normal');
-   assert.ok(positions.getX(0)*normals.getX(0)+positions.getZ(0)*normals.getZ(0)>0,'Mountain outer faces must face the camera');assert.ok(d.total<150,'Storm skyline remains overcrowded');}
+   assert.ok(Array.from({length:normals.count},(_,i)=>normals.getY(i)).every(y=>y>0),'Mountain heightfield faces must point outward above the ground');assert.ok(d.total<150,'Storm skyline remains overcrowded');}
  assert.ok(d.chapterCounts.every(c=>c>0),'Not all four chapters have distinct scenery on course '+course);
  assert.ok(d.chunks.some(c=>c.meshes[4].count>0),'Course-specific form was not instanced');
  assert.ok(d.nearCount>(course===4?3:8),'Foreground band not visible on '+course+': '+d.nearCount);

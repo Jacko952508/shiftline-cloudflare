@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {bevelBox} from './art-direction-v148.js?v=148';
+import {bevelBox} from './art-direction-v148.js?v=150';
 // Single-instance-draw architectural detail for all six worlds. All geometry sits
 // outside the playable flight radius; no changes to obstacles or hit boxes.
 const PALETTE={1:0x58c6ec,2:0x5bc9c3,3:0xe69b69,4:0x90bdfc,5:0x8bc99b,6:0xb4a1ff};

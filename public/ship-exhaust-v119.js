@@ -32,6 +32,7 @@ const vertex=[
  'uniform float uPower;',
  'uniform float uTurbulence;',
  'varying vec2 vUv;',
+ 'varying vec3 plumeNormal;varying vec3 plumeView;',
  'void main(){',
  ' vUv=uv;',
  ' vec3 p=position;',
@@ -39,7 +40,8 @@ const vertex=[
  ' float wobble=(sin(uTime*13.0+t*32.0+uv.x*6.2831)*0.027+sin(uTime*19.0-t*47.0+uv.x*11.0)*0.014)*t*t;',
  ' p.x+=wobble*(0.6+uPower*0.4)*uTurbulence;',
  ' p.y+=cos(uTime*14.0+t*31.0+uv.x*8.0)*0.024*t*t*uTurbulence;',
- ' gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);',
+ ' vec4 mv=modelViewMatrix*vec4(p,1.0);plumeNormal=normalize(normalMatrix*normal);plumeView=-mv.xyz;',
+ ' gl_Position=projectionMatrix*mv;',
  '}'
 ].join('\n');
 const fragment=[
@@ -50,19 +52,21 @@ const fragment=[
  'uniform float uOpacity;',
  'uniform float uTurbulence;',
  'varying vec2 vUv;',
+ 'varying vec3 plumeNormal;varying vec3 plumeView;',
  'void main(){',
  ' float t=clamp(vUv.y,0.0,1.0);',
  ' float edge=pow(1.0-t,0.95);',
  ' float noise=0.84+0.16*sin(uTime*(22.0+uTurbulence*6.0)-t*(44.0+uTurbulence*9.0)+sin(vUv.x*23.0)*4.0);',
  ' float waves=0.87+0.13*sin(t*82.0-uTime*31.0+vUv.x*20.0);',
- ' float fade=pow(edge,0.72)*(0.65+0.35*smoothstep(0.0,0.13,t));',
+ ' float facing=pow(abs(dot(normalize(plumeNormal),normalize(plumeView))),0.65);',
+ ' float fade=pow(edge,1.55)*(0.75+0.25*smoothstep(0.0,0.13,t))*facing;',
  ' float a=fade*noise*waves*uOpacity*(0.68+uPower*0.32);',
  ' vec3 col=mix(uTint,vec3(0.92,0.98,1.0),pow(1.0-t,3.5)*0.48)*(1.5+uPower*0.54);',
  ' gl_FragColor=vec4(col,a);',
  '}'
 ].join('\n');
 function plumeGeometry(radius,flare=1){
- const segments=10,rings=15,vertices=[],uv=[],idx=[];
+ const segments=18,rings=18,vertices=[],uv=[],idx=[];
  for(let i=0;i<=rings;i++){
   const t=i/rings,r=radius*(1+flare*Math.sin(Math.PI*t)*.55)*Math.pow(1-t,.56)+.0025;
   for(let k=0;k<=segments;k++){
@@ -122,9 +126,9 @@ export function installShipExhaust(ship,root,index,custom,high=true){
  const engineProfile=ENGINE_PROFILES[custom.engine|0]||ENGINE_PROFILES[0];
  const positions=LOCATIONS[index]||LOCATIONS[0];
  const fxGroup=new THREE.Group();fxGroup.name='dynamic-rocket-trails';root.add(fxGroup);
- const outerMat=plasmaMaterial(colour,high?.48:.28,style),innerMat=plasmaMaterial(colour,high?.82:.42,style);
+ const outerMat=plasmaMaterial(colour,high?.32:.24,style),innerMat=plasmaMaterial(colour,high?.72:.42,style);
  const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68,style),particleMat=particlesMaterial(colour);
- const outerGeo=plumeGeometry(.13*engineProfile.radius,1.8),innerGeo=plumeGeometry(.068*engineProfile.radius,1),coreGeo=plumeGeometry(.024*engineProfile.core,.5);
+ const outerGeo=plumeGeometry(.13*engineProfile.radius,.95),innerGeo=plumeGeometry(.068*engineProfile.radius,.55),coreGeo=plumeGeometry(.024*engineProfile.core,.5);
  const particles=high?24:10,actors=[];
  for(let e=0;e<positions.length;e++){
   const [x,y,z]=positions[e];

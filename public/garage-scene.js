@@ -1,6 +1,6 @@
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=148';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=150';
 import * as THREE from 'three';
-import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=148';
+import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=150';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=147';
 import{PAINT}from'./progress.js?v=112';
 export function createGarage(p){
@@ -19,7 +19,7 @@ export function equipGarage(g,p){disposeCockpit(g.cockpit);g.cockpit=createCockp
 export function setGarageLighting(g,mode='studio'){
  if(!g)return;
  const schemes={
-  studio:{background:0x081522,key:82,rim:2.0,fill:2.6,back:1.7,ambient:1.5,env:1.2,exposure:1.42,floor:0x17212d},
+  studio:{background:0x081522,key:76,rim:1.7,fill:1.6,back:1.5,ambient:1.25,env:1.1,exposure:1.28,floor:0x17212d},
   night:{background:0x020610,key:36,rim:3.2,fill:.52,back:1.3,ambient:.72,env:.68,exposure:1.02,floor:0x0a111e},
   track:{background:0x213849,key:105,rim:1.35,fill:3.0,back:2.6,ambient:2.1,env:1.5,exposure:1.22,floor:0x253646}
  };

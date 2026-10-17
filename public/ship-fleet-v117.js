@@ -1,9 +1,10 @@
+import {refineFleetAppearance} from './fleet-refinement-v150.js?v=150';
 import * as THREE from 'three';
-import {installShipFinish} from './art-direction-v148.js?v=148';
-import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=118';
-import{installShipExhaust}from'./ship-exhaust-v119.js?v=123';
+import {installShipFinish} from './art-direction-v148.js?v=150';
+import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=150';
+import{installShipExhaust}from'./ship-exhaust-v119.js?v=150';
 import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
-import{installFleetPolish}from'./fleet-polish-v120.js?v=120';
+import{installFleetPolish}from'./fleet-polish-v120.js?v=150';
 import{addSignatureKits}from'./fleet-signatures-v120.js?v=120';
 import{installFleetPrecision}from'./fleet-precision-v121.js?v=121';
 // SHIFTLINE 117 — six deliberately different, complete airframes. All geometry
@@ -87,7 +88,7 @@ function builder(ship,index,c,m,high=true){
  }
  const polished=material({...fleetSurfaceMaps('brushed'),bumpScale:.007,color:premium?hull.color.clone():new THREE.Color(index===1?0xa61c35:index===3?0xeaf2fb:0xc3d6e0),metalness:.9,roughness:.31,clearcoat:1,clearcoatRoughness:.13,side:THREE.DoubleSide});
  const graphite=material({...fleetSurfaceMaps('industrial'),bumpScale:.009,color:0x263745,metalness:.63,roughness:.67,side:THREE.DoubleSide});
- const tiledPod=material({...fleetSurfaceMaps('pod'),bumpScale:.015,color:0xa5bdce,metalness:.62,roughness:.6,clearcoat:.26,side:THREE.DoubleSide});
+ const tiledPod=material({...fleetSurfaceMaps('pod'),bumpScale:.002,color:index===4?0x6e818d:0x9caeba,metalness:.62,roughness:.6,clearcoat:.26,side:THREE.DoubleSide});
  const stealth=material({...fleetSurfaceMaps('stealth'),bumpScale:.005,color:0x374b5c,metalness:.58,roughness:.70,side:THREE.DoubleSide});
  const ceramic=material({...fleetSurfaceMaps('ceramic'),bumpScale:.003,color:0xf4fbff,metalness:.26,roughness:.39,clearcoat:1,side:THREE.DoubleSide});
  const shade=material({color:0x071522,metalness:.38,roughness:.7,side:THREE.DoubleSide});
@@ -356,6 +357,7 @@ function builder(ship,index,c,m,high=true){
   line([[side*.21,.14,-.42],[side*.29,.15,.14],[side*.35,.13,.45]],paint,.008);
  }
  installShipFinish(ship,root,index,c,{...m,polished,graphite,ceramic},high);
+ refineFleetAppearance(ship,root,index,c,{...m,polished,graphite,ceramic},high);
  // Equal-width garage/race geometry independent of wing option or chosen airframe.
  root.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(root);

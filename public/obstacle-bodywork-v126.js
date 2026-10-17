@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {finishSurface,bevelBox} from './art-direction-v148.js?v=148';
+import {finishSurface,bevelBox} from './art-direction-v148.js?v=150';
 
 // V126: phase-two surface equipment. Everything follows an existing obstacle
 // motion group but NEVER participates in its shared physics/collider data.

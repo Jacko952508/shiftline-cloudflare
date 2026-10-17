@@ -1,4 +1,4 @@
-import {collisionAt} from './race-obstacles.js?v=148';
+import {collisionAt} from './race-obstacles.js?v=150';
 // Rejoin immediately beyond the hit gate, on a clear centre line. Probe the
 // complete ship envelope so recovery does not drop a wing into moving geometry.
 export function recoveryPose(track,specs,along,time,hit=null){
