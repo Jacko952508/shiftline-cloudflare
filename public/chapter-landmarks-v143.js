@@ -21,7 +21,7 @@ function geos(course,low){
   case 1:return [skylineBlock(),new THREE.TorusGeometry(1,.075,low?4:7,low?14:32),new THREE.BoxGeometry(1,1,1)];
   case 2:return [new THREE.CylinderGeometry(.45,.85,1,radial),weatheredRock(low?0:1),new THREE.OctahedronGeometry(1,0)];
   case 3:return [new THREE.CylinderGeometry(.65,.92,1,radial),new THREE.TorusGeometry(1,.18,low?4:6,low?12:24),new THREE.ConeGeometry(1,1,radial)];
-  case 4:return [new THREE.ConeGeometry(1,1,low?5:7),new THREE.BoxGeometry(1,1,1),new THREE.IcosahedronGeometry(1,0)];
+  case 4:return [new THREE.ConeGeometry(1,1,low?6:18,low?1:5),new THREE.BoxGeometry(1,1,1),new THREE.IcosahedronGeometry(1,0)];
   case 5:return [new THREE.CylinderGeometry(.40,.85,1,radial),canopyGeometry(low?0:2),new THREE.OctahedronGeometry(1,0)];
   default:return [new THREE.OctahedronGeometry(1,0),new THREE.TetrahedronGeometry(1,0),new THREE.TorusGeometry(1,.12,low?4:6,low?14:28)];
  }
@@ -104,6 +104,7 @@ export function attachChapterLandmarks(world,track,course,quality='auto'){
   new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,depthWrite:true})
  ];
  if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;}
+ if(course===4)materials[0].flatShading=false;
  for(let i=0;i<2;i++)finishSurface(materials[i],course===1?'city':course===5?(i===1?'canopy':'organic'):'landscape',course);
  const groupCount=3,sites=[],chapterCounts=[0,0,0,0];
  const v=new THREE.Vector3(),dir=new THREE.Vector3(),centre=new THREE.Vector3();
