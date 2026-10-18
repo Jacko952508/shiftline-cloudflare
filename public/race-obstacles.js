@@ -1,6 +1,6 @@
 import {hazardGeometry} from './hazard-construction-v156.js?v=159';
 import {upcomingHazard,cueEnvelope,idleHazardGlow} from './obstacle-lighting-v160.js?v=160';
-import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=156';
+import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=161';
 import {markHazardGeometry} from './obstacle-glow-v155.js?v=161';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
 import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=159';
@@ -11,7 +11,7 @@ export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,
 import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-colliders.js?v=67';
 const RACING_LINES=[];for(let r=0;r<=5.8;r+=.65)for(let k=0;k<24;k++){const a=k*Math.PI*2/24;RACING_LINES.push({x:Math.cos(a)*r,y:Math.sin(a)*r})}
 import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=161';
-import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=156';
+import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=161';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=159';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js';
