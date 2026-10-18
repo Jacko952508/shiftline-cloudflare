@@ -29,6 +29,10 @@ try{
    if(samples[0].shot!==0||samples[3].shot!==1||samples[5].shot!==2||samples[6].shot!==3)throw Error('Bad reel course '+course+JSON.stringify(samples));
    if(distance(samples[0],samples[1])<15||distance(samples[1],samples[4])<15)throw Error('Camera not travelling on '+course);
    if(!(samples[2].fade>.55&&samples[3].fade>.2))throw Error('Missing cinematic cuts '+course);
+   const negative=menuCamera(track,course,camera,-.01,world,false);
+   if(!Number.isFinite(negative)||camera.userData.menuReel.shot!==0)throw Error('Negative frame delta broke preview shot '+course);
+   const invalid=menuCamera(track,course,camera,NaN,world,false);
+   if(!Number.isFinite(invalid)||camera.userData.menuReel.shot!==0)throw Error('Nonfinite preview clock broke shot '+course);
    const frozen=menuCamera(track,course,camera,51,world,true),pos=camera.position.clone();
    menuCamera(track,course,camera,250,world,true);
    if(camera.position.distanceTo(pos)>.001)throw Error('Reduced-motion still moves on '+course);
