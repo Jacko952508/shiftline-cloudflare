@@ -26,6 +26,18 @@ async function run(name,port){
    const ready=await page.evaluate(()=>window.__shiftlineRaceReadyQA);assert.equal(ready?.version,152);assert.equal(ready.course,course);assert.equal(ready.impactPools,8);assert.ok(ready.rivalBatches.every(b=>b.saved>10));
    await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-grid.png',timeout:90000});
   }
+  if(name==='candidate'&&process.env.RUNTIME_FAMILY156==='1'){
+   const families=await page.evaluate(()=>window.__shiftlineFamilyTest.list());assert.equal(families.length,3);report.families=[];
+   for(const family of families){
+    const first=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,17.2),family);
+    await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-'+family+'.png',timeout:90000});
+    const moved=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,19.2),family);
+    assert.ok(first.poseError<1e-7&&moved.poseError<1e-7,'Rendered moving parts do not match physics');assert.equal(moved.lost,false);assert.equal(moved.ratio,first.ratio);assert.equal(moved.quality,first.quality);
+    assert.ok(first.poses.some((v,i)=>Math.abs(v-moved.poses[i])>.01),'Family has no moving mechanism');
+    await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-'+family+'-moving.png',timeout:90000});
+    report.families.push({first,moved});
+   }
+  }
   for(const fraction of[.08,.50,.85]){
    await page.evaluate(p=>window.__shiftlineRuntimeTest.position(p),fraction);
    // Finish an ordinary render before measuring only first-use collision work.
@@ -51,7 +63,7 @@ async function run(name,port){
 }
 const baseline=await run('baseline',8764),candidate=await run('candidate',8765);
 const oldCalls=baseline.grid.at(-1).calls,newCalls=candidate.grid.at(-1).calls;
-assert.ok(newCalls<oldCalls-60,'Starting grid draw calls did not fall');
+if(process.env.RUNTIME_FAMILY156==='1')assert.ok(newCalls<=oldCalls+80,'New machinery exceeds the draw-call budget: '+oldCalls+' -> '+newCalls);else assert.ok(newCalls<oldCalls-60,'Starting grid draw calls did not fall');
 assert.equal(candidate.grid[0].ratio,baseline.grid[0].ratio,'Resolution was reduced');assert.equal(candidate.grid[0].quality,baseline.grid[0].quality);
 assert.deepEqual(candidate.grid[0].rivals.map(r=>r.triangles),baseline.grid[0].rivals.map(r=>r.triangles),'Rival geometry quality changed');
 await writeFile(out+'/'+course+'-'+kind.name()+'.json',JSON.stringify({baseline,candidate,gridDrawReduction:1-newCalls/oldCalls},null,2));

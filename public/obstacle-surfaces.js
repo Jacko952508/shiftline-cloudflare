@@ -1,4 +1,4 @@
-import {illuminateHazard} from './obstacle-glow-v155.js?v=155';
+import {illuminateHazard} from './obstacle-glow-v155.js?v=156';
 import * as THREE from 'three';
 import {finishSurface,bevelBox} from './art-direction-v148.js?v=153';
 
@@ -84,10 +84,10 @@ function atlas(course,organic=false){
  cache.set(key,{maps,users:1});return maps;
 }
 export function makeObstacleMaterial(obstacle){
- const course=obstacle.course,organic=course===2&&obstacle.kind==='reef',t=THEMES[course]||THEMES[1],maps=atlas(course,organic);
+ const course=obstacle.course,organic=(course===2&&/reef/.test(obstacle.kind))||(course===5&&/root/.test(obstacle.kind)),t=THEMES[course]||THEMES[1],maps=atlas(course,organic);
  obstacle.surfaceAtlasKey=course+(organic?':reef':'');
- const mat=new THREE.MeshStandardMaterial({...maps,color:organic?0xb69d87:t.base,metalness:organic?.13:t.metalness,roughness:organic?.94:t.roughness,normalScale:new THREE.Vector2(organic?.32:.48,organic?.32:.48),emissive:t.accent,emissiveIntensity:course===6?.55:course===3?.52:.46,side:THREE.FrontSide});
- finishSurface(mat,organic?'organic':'obstacle',course);return illuminateHazard(mat);
+ const mat=new THREE.MeshStandardMaterial({...maps,vertexColors:!!obstacle.family,color:organic?0xb69d87:t.base,metalness:organic?.13:t.metalness,roughness:organic?.94:t.roughness,normalScale:new THREE.Vector2(organic?.32:.48,organic?.32:.48),emissive:t.accent,emissiveIntensity:course===6?.55:course===3?.52:.46,side:THREE.FrontSide});
+ finishSurface(mat,organic?'organic':'obstacle',course);illuminateHazard(mat);if(obstacle.family){mat.userData.hazardGlowStrength.value=.62;mat.emissiveIntensity*=.78;}return mat;
 }
 export function releaseObstacleSurface(obstacle){
  const key=obstacle.surfaceAtlasKey;if(!key)return;obstacle.surfaceAtlasKey=null;

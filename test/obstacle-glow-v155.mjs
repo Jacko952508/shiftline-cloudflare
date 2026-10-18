@@ -6,7 +6,7 @@ import {finishSurface} from '../public/art-direction-v148.js';
 for(let course=1;course<=6;course++){
  let n=0;
  for(const o of specifications(course,7500))for(const shape of o.solids){
-  const g=shape.type==='box'?new THREE.BoxGeometry(shape.hx*2,shape.hy*2,shape.hz*2):shape.type==='sphere'?new THREE.SphereGeometry(shape.r,16,10):shape.type==='torus'?new THREE.TorusGeometry(shape.R,shape.tube,8,32):new THREE.ExtrudeGeometry(new THREE.Shape(shape.points.map(([x,y])=>new THREE.Vector2(x,y))),{depth:shape.hz*2,bevelEnabled:false});
+  const g=shape.type==='box'?new THREE.BoxGeometry(shape.hx*2,shape.hy*2,shape.hz*2):shape.type==='sphere'?new THREE.SphereGeometry(shape.r,16,10):(shape.type==='torus'||shape.type==='arc')?new THREE.TorusGeometry(shape.R,shape.tube,8,32):new THREE.ExtrudeGeometry(new THREE.Shape(shape.points.map(([x,y])=>new THREE.Vector2(x,y))),{depth:shape.hz*2,bevelEnabled:false});
   const positions=new Float32Array(g.attributes.position.array),index=g.index?new Uint32Array(g.index.array):null;g.computeBoundingBox();const bounds=g.boundingBox.clone();
   markHazardGeometry(g,shape);g.computeBoundingBox();
   assert.deepEqual(g.attributes.position.array,positions);assert.deepEqual(g.index?new Uint32Array(g.index.array):null,index);assert.ok(g.boundingBox.equals(bounds));

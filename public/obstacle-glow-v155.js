@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // bloom dependency or changes to geometry/colliders. Analytic bands remain
 // readable on the native iPhone framebuffer and are filtered at a distance.
 export function markHazardGeometry(geometry,shape){
- const type=shape.type==='box'?1:shape.type==='torus'?2:shape.type==='sphere'?3:0;
+ const type=shape.type==='box'?1:(shape.type==='torus'||shape.type==='arc')?2:shape.type==='sphere'?3:0;
  const parameters=type===1?[shape.hx,shape.hy,shape.hz,1]:type===2?[shape.R,shape.tube,0,2]:type===3?[shape.r,0,0,3]:[0,0,0,0];
  const data=new Float32Array(geometry.attributes.position.count*4);
  for(let i=0;i<data.length;i+=4)data.set(parameters,i);
@@ -38,6 +38,9 @@ export function illuminateHazard(material){
    vec3 hazardTint=emissive/max(max(emissive.r,max(emissive.g,emissive.b)),.001);
    // Constant low fill exposes the solid face; bright bands mark its actual
    // boundary, leaving holes and the clear racing line unpainted.
+   #ifdef USE_COLOR
+    hazardTint*=mix(vec3(1.),vColor.rgb,.65);
+   #endif
    totalEmissiveRadiance+=hazardTint*(.15+hazardBand*1.85+hazardRim*.80)*hazardGlowStrength;
   `);
  };

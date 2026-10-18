@@ -18,7 +18,7 @@ const TAU=Math.PI*2,MAX_RADIAL=6.9,Z_AXIS=new THREE.Vector3(0,0,1);
 const finite=n=>Number.isFinite(n);
 export function installObstacleBodywork(obstacle,quality='auto'){
  const theme=THEMES[obstacle.course]||THEMES[1],low=quality==='low';
- const metal=[],light=[],q=new THREE.Quaternion(),position=new THREE.Vector3(),scale=new THREE.Vector3(),matrix=new THREE.Matrix4();
+ const metal=[],light=[],drivers=[[],[]];let activePiece=0;const q=new THREE.Quaternion(),position=new THREE.Vector3(),scale=new THREE.Vector3(),matrix=new THREE.Matrix4();
  const metalMaterial=new THREE.MeshStandardMaterial({
   color:theme.paint,metalness:theme.metalness,roughness:theme.roughness,
   emissive:obstacle.course===3?0x271008:0x050b0d,emissiveIntensity:.24,
@@ -35,11 +35,11 @@ export function installObstacleBodywork(obstacle,quality='auto'){
   if(Math.hypot(x,y)+Math.hypot(w,h)*.5>=MAX_RADIAL)return;
   position.set(x,y,z);q.setFromAxisAngle(Z_AXIS,angle);
   scale.set(w,h,d);matrix.compose(position,q,scale);
-  dest.push(matrix.clone());
+  dest.push(matrix.clone());drivers[dest===metal?0:1].push(activePiece);
  };
- const fitting=(dest,p,localX,localY,z,w,h,d)=>{
+ const fitting=(dest,p,localX,localY,z,w,h,d,angle=0)=>{
   const a=p.a||0,ca=Math.cos(a),sa=Math.sin(a);
-  place(dest,(p.x||0)+ca*localX-sa*localY,(p.y||0)+sa*localX+ca*localY,z,w,h,d,a);
+  place(dest,(p.x||0)+ca*localX-sa*localY,(p.y||0)+sa*localX+ca*localY,z+(p.z||0),w,h,d,a+angle);
  };
  const addBox=p=>{
   // Hinges stay on an existing solid face; large shutters get their fittings
@@ -65,10 +65,10 @@ export function installObstacleBodywork(obstacle,quality='auto'){
   // Tiny machined studs sit on the solid torus tube, never across its hole.
   const n=low?4:8;
   for(let k=0;k<n;k++){
-   const a=(k+.5)*TAU/n,rr=p.R,xx=(p.x||0)+Math.cos(a)*rr,yy=(p.y||0)+Math.sin(a)*rr;
+   const a=p.type==='arc'?p.start+(k+.5)*(p.end-p.start)/n:(k+.5)*TAU/n,rr=p.R,xx=(p.x||0)+Math.cos(a)*rr,yy=(p.y||0)+Math.sin(a)*rr;
    const z=p.tube*.67;
-   place(metal,xx,yy,z,Math.min(.23,p.tube*.35),Math.min(.21,p.tube*.35),.13,a);
-   if(!low&&k%2===0)place(light,xx,yy,z+.10,.075,.075,.06,a);
+   fitting(metal,p,Math.cos(a)*rr,Math.sin(a)*rr,z,Math.min(.23,p.tube*.35),Math.min(.21,p.tube*.35),.13,a);
+   if(!low&&k%2===0)fitting(light,p,Math.cos(a)*rr,Math.sin(a)*rr,z+.10,.075,.075,.06,a);
   }
  };
  const addPolygon=p=>{
@@ -77,8 +77,8 @@ export function installObstacleBodywork(obstacle,quality='auto'){
    const pt=pts[i],x=pt[0],y=pt[1],r=Math.hypot(x,y);
    if(r<.35||r>6.91)continue;
    const toward=(r>4.6?-.23:.23)/r,px=x+x*toward,py=y+y*toward;
-   place(metal,px,py,p.hz+.045,.14,.15,.15,Math.atan2(y,x));
-   if(!low&&i%(step*2)===0)place(light,px,py,p.hz+.136,.067,.075,.045,Math.atan2(y,x));
+   fitting(metal,p,px,py,p.hz+.045,.14,.15,.15,Math.atan2(y,x));
+   if(!low&&i%(step*2)===0)fitting(light,p,px,py,p.hz+.136,.067,.075,.045,Math.atan2(y,x));
   }
  };
  const addSphere=p=>{
@@ -92,9 +92,10 @@ export function installObstacleBodywork(obstacle,quality='auto'){
    if(!low)place(light,x,y,z+.075,.075,.075,.045,a);
   }
  };
- for(const p of obstacle.solids){
+ for(let pi=0;pi<obstacle.solids.length;pi++){
+  activePiece=pi;const p=obstacle.solids[pi];
   if(p.type==='box')addBox(p);
-  else if(p.type==='torus')addRing(p);
+  else if(p.type==='torus'||p.type==='arc')addRing(p);
   else if(p.type==='polygon')addPolygon(p);
   else if(p.type==='sphere')addSphere(p);
  }
@@ -112,7 +113,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
  const solid=add(metal,metalMaterial,'V126 / forged mountings');
  const lights=add(light,trimMaterial,'V126 / hazard indicator pins');
  if(lights)obstacle.trim.push(trimMaterial);
- obstacle.bodywork={course:obstacle.course,name:theme.name,metal:metal.length,lit:light.length,low,meshes:[solid,lights].filter(Boolean),indicatorMaterial:lights?.material||null,clipped:false};
+ obstacle.bodywork={course:obstacle.course,name:theme.name,metal:metal.length,lit:light.length,low,meshes:[solid,lights].filter(Boolean),indicatorMaterial:lights?.material||null,clipped:false,drivers,bases:[metal,light],working:new THREE.Matrix4(),pose:new THREE.Matrix4(),partInverse:obstacle.solids.map(p=>{const m=new THREE.Matrix4().makeRotationZ(p.a||0);m.setPosition(p.x||0,p.y||0,p.z||0);return m.invert();}),partDelta:obstacle.solids.map(()=>new THREE.Matrix4())};
  return obstacle.bodywork;
 }
 export function inspectObstacleBodywork(obstacle){return obstacle.bodywork?{
@@ -120,3 +121,13 @@ export function inspectObstacleBodywork(obstacle){return obstacle.bodywork?{
  lit:obstacle.bodywork.lit,low:obstacle.bodywork.low,
  parts:obstacle.bodywork.meshes.length
 }:null}
+
+export function updateObstacleBodywork(o,state){
+ const kit=o.bodywork;if(!kit||!state.pieces)return;
+ for(let i=0;i<o.solids.length;i++){const j=i*6;kit.pose.makeRotationZ(state.pieces[j+3]);kit.pose.setPosition(state.pieces[j],state.pieces[j+1],state.pieces[j+2]);kit.partDelta[i].multiplyMatrices(kit.pose,kit.partInverse[i]);}
+ for(const mesh of kit.meshes){
+  const batch=mesh.name.includes('forged')?0:1,bases=kit.bases[batch],drivers=kit.drivers[batch];
+  for(let i=0;i<bases.length;i++){kit.working.multiplyMatrices(kit.partDelta[drivers[i]],bases[i]);mesh.setMatrixAt(i,kit.working);}
+  mesh.instanceMatrix.needsUpdate=true;
+ }
+}
