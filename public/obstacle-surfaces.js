@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {finishSurface,bevelBox} from './art-direction-v148.js?v=150';
+import {finishSurface,bevelBox} from './art-direction-v148.js?v=153';
 
 // Compact, procedural PBR atlases for the race hazards. One 256px atlas per
 // course, plus a separate organic finish for Leviathan's reef structure.

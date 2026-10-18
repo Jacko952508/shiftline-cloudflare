@@ -10,7 +10,7 @@ import{createHorizon,updateHorizon}from'./eclipse-horizon.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';
 import * as THREE from 'three';
-import {finishSurface,refineAlpineGeology} from './art-direction-v148.js?v=150';
+import {finishSurface,refineAlpineGeology} from './art-direction-v148.js?v=153';
 import {attachRaceFinish} from './race-finish-v147.js?v=147';
 import{RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{shiftState,themeColor,themeColorAt,section,PALETTES}from'./race-theme.js';

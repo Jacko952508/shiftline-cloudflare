@@ -2,7 +2,7 @@ import {reefShelf,coralBranches,basaltMass,ventStack,ancientTrunk,forestCrown,lu
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import {orbitalCityShapes} from './orbital-city-v149.js?v=153';
 import * as THREE from 'three';
-import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
+import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=153';
 
 // V133 / Phase 3 worldscapes: six independent distant silhouettes.
 // Keep every scenic mesh opaque, unlit by shadow maps, and separate from

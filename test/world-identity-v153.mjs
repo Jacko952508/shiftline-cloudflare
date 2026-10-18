@@ -25,3 +25,13 @@ for(let course=1;course<=6;course++){
  const g=servicePanel(course);g.computeBoundingBox();assert.ok(g.boundingBox.min.x>=-.17);assert.ok(g.boundingBox.max.x<=.061);assert.ok(g.boundingBox.max.y<=.726);assert.ok(g.boundingBox.max.z<=2.601);g.dispose();
 }
 for(const g of [forestCrown(),ancientTrunk()]){const a=g.attributes.position;for(const x of a.array)assert.ok(Number.isFinite(x));g.dispose();}
+// Panel coloration is valid on the far-scene Lambert material as well as PBR.
+const {finishSurface}=await import('../public/art-direction-v148.js');
+for(const material of [new THREE.MeshLambertMaterial(),new THREE.MeshStandardMaterial()]){
+ finishSurface(material,'tunnel',6);
+ const shader={vertexShader:'#include <project_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};
+ material.onBeforeCompile(shader);
+ assert.equal(shader.fragmentShader.includes('roughnessFactor='),!!material.isMeshStandardMaterial);
+ assert.ok(shader.fragmentShader.includes('adSeam'));
+ material.dispose();
+}

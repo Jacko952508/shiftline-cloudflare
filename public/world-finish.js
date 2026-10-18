@@ -1,7 +1,7 @@
 import {ancientTrunk,forestCrown} from './world-identity-v153.js?v=153';
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import * as THREE from 'three';
-import {finishSurface} from './art-direction-v148.js?v=150';
+import {finishSurface} from './art-direction-v148.js?v=153';
 import{installBiomeFloor}from'./biome-floor-v140.js?v=140';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 const noiseGLSL=`float wfHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float wfNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(wfHash(i),wfHash(i+vec2(1.,0.)),f.x),mix(wfHash(i+vec2(0.,1.)),wfHash(i+1.),f.x),f.y);}`;

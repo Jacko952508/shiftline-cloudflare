@@ -1,7 +1,7 @@
 import {ancientTrunk,forestCrown,lunarRubble,miningHabitat,ventStack} from './world-identity-v153.js?v=153';
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import * as THREE from 'three';
-import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
+import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=153';
 import {actAt} from './race-track.js?v=58';
 
 // V144: deliberately recognisable exterior set pieces instead of repeated
