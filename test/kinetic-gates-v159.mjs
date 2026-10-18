@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {kineticGateSolids,isKineticGate} from '../public/kinetic-gates-v159.js';
 import {familySpecifications,familyState} from '../public/hazard-families-v156.js';
-import {localDistance} from '../public/course-colliders.js';
+import {localDistance,solidDistance} from '../public/course-colliders.js';
 import {planTarget,clearance} from '../public/race-obstacles.js';
 import {hazardGeometry} from '../public/hazard-construction-v156.js';
 import {markHazardGeometry} from '../public/obstacle-glow-v155.js';
@@ -16,6 +16,7 @@ for(const [course,families]of [[1,['dock-clamps','security-segments']],[2,['pres
   assert.ok(coverage<.40,'Too much opaque plate area '+family+' '+coverage);
   for(const p of solids){
    const g=markHazardGeometry(hazardGeometry(p,course),p);
+   if(p.type==='polygon'){const local={...p,x:0,y:0,z:0,a:0},pos=g.attributes.position;let outside=-Infinity;for(let i=0;i<pos.count;i++)outside=Math.max(outside,solidDistance(local,pos.getX(i),pos.getY(i),pos.getZ(i)));assert.ok(outside<.04,'Bevel or conduit extends beyond visible collider '+outside);}
    assert.equal(g.attributes.hazardStyle.getX(0),shutter?1:2);assert.ok(g.attributes.position.count<18000);
    assert.ok([...g.attributes.hazardLight.array].some(x=>x>.9)||p.type==='sphere');g.dispose();
   }

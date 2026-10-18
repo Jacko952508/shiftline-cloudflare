@@ -65,10 +65,16 @@ export function illuminateHazard(material,{period=6.8,driveScale=1.8}={}){
    if(length(hazardDrive)>.001)hazardWave=.5+.5*sin((hazardTravel-hazardOffset)*3.2);
    float hazardScan=smoothstep(.87,.98,hazardWave);
    vec3 hazardFace=hazardFaceColor*(.72+hazardScan*.16);
-   if(hazardMechanism>.5)hazardFace*=.68;
    float hazardTrace=max(hazardBand,hazardEnergy);
    vec3 hazardCore=mix(hazardTint,vec3(1.),.30)*hazardTrace*(2.65+hazardWave*.55);
-   totalEmissiveRadiance+=(hazardTint*(hazardFace+hazardRim*.48)+hazardCore)*hazardGlowStrength;
+   vec3 hazardBody=hazardTint*(hazardFace+hazardRim*.48);
+   if(hazardMechanism>.5){
+    // Cool dark alloy and hot perimeter light have different jobs: lighting
+    // the outline must not turn the whole mechanism into a cream sheet.
+    totalEmissiveRadiance*=.16;
+    hazardBody=vec3(.04,.11,.20)*hazardFaceColor+hazardTint*hazardRim*.22;
+   }
+   totalEmissiveRadiance+=(hazardBody+hazardCore)*hazardGlowStrength;
   `);
  };
  material.customProgramCacheKey=()=>key+'/hazard-light-159';material.needsUpdate=true;return material;

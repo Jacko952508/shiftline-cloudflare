@@ -43,7 +43,8 @@ export function hazardGeometry(p,course,quality='auto'){
  else if(p.type==='arc'){
   base=new THREE.TorusGeometry(p.R,p.tube,16,Math.ceil((p.end-p.start)*22),p.end-p.start);base.rotateZ(p.start);
  }else{
-  const s=new THREE.Shape();p.points.forEach(([x,y],i)=>i?s.lineTo(x,y):s.moveTo(x,y));s.closePath();base=new THREE.ExtrudeGeometry(s,{depth:p.hz*2,bevelEnabled:false,steps:1});base.translate(0,0,-p.hz);
+  const s=new THREE.Shape();p.points.forEach(([x,y],i)=>i?s.lineTo(x,y):s.moveTo(x,y));s.closePath();const bevel=p.signalStyle?.065:0;
+  base=new THREE.ExtrudeGeometry(s,{depth:p.hz*2-bevel*2,bevelEnabled:!!bevel,bevelSize:bevel,bevelOffset:-bevel,bevelThickness:bevel,bevelSegments:2,steps:1});base.translate(0,0,-p.hz+bevel);
  }
  // Living roots keep a bark silhouette and darker, mottled tissue rather
  // than reading as pale manufactured pipe sections.
@@ -62,13 +63,20 @@ export function hazardGeometry(p,course,quality='auto'){
   // Rounded living root ends are also the spherical end caps in the shared SDF.
   for(const a of [p.start,p.end]){const cap=new THREE.SphereGeometry(p.tube,16,12);cap.translate(Math.cos(a)*p.R,Math.sin(a)*p.R,0);parts.push([cap,p.role==='root'?[.43,.19,.07]:1]);}
  }else if(p.signalStyle&&(p.type==='box'||p.type==='polygon')){
-  // Flush segmented power cells replace the repeated equipment decals.
-  // Every cell is contained by the real solid, including the hooked tips.
-  base.computeBoundingBox();const b=base.boundingBox,z=p.hz+.024;let count=0;
-  for(let y=b.min.y+.28;y<b.max.y-.22;y+=.55)for(let x=b.min.x+.25;x<b.max.x-.18;x+=.58){
-   if(solidDistance(local,x,y,0)>-.23)continue;
-   const seam=new THREE.PlaneGeometry(.16,.32);seam.translate(x,y,z);parts.push([seam,[.09,.12,.18],0]);
-   const cell=new THREE.PlaneGeometry(.055,.24);cell.translate(x,y,z+.005);parts.push([cell,1,count++%3===0?1:.65]);
+  // One large conduit follows the mechanism; no repeated LED/decal grid.
+  const z=p.hz+.024;
+  if(p.role==='orbital-petal'){
+   const start=Math.atan2(p.points[0][1],p.points[0][0]),last=p.points[Math.floor(p.points.length/2)-1],span=((Math.atan2(last[1],last[0])-start)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+   const recess=new THREE.RingGeometry(5.64,6.00,36,1,start+.09,span-.18);recess.translate(0,0,z);parts.push([recess,[.045,.065,.10],0]);
+   const conduit=new THREE.RingGeometry(5.75,5.88,36,1,start+.13,span-.26);conduit.translate(0,0,z+.006);parts.push([conduit,1,1]);
+  }else{
+   const x=p.type==='box'?0:-.38,h=p.type==='box'?p.hy*1.65:6.55;
+   const recess=new THREE.PlaneGeometry(p.type==='box'?.16:.30,h);recess.translate(x,0,z);parts.push([recess,[.045,.065,.10],0]);
+   const conduit=new THREE.PlaneGeometry(.095,h*.96);conduit.translate(x,0,z+.006);parts.push([conduit,1,1]);
+   if(p.type==='polygon')for(const y of[-2.55,0,2.55]){
+    const socket=new THREE.PlaneGeometry(.35,.56);socket.translate(-.76,y,z);parts.push([socket,[.045,.065,.10],0]);
+    const cell=new THREE.PlaneGeometry(.20,.37);cell.translate(-.76,y,z+.007);parts.push([cell,1,.9]);
+   }
   }
  }else if(p.type==='box'||p.type==='polygon'){
   base.computeBoundingBox();const b=base.boundingBox,wide=b.max.x-b.min.x,tall=b.max.y-b.min.y,thin=Math.min(wide,tall)<1.3;

@@ -76,7 +76,7 @@ async function run(name,port){
     console.log('READABILITY '+JSON.stringify(metrics));
     assert.ok(changed>70,'No visible hazard silhouette '+JSON.stringify(metrics));
     const kinetic=['dock-clamps','pressure-bulkhead','security-segments','discharge-gate'].includes(family);
-    assert.ok(metrics.brightFraction>(kinetic?.18:.45),'Hazard lacks luminous edge coverage '+JSON.stringify(metrics));
+    assert.ok(metrics.brightFraction>(kinetic?.12:.45),'Hazard lacks luminous edge coverage '+JSON.stringify(metrics));
     if(kinetic)assert.ok(bright>100,'Insufficient luminous boundary pixels '+JSON.stringify(metrics));
     assert.ok(metrics.meanContrast>32,'Hazard lacks background separation '+JSON.stringify(metrics));
    }

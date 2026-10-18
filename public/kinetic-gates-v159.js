@@ -1,6 +1,6 @@
 // Authored racing mechanisms. Solids, drive axes and clear openings are shared
 // by rendering, AI and player collision; decorative light never defines a hit.
-export const isKineticGate=family=>['dock-clamps','pressure-bulkhead','security-segments','discharge-gate'].includes(family);
+export const isKineticGate=family=>family==='dock-clamps'||family==='pressure-bulkhead'||family==='security-segments'||family==='discharge-gate';
 export function kineticGateSolids(family,variant=0){
  const solids=[],shutter=/clamps|bulkhead/.test(family),direction=variant===1?-1:1;
  const poly=(points,x,y,a,drive,role,style)=>solids.push({type:'polygon',points,x,y,a,z:0,hz:shutter?.48:.36,drive,role,signalStyle:style});
@@ -19,7 +19,7 @@ export function kineticGateSolids(family,variant=0){
   for(let k=0;k<3;k++){
    const start=k*1.43,span=1.31,points=[],n=18;
    for(let j=0;j<=n;j++){const u=j/n,a=start+span*u,r=6.65-.16*Math.sin(Math.PI*u)**2;points.push([Math.cos(a)*r,Math.sin(a)*r]);}
-   for(let j=n;j>=0;j--){const u=j/n,a=start+span*u,r=4.40-1.65*Math.sin(Math.PI*u)**6;points.push([Math.cos(a)*r,Math.sin(a)*r]);}
+   for(let j=n;j>=0;j--){const u=j/n,a=start+span*u,r=5.25-2.90*Math.sin(Math.PI*u)**8;points.push([Math.cos(a)*r,Math.sin(a)*r]);}
    poly(points,0,0,variant*.20,{turn:direction*.19,phase:0},'orbital-petal',2);
   }
   // A visible axle blocks the uninteresting straight-through centre while
