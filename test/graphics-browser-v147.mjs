@@ -16,7 +16,7 @@ async function check(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?graphicsqa=1&shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=152');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=153');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await page.locator('#obsOpen').click({timeout:35000});
@@ -35,6 +35,12 @@ async function check(kind,courses){
     await page.locator('#obsScrub').evaluate((el,p)=>{el.value=String(p);el.dispatchEvent(new Event('input',{bubbles:true}));},progress);
     await page.waitForTimeout(350);
     await page.screenshot({path:output+'/'+kind.name()+'-chapter-'+progress+'-course-4.png',timeout:65000});
+   }
+   if(process.env.SHIFTLINE_WORLD_IDENTITY==='1'){
+    await page.locator('[data-obs-mode="orbit"]').click();
+    for(let z=0;z<3;z++)await page.locator('#obsZoomOut').click();
+    await page.waitForTimeout(350);
+    await page.screenshot({path:output+'/'+kind.name()+'-exterior-'+course+'.png',timeout:65000});
    }
    console.log('PASS V147 '+kind.name()+' course '+course+' '+JSON.stringify(info));
    await page.locator('#obsClose').click();

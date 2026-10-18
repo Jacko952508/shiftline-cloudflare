@@ -1,0 +1,48 @@
+name: SHIFTLINE V153 World Identity
+on:
+  push:
+    branches: [graphics-v153]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  worlds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        course: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate clearance, geometry and race regressions
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/world-identity-v153.mjs
+          node --experimental-loader ./test/three-loader.mjs test/terrain-v141.mjs
+          node --experimental-loader ./test/three-loader.mjs test/graphics-v147.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v153.log 2>&1 &
+          sleep 2
+      - name: Inspect world and flight in Chromium and WebKit
+        env:
+          SHIFTLINE_ART_COURSES: ${{ matrix.course }}
+          SHIFTLINE_ART_RACE_COURSE: ${{ matrix.course }}
+          SHIFTLINE_GRAPHICS_OUTPUT: world-identity-frames
+          SHIFTLINE_WORLD_IDENTITY: '1'
+        run: node test/graphics-browser-v147.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-v153-${{ matrix.course }}
+          path: world-identity-frames
+          if-no-files-found: ignore

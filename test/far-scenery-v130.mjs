@@ -21,7 +21,7 @@ for(let course=1;course<=6;course++){
  assert.ok(d.chunks.some(c=>!c.group.visible),'Distant sections not culled');
  assert.equal(d.total,d.chunks.reduce((n,c)=>n+c.count,0));
  assert.equal(d.chapterCounts.reduce((a,b)=>a+b,0),d.total);
- const data=[course,d.name,d.total,d.minClearance,d.chunks.length,d.geometries[0].type];
+ const data=[course,d.name,d.total,d.minClearance,d.chunks.length,d.geometries[0].name||d.geometries[0].type];
  signatures.push(data);
  disposeFarScenery(world);
  assert.equal(world.farScenery,null);assert.equal(scene.children.length,0);
@@ -33,7 +33,7 @@ for(let course=1;course<=6;course++){
  const track=createTrack(course),scene=new THREE.Scene(),world={renderAhead:700};
  attachFarScenery(scene,world,track,course,'auto');const d=world.farScenery;
  assert.ok(d.total>(course===4?12:25),'Auto detail unexpectedly sparse');
- if(course===4){assert.equal(d.geometries[0].type,'BufferGeometry');assert.equal(d.dynamicCount,0);
+ if(course===4){assert.equal(d.geometries[0].name||d.geometries[0].type,'BufferGeometry');assert.equal(d.dynamicCount,0);
    const positions=d.geometries[0].getAttribute('position'),normals=d.geometries[0].getAttribute('normal');
    assert.ok(Array.from({length:normals.count},(_,i)=>normals.getY(i)).every(y=>y>0),'Mountain heightfield faces must point outward above the ground');assert.ok(d.total<150,'Storm skyline remains overcrowded');}
  assert.ok(d.chapterCounts.every(c=>c>0),'Not all four chapters have distinct scenery on course '+course);

@@ -1,5 +1,6 @@
+import {reefShelf,coralBranches,basaltMass,ventStack,ancientTrunk,forestCrown,lunarRubble,miningHabitat,quarryCrane,drillHead} from './world-identity-v153.js?v=153';
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
-import {orbitalCityShapes} from './orbital-city-v149.js?v=149';
+import {orbitalCityShapes} from './orbital-city-v149.js?v=153';
 import * as THREE from 'three';
 import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
 import {canopyGeometry} from './race-finish-v147.js?v=147';
@@ -23,8 +24,8 @@ const PROFILES={
  5:{name:'ANCIENT CANOPY / giant trunks, boughs, crowns and glowing spores',kind:'forest',
     primary:0x42674e,secondary:0x578b58,accent:0x9edc8c,shade:0x2e4b39,
     base:45,height:94,spread:14},
- 6:{name:'RIFT QUARRY / jagged basalt, suspended shards and violet rifts',kind:'rift',
-    primary:0x5c6074,secondary:0x9692b9,accent:0xc09aff,shade:0x33364c,
+ 6:{name:'RIFT QUARRY / lunar regolith, pressurised habitats and excavators',kind:'rift',
+    primary:0x656771,secondary:0xa5a9af,accent:0xa9bddd,shade:0x343c49,
     base:47,height:96,spread:12}
 };
 // Four independent chapter accents per world, applied through existing
@@ -103,13 +104,13 @@ function shapes(kind,quality){
  switch(kind){
  case 'city':return orbitalCityShapes(low);
  case 'reef':return [
-  new THREE.IcosahedronGeometry(1,low?0:1),
-  cylinder(.32,1,7),new THREE.IcosahedronGeometry(1,low?0:1),
+  reefShelf(low),
+  coralBranches(low),reefShelf(low),
   new THREE.IcosahedronGeometry(1,0),
-  cylinder(.12,.32,6)];
+  coralBranches(low)];
  case 'forge':return [
-  weatheredRock(low?0:1),
-  cylinder(.12,1,7),cylinder(.65,.83,8),
+  basaltMass(low),
+  ventStack(low),cylinder(.65,.83,8),
   new THREE.OctahedronGeometry(1,0),
   cylinder(.38,.44,7)];
  case 'storm':return [
@@ -117,15 +118,15 @@ function shapes(kind,quality){
   weatheredRock(low?0:2,true),new THREE.OctahedronGeometry(1,0),
   weatheredRock(low?0:2,true)];
  case 'forest':return [
-  cylinder(.34,.72,7),
-  canopyGeometry(low?0:1),
+  ancientTrunk(low),
+  forestCrown(low),
   cylinder(.45,.6,6),new THREE.IcosahedronGeometry(1,0),
   cylinder(.24,.40,6)];
  default:return [
-  new THREE.IcosahedronGeometry(1,0),
-  new THREE.OctahedronGeometry(1,0),new THREE.TetrahedronGeometry(1,0),
-  new THREE.OctahedronGeometry(1,0),
-  new THREE.TetrahedronGeometry(1,0)];
+  lunarRubble(low),
+  miningHabitat(low),quarryCrane(),
+  new THREE.BoxGeometry(.8,.4,.8),
+  drillHead(low)];
  }
 }
 function recipes(profile,anchor,width,height,seed,chapter){
@@ -168,10 +169,10 @@ function recipes(profile,anchor,width,height,seed,chapter){
    a(-width*.78,height*.93,width*.30,width*.24,height*.18,width*.24)];
  }else{
   parts=[
-   a(0,height*.18,0,width*1.2,height*.36,width*1.2),
-   a(0,height*.66,0,width*.87,height*.91,width*.86),
-   a(width*.76,height*.58,width*.3,width*.42,height*.50,width*.44,.35),
-   a(-width*.45,height*.97,0,width*.26,height*.25,width*.26)];
+   a(0,height*.12,0,width*1.8,height*.25,width*1.7),
+   a(0,height*.25,0,width*1.8,height*.26,width*1.6),
+   a(width*.42,height*.45,width*.18,width*.7,height*.65,width*.7),
+   a(-width*.45,height*.35,0,width*.11,height*.025,width*.11)];
  }
  // Unique fifth silhouette attached to each structure; it is not a second
  // free-floating skyline layer and uses the same verified clearance.
@@ -180,7 +181,7 @@ function recipes(profile,anchor,width,height,seed,chapter){
  else if(kind==='forge')parts.push(a(width*.25,height*.90,0,width*.22,height*.45,width*.22,.16));
  else if(kind==='storm')parts.push(a(-width*.54,height*.14,width*.36,width*.40,height*.26,width*.42,-.28));
  else if(kind==='forest')parts.push(a(-width*.72,height*.65,width*.15,width*.22,height*.78,width*.22,-.68));
- else parts.push(a(width*.92,height*(chapter===2?.92:.74),width*.16,width*.33,height*.52,width*.35,.36));
+ else parts.push(a(width*.92,height*.40,width*.16,width*.25,height*.30,width*.25));
  return {parts,variations:[color(0,1),color(1,2),color(2,3),color(3,4),color(4,5)]};
 }
 function makeMatrix(dummy,part,out=new THREE.Matrix4()){
@@ -204,7 +205,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
  ];
  if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;finishSurface(materials[1],'canopy',course);}
  if(course===4)for(const i of [0,1,2,4]){materials[i].flatShading=false;alpineSurface(materials[i]);}
- for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':'landscape',course);
+ for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':course===6&&i!==0?'tunnel':'landscape',course);
  const candidates=trackIndex(track),dummy=new THREE.Object3D(),chunks=[];
  const horizontal=new THREE.Vector3(),normal=new THREE.Vector3(),point=new THREE.Vector3(),centre=new THREE.Vector3();
  const tint=new THREE.Color();const chapterCounts=[0,0,0,0];let total=0,skipped=0,minClearance=Infinity,dynamicCount=0,nearCount=0;
@@ -237,12 +238,12 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
     distance=baseDistance+attempt*82;
     point.copy(f.p).addScaledVector(horizontal,distance);
     let floor=f.p.y-(course===6?30:course===1?65:course===4?105:80)+35*(hash(seed,6)-.5);
-    if(course>=4&&course!==6&&typeof world.ground==='function'){
+    if(course>=4&&typeof world.ground==='function'){
      const grounded=world.ground(point.x,point.z);
-     if(course===4&&Number.isFinite(grounded))floor=grounded-5;
+     if((course===4||course===6)&&Number.isFinite(grounded))floor=grounded-5;
      else if(Number.isFinite(grounded)&&Math.abs(grounded-f.p.y)<330)floor=grounded-2;
     }
-    if(course===6)floor=f.p.y-height*.32+65*(hash(seed,7)-.5);
+    if(course===6&&typeof world.ground!=='function')floor=f.p.y-height*.32+65*(hash(seed,7)-.5);
     point.y=floor;
     centre.copy(point).addScaledVector(UP,height*.6);
     margin=candidates(centre,boundsRadius);
@@ -260,7 +261,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
     mesh.setColorAt(count,tint);
    }
    if(!low&&(course===6||course===2)&&j%2===0){
-    const target=course===6?1:3;
+    const target=course===6?4:3;
     motions.push({index:count,target,part:candidate.parts[target],phase:seed*.34});
     dynamicCount++;
    }
@@ -320,7 +321,7 @@ export function updateFarScenery(world,along,time=0){
   for(const m of chunk.motions){
    const p=m.part,t=time+m.phase;
    dummy.position.copy(p.position);
-   if(d.course===6)dummy.position.y+=Math.sin(t*.42)*3;
+   // Lunar structures remain grounded; only the drill spindle turns.
    if(d.course===2)dummy.position.y+=Math.sin(t*.26)*.5;
    dummy.rotation.set(p.rz||0,(p.ry||0)+(d.course===4?time*.42:d.course===6?time*.11:Math.sin(t*.35)*.13),0);
    dummy.scale.copy(p.scale);dummy.updateMatrix();

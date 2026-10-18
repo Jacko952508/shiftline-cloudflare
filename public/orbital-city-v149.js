@@ -31,6 +31,11 @@ export function orbitalCityShapes(low=false){
   [box(),[.22,.18,.32],-.44,.22,0],
   [box(),[.22,.18,.32],.44,.22,0]
  ];
+ // Folded solar wings and docking collars give the platform a readable purpose.
+ for(const x of[-.68,.68]){
+  deck.push([box(),[.42,.045,.48],x,.07,0]);
+  for(const z of[-.18,0,.18])deck.push([box(),[.43,.025,.018],x,.11,z]);
+ }
  const engines=[],light=[];
  for(const x of[-.34,.34])for(const z of[-.34,.34]){
   engines.push([cone(.16,.22),[1,1,1],x,0,z]);

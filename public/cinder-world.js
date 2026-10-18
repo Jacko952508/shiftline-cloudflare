@@ -1,4 +1,4 @@
-import{installWorldFinish}from'./world-finish.js?v=150';
+import{installWorldFinish}from'./world-finish.js?v=153';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=147';
 import * as THREE from 'three';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';

@@ -1,5 +1,6 @@
+import {ancientTrunk,forestCrown} from './world-identity-v153.js?v=153';
 import {attachTempestHorizon} from './tempest-horizon-v151.js?v=151';
-import{installWorldFinish}from'./world-finish.js?v=150';
+import{installWorldFinish}from'./world-finish.js?v=153';
 import{glassDetail}from'./surface-detail.js?v=147';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
@@ -48,15 +49,30 @@ export function createExpansionWorld(scene,track){
  columns.count=feet.count=support;columns.instanceMatrix.needsUpdate=feet.instanceMatrix.needsUpdate=true;root.add(columns,feet);
  // Manufactured stations, with bases, decks, cables and moving fan assemblies.
  const stationCount=course===4?9:28;
- for(let i=0;i<stationCount;i++){const s=track.length*(course===4?(.065+i*.10):(.025+i*.032)),F=track.frame(s),side=i%2?1:-1,x=F.p.x+side*(55+i%4*18),z=F.p.z,y=ground(x,z),g=new THREE.Group();g.position.set(x,y,z);root.add(g);const h=Math.max(28,Math.min(course===4?72:210,F.p.y-y+28));add(g,new THREE.BoxGeometry(32,3,28),steel,0,1.5);add(g,new THREE.BoxGeometry(18,h,16),dark,0,h/2+3);for(let k=0;k<5;k++){add(g,new THREE.BoxGeometry(22,.7,20),steel,0,8+k*h/5);add(g,new THREE.BoxGeometry(14,.18,.12),glow,0,9+k*h/5,10.2);}for(const side of[-1,1])add(g,new THREE.CylinderGeometry(.5,.7,h+8,8),steel,side*12,(h+8)/2);
- const rotor=new THREE.Group();rotor.position.set(0,h+13,0);g.add(rotor);add(rotor,new THREE.TorusGeometry(8,.42,8,48),steel);add(rotor,new THREE.CylinderGeometry(1.2,1.2,1.2,12),dark).rotation.x=Math.PI/2;for(let k=0;k<3;k++){const a=k*TAU/3,m=add(rotor,new THREE.BoxGeometry(6,.55,.25),steel,Math.cos(a)*4.3,Math.sin(a)*4.3,0);m.rotation.z=a;}let clear=false;for(let attempt=0;attempt<16;attempt++){if(clearance.objectClear(g)){clear=true;break;}const a=attempt*2.39996,r=130+attempt*35;g.position.set(F.p.x+Math.cos(a)*r,0,F.p.z+Math.sin(a)*r);g.position.y=ground(g.position.x,g.position.z);}if(clear){sceneryBounds.push(new THREE.Box3().setFromObject(g));machines.push({g:rotor,s,base:rotor.quaternion.clone(),phase:i});}else{root.remove(g);g.traverse(o=>o.geometry?.dispose());}}
+ for(let i=0;i<stationCount;i++){const s=track.length*(course===4?(.065+i*.10):(.025+i*.032)),F=track.frame(s),side=i%2?1:-1,x=F.p.x+side*(55+i%4*18),z=F.p.z,y=ground(x,z),g=new THREE.Group();g.position.set(x,y,z);root.add(g);const h=Math.max(28,Math.min(course===4?72:210,F.p.y-y+28));let rotor;
+ if(course===4){add(g,new THREE.BoxGeometry(32,3,28),steel,0,1.5);add(g,new THREE.BoxGeometry(18,h,16),dark,0,h/2+3);for(let k=0;k<5;k++){add(g,new THREE.BoxGeometry(22,.7,20),steel,0,8+k*h/5);add(g,new THREE.BoxGeometry(14,.18,.12),glow,0,9+k*h/5,10.2);}for(const side of[-1,1])add(g,new THREE.CylinderGeometry(.5,.7,h+8,8),steel,side*12,(h+8)/2);
+ for(const side of[-1,1])add(g,new THREE.BoxGeometry(8,5,30),rock,side*15,1.5);rotor=new THREE.Group();rotor.position.set(0,h+13,0);g.add(rotor);add(rotor,new THREE.TorusGeometry(8,.42,8,48),steel);add(rotor,new THREE.CylinderGeometry(1.2,1.2,1.2,12),dark).rotation.x=Math.PI/2;for(let k=0;k<3;k++){const a=k*TAU/3,m=add(rotor,new THREE.BoxGeometry(6,.55,.25),steel,Math.cos(a)*4.3,Math.sin(a)*4.3,0);m.rotation.z=a;}}else{
+ add(g,new THREE.BoxGeometry(30,3,26),steel,0,1.5);
+ for(const side of[-1,1])add(g,new THREE.CylinderGeometry(1.8,2.6,h*.42,8),dark,side*10,h*.21+3);
+ add(g,new THREE.BoxGeometry(28,2,24),steel,0,h*.42+3);
+ const cabin=add(g,new THREE.CylinderGeometry(10,10,course===5?9:12,course===5?8:12),steel,0,h*.42+9);cabin.scale.z=.8;
+ for(const side of[-1,1])add(g,new THREE.BoxGeometry(12,.65,.25),glow,0,h*.42+10,side*8.1);
+ if(course===5){
+  const roof=add(g,new THREE.ConeGeometry(14,6,8),dark,0,h*.42+17);roof.scale.z=.85;
+  for(const side of[-1,1])add(g,new THREE.BoxGeometry(1,12,1),dark,side*12,h*.42+7);
+ }else{
+  for(const side of[-1,1]){const solar=add(g,new THREE.BoxGeometry(15,.3,16),dark,side*20,h*.42+9);solar.rotation.z=side*.22;for(let k=0;k<4;k++)add(g,new THREE.BoxGeometry(.18,.34,16),steel,side*20+(k-1.5)*3,h*.42+9);}
+  add(g,new THREE.CylinderGeometry(.6,.9,15,8),steel,0,h*.42+21);
+ }
+ rotor=new THREE.Group();rotor.position.y=h*.42+20;g.add(rotor);
+ }let clear=false;for(let attempt=0;attempt<16;attempt++){if(clearance.objectClear(g)){clear=true;break;}const a=attempt*2.39996,r=130+attempt*35;g.position.set(F.p.x+Math.cos(a)*r,0,F.p.z+Math.sin(a)*r);g.position.y=ground(g.position.x,g.position.z);}if(clear){sceneryBounds.push(new THREE.Box3().setFromObject(g));machines.push({g:rotor,s,base:rotor.quaternion.clone(),phase:i,stationary:course!==4});}else{root.remove(g);g.traverse(o=>o.geometry?.dispose());}}
  if(course===5){
  // V139: replace thousands of paper-thin billboards with true spatial,
  // faceted crowns. Instance count is ~1/6 of the original 32-leaf-per-tree system.
  const bark=new THREE.MeshStandardMaterial({...rockMaps,color:0x51463a,roughness:1});
  const leaf=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.91,metalness:0,side:THREE.FrontSide});
- const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.85,1.55,1,7),bark,180);
- const foliage=new THREE.InstancedMesh(canopyGeometry(),leaf,180*5);
+ const trunks=new THREE.InstancedMesh(ancientTrunk(),bark,180);
+ const foliage=new THREE.InstancedMesh(forestCrown(),leaf,180*5);
  const foliagePalette=[0x3c6638,0x4d8045,0x69924c,0x567d48,0x7d9750,0x3d7054];
  const tint=new THREE.Color();let n=0,l=0;
  for(let i=0;i<180;i++){
@@ -67,7 +83,7 @@ export function createExpansionWorld(scene,track){
   if(!clearance.boxClear(bound))continue;
   sceneryBounds.push(bound);
   dummy.position.set(x,y+h/2,z);dummy.rotation.set(0,i*.24,0);
-  dummy.scale.set(1.45+(i%3)*.25,h,1.45+(i%3)*.25);
+  dummy.scale.set(4.8+(i%3)*.65,h,4.8+(i%3)*.65);
   dummy.updateMatrix();trunks.setMatrixAt(n++,dummy.matrix);
   for(let k=0;k<5;k++){
    const outer=k>0,angle=k*TAU/4+i*1.41;
@@ -100,5 +116,5 @@ export function createExpansionWorld(scene,track){
  const ambient=new THREE.HemisphereLight(course===5?0xb1d1bb:0xb4cde9,course===5?0x253520:0x262633,1.15),sun=new THREE.DirectionalLight(course===4?0xf8d8ad:course===5?0xffe5b3:0xc8d7ff,1.45);sun.position.set(-800,1500,800);root.add(ambient,sun);const key=new THREE.SpotLight(0xd7e9f3,110,75,1.05,.65,1.5);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.normalBias=.03;key.shadow.camera.far=80;const fill=new THREE.PointLight(p.colors[0],12,35,2);root.add(key,key.target,fill);const batchStats=batchScenery(root,[...chunks.map(c=>c.g),...machines.map(m=>m.g)]);scene.add(root);freezeWorld(root,[sky,key,key.target,fill,...machines.map(m=>m.g),...dynamic]);
  return{kind:'expansion',horizon,batchStats,sceneryBounds,stationCount,bridgeSupportCount:support,course,root,track,chunks,materials,machines,sky,skyMat,key,fill,ground,textures:[environment],materialKinds:['metal','rock'],petals:[],act:0,gradientColors:course===5?['#071c17','#244b37','#0b251b']:course===4?['#111e34','#365a76','#152638']:['#070b1c','#2b2841','#101424']};
 }
-export function updateExpansionWorld(w,s,time){const shift=expansionShift(time),p=EXPANSIONS[w.course],act=expansionAct(s,w.track.length,w.course);for(const c of w.chunks)c.g.visible=c.end>s-(w.renderBehind||80)&&c.start<s+(w.renderAhead||650);w.materials.glow.color.setHex(act.color).lerp(new THREE.Color(p.shift),shift*.65);w.materials.steel.color.setHex(p.metal).lerp(new THREE.Color(p.shift),shift*.09);w.key.position.copy(w.track.pose(Math.max(0,s-5),-2,3));w.key.target.position.copy(w.track.pose(s+20));w.fill.position.copy(w.track.pose(s+8,3,-2));w.fill.color.copy(w.materials.glow.color);w.act=+act.name.slice(0,2);if(w.lowDetail)return;w.materials.distant.uniforms.anchor.value.copy(w.track.pose(s));w.sky.position.copy(w.track.pose(s));w.skyMat.uniforms.time.value=time;w.skyMat.uniforms.shift.value=shift;if(w.materials.wind)w.materials.wind.value=time;for(const m of w.machines){m.g.visible=Math.abs(m.s-s)<850;if(!m.g.visible)continue;if(m.water)m.g.material.opacity=.42+Math.sin(time*.8+m.phase)*.035;else{m.g.quaternion.copy(m.base);m.g.rotateZ(time*(w.course===4?.2:.1)+shift*.25);}}}
+export function updateExpansionWorld(w,s,time){const shift=expansionShift(time),p=EXPANSIONS[w.course],act=expansionAct(s,w.track.length,w.course);for(const c of w.chunks)c.g.visible=c.end>s-(w.renderBehind||80)&&c.start<s+(w.renderAhead||650);w.materials.glow.color.setHex(act.color).lerp(new THREE.Color(p.shift),shift*.65);w.materials.steel.color.setHex(p.metal).lerp(new THREE.Color(p.shift),shift*.09);w.key.position.copy(w.track.pose(Math.max(0,s-5),-2,3));w.key.target.position.copy(w.track.pose(s+20));w.fill.position.copy(w.track.pose(s+8,3,-2));w.fill.color.copy(w.materials.glow.color);w.act=+act.name.slice(0,2);if(w.lowDetail)return;w.materials.distant.uniforms.anchor.value.copy(w.track.pose(s));w.sky.position.copy(w.track.pose(s));w.skyMat.uniforms.time.value=time;w.skyMat.uniforms.shift.value=shift;if(w.materials.wind)w.materials.wind.value=time;for(const m of w.machines){m.g.visible=Math.abs(m.s-s)<850;if(!m.g.visible)continue;if(m.water)m.g.material.opacity=.42+Math.sin(time*.8+m.phase)*.035;else if(!m.stationary){m.g.quaternion.copy(m.base);m.g.rotateZ(time*(w.course===4?.2:.1)+shift*.25);}}}
 export function disposeExpansionWorld(scene,w){scene.remove(w.root);for(const kind of w.materialKinds)releasePBR(kind);scene.environment=null;const g=new Set(),m=new Set();w.root.traverse(o=>{if(o.geometry)g.add(o.geometry);if(o.material)m.add(o.material)});g.forEach(v=>v.dispose());m.forEach(v=>v.dispose());w.textures.forEach(v=>v.dispose());w.key.shadow.map?.dispose();}
