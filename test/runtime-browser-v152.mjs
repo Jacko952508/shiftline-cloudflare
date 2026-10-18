@@ -10,9 +10,9 @@ async function run(name,port){
  try{
   await page.addInitScript(()=>{
    localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:5,color:0,custom:{wing:3,engine:4,fin:2,trail:1},records:{1:112000},courseRevisions:{1:2,2:3},ghosts:{},medals:{},races:4}));
-   window.__runtimeCounters={programs:0,audioBuffers:0};
+   window.__runtimeCounters={programs:0,audioBuffers:0,audioEvents:[]};
    const create=WebGL2RenderingContext.prototype.createProgram;WebGL2RenderingContext.prototype.createProgram=function(...a){window.__runtimeCounters.programs++;return create.apply(this,a);};
-   const Audio=window.AudioContext||window.webkitAudioContext;if(Audio){const fn=Audio.prototype.createBuffer;Audio.prototype.createBuffer=function(...a){window.__runtimeCounters.audioBuffers++;return fn.apply(this,a);};}
+   const Audio=window.AudioContext||window.webkitAudioContext;if(Audio){const fn=Audio.prototype.createBuffer;Audio.prototype.createBuffer=function(...a){window.__runtimeCounters.audioBuffers++;window.__runtimeCounters.audioEvents.push({channels:a[0],length:a[1],source:new Error().stack});return fn.apply(this,a);};}
   });
   await page.goto('http://127.0.0.1:'+port+'/?shipqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady&&window.__shiftlineRuntimeTest,null,{timeout:150000});
@@ -34,9 +34,17 @@ async function run(name,port){
    const frame=await page.evaluate(()=>window.__shiftlineRuntimeTest.frame());const after=await page.evaluate(()=>({...window.__runtimeCounters,...window.__shiftlineRuntimeTest.read()}));
    const recovery=await page.evaluate(()=>window.__shiftlineRuntimeTest.recover());assert.equal(recovery.dead,0,'Repeated crash recovery failed');assert.equal(recovery.x,0);assert.equal(recovery.y,0);assert.equal(recovery.blocked,false,'Respawn inside an obstacle');
    report.collisions.push({fraction,hitCPU:hit.cpu,frameCPU:frame.cpu,programDelta:after.programs-before.programs,pcmDelta:after.audioBuffers-before.audioBuffers,scale:frame.scale,recovery});
-   if(name==='candidate'){assert.equal(after.programs,before.programs,'First collision compiles GPU programs');assert.equal(after.audioBuffers,before.audioBuffers,'First collision synthesises sound during play');assert.ok(Math.abs(frame.scale-.83)<1e-6,'Collision resizes ship');}
+   if(name==='candidate'){assert.equal(after.programs,before.programs,'First collision compiles GPU programs');assert.equal(after.audioBuffers,before.audioBuffers,'First collision allocates audio '+JSON.stringify(after.audioEvents.slice(before.audioEvents.length)));assert.ok(Math.abs(frame.scale-.83)<1e-6,'Collision resizes ship');}
   }
   const cockpit=await page.evaluate(()=>window.__shiftlineRuntimeTest.cockpit());assert.equal(cockpit.active,true);assert.equal(cockpit.lost,false);await page.evaluate(()=>window.__shiftlineRuntimeTest.cockpit());
+  if(name==='candidate'&&course===1){
+   await page.evaluate(()=>window.__shiftlineRuntimeTest.trial());
+   await page.waitForFunction(()=>window.__shiftlineRuntimeTest.read().state==='countdown',null,{timeout:220000});
+   assert.equal((await page.evaluate(()=>window.__shiftlineRuntimeTest.read())).ghost?.batched,false,'Translucent time-trial ghost must preserve original part sorting');
+   await page.evaluate(()=>{window.__shiftlineRuntimeTest.menu();window.__shiftlineRuntimeTest.start();window.__shiftlineRuntimeTest.menu();});
+   await page.waitForTimeout(400);
+   assert.equal((await page.evaluate(()=>window.__shiftlineRuntimeTest.read())).state,'menu','Cancelled preparation starts a hidden race later');
+  }
   const save=await page.evaluate(()=>JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')));assert.equal(save.records[1],112000,'Regression erased saved record');assert.deepEqual(errors,[]);
   return report;
  }finally{await browser.close();}

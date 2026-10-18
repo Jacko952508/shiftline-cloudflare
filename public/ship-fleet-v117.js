@@ -367,7 +367,7 @@ function builder(ship,index,c,m,high=true){
  root.scale.x*=scale;root.updateMatrixWorld(true);
  const finalBox=new THREE.Box3().setFromObject(root);
  const actualSpan=finalBox.max.x-finalBox.min.x;
- if(!high)ship.userData.airframeBatch=batchStaticAirframe(root);
+ if(!high&&!ship.userData.skipAirframeBatch)ship.userData.airframeBatch=batchStaticAirframe(root);
  installShipExhaust(ship,root,index,c,high);
  root.userData.designId=NAMES[index];
  root.userData.wingspan=SPAN;

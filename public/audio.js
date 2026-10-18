@@ -47,10 +47,11 @@ function warmEffects(){
 // Background idle warming may otherwise leave the first crash at the end of its queue.
 export async function prepareRaceAudio(valid=()=>true){
  if(!ctx||!userVolume)return;
- const water=scene===2;
- for(const name of ['engineBody','engineTurbine','engineAir','crash','boost','release','pulse','shield','hull']){
+ const effects=['pulse','missile','mine','crash','shield','hull','boost','release','scrape','hit','kill'];
+ const required=[...['engineBody','engineTurbine','engineAir'].map(name=>[name,false]),...[false,true].flatMap(water=>effects.map(name=>[name,water]))];
+ for(const [name,water] of required){
   if(!valid())return;
-  effectBuffer(ctx,name,name.startsWith('engine')?false:water);
+  effectBuffer(ctx,name,water);
   await new Promise(resolve=>setTimeout(resolve,0));
  }
  if(!valid())return;
