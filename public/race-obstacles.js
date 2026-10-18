@@ -1,4 +1,5 @@
 import {hazardGeometry} from './hazard-construction-v156.js?v=159';
+import {upcomingHazard,cueEnvelope,idleHazardGlow} from './obstacle-lighting-v160.js?v=160';
 import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=156';
 import {markHazardGeometry} from './obstacle-glow-v155.js?v=159';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
@@ -64,6 +65,18 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
  material.customProgramCacheKey=()=> previousKey+'/obstacle-tunnel-trim-v127-instanced';
 }
 function finishObstacleGeometry(o){o.rig.traverse(m=>{if(m.material)for(const material of Array.isArray(m.material)?m.material:[m.material])trimToTunnel(material,o.frame);if(m.isMesh&&m.castShadow){m.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});m.customDistanceMaterial=new THREE.MeshDistanceMaterial();trimToTunnel(m.customDepthMaterial,o.frame);trimToTunnel(m.customDistanceMaterial,o.frame);}});if(o.bodywork)o.bodywork.clipped=o.bodywork.meshes.every(m=>m.material.userData.tunnelTrim===true);}
+// One reusable approach signal per track: no crowd of permanently glowing rings.
+function createWarningRing(){
+ const group=new THREE.Group();
+ group.name='NEXT HAZARD / SEQUENTIAL SIGNAL';
+ const base=new THREE.Mesh(new THREE.TorusGeometry(7.02,.052,6,80),new THREE.MeshBasicMaterial({color:0x80e9ff,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));
+ const arcGeometry=new THREE.TorusGeometry(7.04,.09,5,24,Math.PI*.46);
+ const a=new THREE.Mesh(arcGeometry,new THREE.MeshBasicMaterial({color:0xb4faff,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));
+ const b=new THREE.Mesh(arcGeometry,a.material.clone());
+ for(const mesh of [base,a,b]){mesh.castShadow=false;mesh.receiveShadow=false;mesh.userData.obstacleDecoration=true;}
+ group.add(base,a,b);group.visible=false;group.position.z=.12;
+ return {group,base,a,b,owner:null};
+}
 export function buildObstacles(scene,track,course,select=null){
  const generated=specifications(course,track.length),specs=select?generated.filter(select):generated;
  const quality=typeof document!=='undefined'?document.getElementById('quality')?.value||'auto':'auto';let bodyworkCount=0,metalParts=0,glowParts=0;
@@ -78,10 +91,55 @@ export function buildObstacles(scene,track,course,select=null){
   }
   const kit=installObstacleBodywork(o,quality);bodyworkCount+=kit.meshes.length;metalParts+=kit.metal;glowParts+=kit.lit;finishObstacleGeometry(o);scene.add(o.rig);
  }
+ if(specs.length)specs.warningRing=createWarningRing();
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&(/obstacleqa=1|shipqa=1/.test(location.search)))window.__shiftlineObstacleQA={course,obstacles:specs.length,detailMeshes:bodyworkCount,metalParts,glowParts,quality,collisionTypes:specs.reduce((n,o)=>n+o.solids.length,0),decorOnly:true,clipped:specs.every(o=>o.bodywork?.clipped),families:[...new Set(specs.map(o=>o.family))],version:157};
  return specs;
 }
 const HAZARD_COLORS=[0,0xffb86b,0xff8fce,0x73efff,0xffd078,0x73ffe7,0xffbc7e];
 function obstacleColor(o,time,color){if(o.family)return color.setHex(HAZARD_COLORS[o.course]);if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp(new THREE.Color(EXPANSIONS[o.course].shift),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(new THREE.Color(0xff8056),cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
-export function updateObstacles(specs,along,time){for(const o of specs){o.rig.visible=o.s>along-55&&o.s<along+520;if(!o.rig.visible)continue;const tint=obstacleColor(o,time,o.cachedTint??=new THREE.Color());for(const m of o.trim)m.color.copy(tint).multiplyScalar(m.userData.smallRing?3.4:3);o.material.emissive.copy(tint);o.material.userData.hazardTime.value=time+o.seed;const distance=o.s-along;o.material.userData.hazardGlowStrength.value=1.15-THREE.MathUtils.smoothstep(distance,160,520)*.25;if(o.bodywork?.indicatorMaterial){const hz=[0,1.4,.95,1.1,1.85,.72,1.34][o.course]||1.2;const pulse=.86+.14*Math.sin(time*hz+o.seed*.73);o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar(2.4*pulse);}for(const h of o.ringHalos||[])h.material.opacity=.16+.08*Math.max(0,Math.min(1,(520-(o.s-along))/400));const st=obstacleState(o,time);o.motion.position.set(st.x,st.y,0);o.motion.rotation.set(0,0,st.a);o.motion.scale.setScalar(st.scale);if(st.pieces){for(let i=0;i<o.pieces.length;i++){const j=i*6,node=o.pieces[i];node.position.set(st.pieces[j],st.pieces[j+1],st.pieces[j+2]);node.rotation.z=st.pieces[j+3];}updateObstacleBodywork(o,st);}}}
-export function disposeObstacles(scene,specs){for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}
+export function updateObstacles(specs,along,time){
+ const next=upcomingHazard(specs,along),distance=next?next.s-along:Infinity;
+ const active=next?cueEnvelope(distance,time,next.seed):null;
+ const warning=specs.warningRing;
+ if(warning){
+  if(next&&active.energy>.005&&distance<390){
+   if(warning.owner!==next){next.rig.add(warning.group);warning.owner=next;}
+   warning.group.visible=true;
+   const tint=obstacleColor(next,time,next.cachedTint??=new THREE.Color());
+   warning.base.material.color.copy(tint);
+   warning.a.material.color.copy(tint).lerp(new THREE.Color(0xffffff),.38);
+   warning.b.material.color.copy(tint).lerp(new THREE.Color(0xffffff),.18);
+   warning.base.material.opacity=active.ring;
+   warning.a.material.opacity=active.sweep;
+   warning.b.material.opacity=active.sweep*.57;
+   // Scanning arcs animate first; the solid rim powers up near the crossing.
+   const rotation=time*.82+active.energy*3.8;
+   warning.a.rotation.z=rotation;warning.b.rotation.z=rotation+Math.PI;
+  }else warning.group.visible=false;
+ }
+ for(const o of specs){
+  const d=o.s-along;
+  o.rig.visible=d>-55&&d<520;
+  if(!o.rig.visible)continue;
+  const focus=o===next?active:null,energy=focus?.energy||0;
+  const tint=obstacleColor(o,time,o.cachedTint??=new THREE.Color());
+  for(const m of o.trim)m.color.copy(tint).multiplyScalar((m.userData.smallRing?1.05:.95)+energy*2.2);
+  o.material.emissive.copy(tint);
+  o.material.userData.hazardTime.value=time+o.seed;
+  o.material.userData.hazardGlowStrength.value=focus?focus.glow:idleHazardGlow(d);
+  if(o.bodywork?.indicatorMaterial){
+   const hz=[0,1.4,.95,1.1,1.85,.72,1.34][o.course]||1.2;
+   const pulse=.93+.07*Math.sin(time*hz+o.seed*.73);
+   o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar((focus?focus.indicators:.72)*pulse);
+  }
+  for(const h of o.ringHalos||[])h.material.opacity=.035+.21*energy;
+  const st=obstacleState(o,time);
+  o.motion.position.set(st.x,st.y,0);o.motion.rotation.set(0,0,st.a);o.motion.scale.setScalar(st.scale);
+  if(st.pieces){for(let i=0;i<o.pieces.length;i++){const j=i*6,node=o.pieces[i];node.position.set(st.pieces[j],st.pieces[j+1],st.pieces[j+2]);node.rotation.z=st.pieces[j+3];}updateObstacleBodywork(o,st);}
+ }
+ if(typeof window!=='undefined'&&typeof location!=='undefined'&&location.search.includes('lightqa=1'))
+  window.__shiftlineLightingQA={version:160,nextId:next?.id??null,distance:Number.isFinite(distance)?distance:null,
+   activeCount:warning?.group.visible?1:0,ringOpacity:warning?.group.visible?warning.base.material.opacity:0,
+   sweepOpacity:warning?.group.visible?warning.a.material.opacity:0};
+}
+export function disposeObstacles(scene,specs){if(specs.warningRing){const w=specs.warningRing;w.group.parent?.remove(w.group);for(const m of [w.base,w.a,w.b])m.material.dispose();w.base.geometry.dispose();w.a.geometry.dispose();specs.warningRing=null;}for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}
