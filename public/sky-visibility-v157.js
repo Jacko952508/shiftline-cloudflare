@@ -33,12 +33,29 @@ const riftSky=`varying vec3 ray;uniform float time;uniform vec3 base;
  void main(){vec3 d=normalize(ray);float band=exp(-pow(dot(d,normalize(vec3(.25,.84,.48)))*3.2,2.));float cloud=field(d*4.+vec3(time*.0008,0.,0.));float dust=field(d*13.+cloud*2.);float thread=smoothstep(.34,.68,cloud)*band;
  vec3 c=vec3(.004,.006,.016)+base*.45;c+=mix(vec3(.018,.035,.085),vec3(.095,.031,.102),dust)*thread;c+=vec3(.032,.052,.085)*pow(thread,2.)*(.45+dust);c*=1.-smoothstep(.5,.73,dust)*thread*.40;gl_FragColor=vec4(c,1.);}`;
 
+// Direction-space clouds have no horizon division, texture seam or mirrored
+// underside. Four filtered scales give soft banks and fine wisps in one draw.
+const naturalSky=`varying vec3 v;uniform float time,level,shift;uniform vec3 base;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
+ void main(){vec3 d=normalize(v);vec2 q=d.xz*4.2+d.y*vec2(1.1,-.7),drift=vec2(time*.006,-time*.004);float broad=noise(q+drift);float middle=noise(q*2.17+drift*.75+3.8);float fine=noise(q*5.3-drift*.4);float wisp=noise(q*12.7+drift*.25);float n=broad*.53+middle*.28+fine*.13+wisp*.06;
+ float horizon=pow(1.-clamp(abs(d.y)*3.4,0.,1.),3.);float overhead=smoothstep(-.015,.28,d.y);float cloud=smoothstep(.38,.72,n)*overhead;float sun=pow(max(0.,dot(d,normalize(vec3(-.6,.35,.7)))),12.);
+ vec3 c=base*(.72+.48*max(0.,d.y));
+ if(level<4.5){
+  c+=vec3(.185,.25,.35)*horizon;float shade=clamp(.42+sun*.45+(fine-.5)*.4-broad*.15,0.,1.);vec3 bank=mix(vec3(.055,.075,.115),vec3(.25,.31,.39),shade);c=mix(c,bank,cloud*.84);c+=vec3(.10,.14,.19)*sun*cloud*(1.-cloud)*1.8;float lightning=pow(max(0.,sin(time*.67)+sin(time*1.91)-1.67),2.);c+=vec3(.14,.19,.27)*cloud*lightning;
+ }else{
+  c+=vec3(.11,.185,.096)*horizon;float shade=clamp(.50+sun*.4+(fine-.5)*.35,0.,1.);vec3 bank=mix(vec3(.07,.115,.105),vec3(.32,.43,.36),shade);c=mix(c,bank,cloud*.72);c+=vec3(.12,.09,.035)*pow(sun,2.)*.45;
+ }gl_FragColor=vec4(c,1.);}`;
+
 export function attachSkyVisibility(w,course){
  if(course===6){
   const old=w.skyMat;
   w.skyMat=atmosphereOutput(new THREE.ShaderMaterial({uniforms:{time:{value:0},shift:{value:0},base:{value:old.uniforms.base.value.clone()}},side:THREE.BackSide,depthWrite:false,vertexShader:'varying vec3 ray;void main(){ray=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:riftSky}));
   w.sky.material=w.skyMat;old.dispose();w.stars=createStarfield(course);w.root.add(w.stars);
- }else atmosphereOutput(w.skyMat||w.vista?.water?.material);
+ }else{
+  if(course===4||course===5)w.skyMat.fragmentShader=naturalSky;
+  atmosphereOutput(w.skyMat||w.vista?.water?.material);
+ }
  if(w.planet)atmosphereOutput(w.planet.material);
  w.skyVisibility={version:157,stars:w.stars?.geometry.attributes.position.count||0,displayCorrect:true};return w;
 }
