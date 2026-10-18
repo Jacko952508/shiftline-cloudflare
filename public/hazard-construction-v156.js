@@ -1,15 +1,17 @@
+import {staghornCoral} from './coral-v154.js?v=154';
 import * as THREE from 'three';
 import {bevelBox} from './art-direction-v148.js?v=153';
 import {solidDistance} from './course-colliders.js?v=156';
 // Surface equipment is baked into the solid draw, not added as dozens of
 // separate meshes. The authored collider remains the primary silhouette.
+let livingCoral;
 function combine(parts){
  const pos=[],normal=[],uv=[],colour=[],index=[];
  for(const [g,tint=1] of parts){
   const offset=pos.length/3,a=g.attributes;
   pos.push(...a.position.array);normal.push(...a.normal.array);
-  const c=typeof tint==='number'?[tint,tint,tint]:tint;
-  for(let i=0;i<a.position.count;i++){uv.push(a.uv?.getX(i)||0,a.uv?.getY(i)||0);colour.push(...c);}
+  const c=typeof tint==='number'?[tint,tint,tint]:tint||[1,1,1];
+  for(let i=0;i<a.position.count;i++){uv.push(a.uv?.getX(i)||0,a.uv?.getY(i)||0);if(tint===null&&a.color)colour.push(a.color.getX(i),a.color.getY(i),a.color.getZ(i));else colour.push(...c);}
   if(g.index)for(const i of g.index.array)index.push(offset+i);else for(let i=0;i<a.position.count;i++)index.push(offset+i);
   g.dispose();
  }
@@ -57,6 +59,10 @@ export function hazardGeometry(p,course,quality='auto'){
   for(let i=0;i<n;i++){
    const a=i*Math.PI*2/n,g=bevelBox(Math.min(.48,p.tube*.8),Math.min(.26,p.tube*.5),.10,.025);g.translate(p.R,0,p.tube*.97);g.rotateZ(a);parts.push([g,i%3?.34:.93]);
   }
+ }
+ if(course===2&&p.role==='reef'&&p.type==='torus'){
+  livingCoral??=staghornCoral();
+  for(const angle of [.3,2.4,4.5]){const coral=livingCoral.clone();coral.scale(.42,.42,.42);coral.translate(p.R,0,p.tube*.88);coral.rotateZ(angle);parts.push([coral,null]);}
  }
  const g=combine(parts);g.userData.machine156=true;g.name='V156 / '+(p.role||p.type)+' / layered construction';return g;
 }

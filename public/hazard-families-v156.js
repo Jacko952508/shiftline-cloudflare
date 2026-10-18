@@ -43,6 +43,7 @@ export function familySolids(course,family,variant=0){
   box(-6.4,0,.35,4.4,1.05,0,null,'mount');box(6.4,0,.35,4.4,1.05,0,null,'mount');
  }else if(family==='furnace-shutters'){
   for(let k=0;k<3;k++)poly(jaw.map(([x,y])=>[x*.64,y*.75]),(k-1)*(4.0+variant*.18),(k%2?-2.3:2.3)+(variant-1)*.25,k%2?Math.PI:0,1.05,slide(0,k%2?2.2:-2.2,k*1.4),'shutter');
+  for(const side of[-1,1])box(0,side*6.45,5.8,.28,.85,0,null,'rail');
  }else if(family==='cooling-rotor'){
   ring(0,0,1.8,.28,null,'motor');
   for(let k=0;k<6;k++)poly(swept.map(([x,y])=>[1.3+x*.79,y*.65]),0,0,k*TAU/6+shift,.65,spin(k%2?-.12:.12),'blade',k%2?.65:-.65);

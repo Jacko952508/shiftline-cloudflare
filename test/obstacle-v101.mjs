@@ -13,7 +13,7 @@ try{
  const result=await page.evaluate(async()=>{
   const THREE=await import('three');
   const {createTrack}=await import('./race-track.js?v=58');
-  const {specifications,buildObstacles,updateObstacles,disposeObstacles,obstacleState}=await import('./race-obstacles.js?v=101');
+  const {specifications,buildObstacles,updateObstacles,disposeObstacles,obstacleState}=await import('./race-obstacles.js?v=156');
   const results=[],colors=new Set(),checks=(ok,what)=>{if(!ok)throw Error(what)};
   for(let course=1;course<=6;course++){
    const track=createTrack(course),before=specifications(course,track.length).map(o=>JSON.stringify({id:o.id,s:o.s,kind:o.kind,theme:o.theme,forceDodge:o.forceDodge,solids:o.solids,seed:o.seed,spin:o.spin}));
@@ -32,7 +32,7 @@ try{
     o.motion.traverse(m=>{if(m.isMesh&&m.userData.collider)collider.push(m);if(m.name==='Instanced machined ring clamps'){clamps++;checks(m.count===18,'Ring clamps not instanced')}if(m.name==='Hazard face guide lines')stripes++});
     checks(collider.length===o.solids.length,'Course '+course+' collider mesh count changed '+i);
     for(let j=0;j<collider.length;j++){
-     const expected=o.solids[j],mesh=collider[j];
+     const expected=o.solids[j],mesh=o.pieces?.[j]||collider[j];
      checks(Math.abs(mesh.position.x-(expected.x||0))<1e-6&&Math.abs(mesh.position.y-(expected.y||0))<1e-6,'Course '+course+' collider coords shifted');
      checks(Math.abs(mesh.rotation.z-(expected.a||0))<1e-6,'Course '+course+' collider rotation shifted');
     }
@@ -45,6 +45,7 @@ try{
     const st=obstacleState(o,2.75);
     checks(Math.abs(o.motion.position.x-st.x)<1e-6&&Math.abs(o.motion.position.y-st.y)<1e-6,'Course '+course+' obstacle motion changed');
     checks(Math.abs(o.motion.rotation.z-st.a)<1e-6,'Course '+course+' obstacle rotation changed');
+    if(st.pieces)for(let i=0;i<o.pieces.length;i++){const node=o.pieces[i],j=i*6;checks(Math.abs(node.position.x-st.pieces[j])<1e-6&&Math.abs(node.position.y-st.pieces[j+1])<1e-6&&Math.abs(node.position.z-st.pieces[j+2])<1e-6&&Math.abs(node.rotation.z-st.pieces[j+3])<1e-6,'Course '+course+' articulated collider/render mismatch');}
    }
    disposeObstacles(scene,specs);
    checks(scene.children.length===0,'Course '+course+' leaked obstacle scene roots');
