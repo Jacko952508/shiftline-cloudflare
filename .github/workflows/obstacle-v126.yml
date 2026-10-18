@@ -5,6 +5,8 @@ on:
     paths:
       - 'public/obstacle-bodywork-v126.js'
       - 'public/race-obstacles.js'
+      - 'public/obstacle-lighting-v160.js'
+      - 'test/obstacle-lighting-v160.mjs'
       - 'public/race-impact.js'
       - 'public/race-engine.js'
       - 'public/index.html'
@@ -34,7 +36,9 @@ jobs:
       - name: Verify centred recoveries and pooled impacts
         run: node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
       - name: Check six course collider invariants and mounted hardware
-        run: node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-lighting-v160.mjs
   browsers:
     runs-on: ubuntu-latest
     timeout-minutes: 17
