@@ -15,12 +15,12 @@ export function createStarfield(course=1){
   const a=i*2.3999632297,y=1-2*(i+.5)/count,r=Math.sqrt(1-y*y);
   positions.push(Math.cos(a)*r*6000,y*6000,Math.sin(a)*r*6000);
   const c=new THREE.Color(i%11===0?0xffd3a2:i%7===0?0x9fcaff:0xe4edff);colors.push(c.r,c.g,c.b);
-  sizes.push(i%47===0?4.8:i%9===0?3.1:1.8+(i%5)*.18);
+  sizes.push(i%47===0?5.5:i%9===0?3.6:2.4+(i%5)*.20);
  }
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.setAttribute('starSize',new THREE.Float32BufferAttribute(sizes,1));
  const m=atmosphereOutput(new THREE.ShaderMaterial({uniforms:{time:{value:0},pixelRatio:{value:1}},vertexShader:`attribute vec3 color;attribute float starSize;varying vec3 tint;varying float phase;uniform float time;uniform float pixelRatio;
  void main(){phase=dot(position,vec3(.13,.27,.17));tint=color*(.94+.06*sin(time*.3+phase));gl_PointSize=starSize*pixelRatio;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
- fragmentShader:`varying vec3 tint;varying float phase;void main(){float r=length(gl_PointCoord-.5);float core=1.-smoothstep(.06,.31,r);float halo=1.-smoothstep(.10,.5,r);gl_FragColor=vec4(tint*(.85+core*.65),max(core,halo*.28)*.95);}`,
+ fragmentShader:`varying vec3 tint;varying float phase;void main(){float r=length(gl_PointCoord-.5);float core=1.-smoothstep(.10,.37,r);float halo=1.-smoothstep(.10,.5,r);gl_FragColor=vec4(tint*(.85+core*.65),max(core,halo*.28)*.95);}`,
  transparent:true,depthWrite:false,fog:false}));
  const stars=new THREE.Points(g,m);stars.name='V157 / resolved orbital stars / '+course;stars.frustumCulled=false;
  stars.onBeforeRender=renderer=>{m.uniforms.pixelRatio.value=renderer.getPixelRatio();};return stars;

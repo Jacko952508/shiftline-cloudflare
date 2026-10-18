@@ -58,6 +58,7 @@ async function run(name,port){
     }
     await page.evaluate(()=>window.__shiftlineReadabilityTest.hideHazard(false));
     const metrics={family,changed,bright,brightFraction:bright/Math.max(1,changed),meanContrast:contrast/Math.max(1,changed)};report.readability.push(metrics);
+    console.log('READABILITY '+JSON.stringify(metrics));
     assert.ok(changed>70,'No visible hazard silhouette '+JSON.stringify(metrics));
     assert.ok(metrics.brightFraction>.45,'Hazard body remains dark '+JSON.stringify(metrics));
     assert.ok(metrics.meanContrast>32,'Hazard lacks background separation '+JSON.stringify(metrics));
@@ -69,6 +70,11 @@ async function run(name,port){
    const mean=sum/(525*370),spread=Math.max(...sample)-Math.min(...sample);assert.ok(mean>14&&mean<205,'Missing ambient sky detail '+mean);assert.ok(spread>12,'Flat atmosphere '+spread);
    if(course===1||course===6){assert.equal(sky.stars,3600);assert.ok(bright>70,'Unresolved stars '+bright);}
    report.sky={...sky,mean,spread,bright};
+   console.log('SKY '+JSON.stringify(report.sky));
+   const low=await page.evaluate(()=>window.__shiftlineReadabilityTest.mode(true,'low'));assert.equal(low.skyVisible,true);assert.equal(low.starsVisible,true);assert.equal(low.lost,false);
+   await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-low-sky.png',timeout:90000});
+   if(course===1&&kind===chromium){const desktop=await page.evaluate(()=>window.__shiftlineReadabilityTest.mode(false,'high'));assert.equal(desktop.path,'multipass');assert.equal(desktop.lost,false);await page.screenshot({path:out+'/desktop-hdr.png',timeout:90000});}
+   await page.evaluate(()=>window.__shiftlineReadabilityTest.mode(true,'high'));
   }
   for(const fraction of[.08,.50,.85]){
    await page.evaluate(p=>window.__shiftlineRuntimeTest.position(p),fraction);
