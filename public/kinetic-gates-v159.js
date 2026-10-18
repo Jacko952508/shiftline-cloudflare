@@ -9,8 +9,9 @@ export function kineticGateSolids(family,variant=0){
   const jaw=[[-1.12,-4.65],[-.28,-4.65],[.58,-3.75],[.12,-2.7],[.88,-1.65],[1.08,-.62],[.46,0],[1.08,.62],[.88,1.65],[.12,2.7],[.58,3.75],[-.28,4.65],[-1.12,4.65],[-1.38,3.8],[-.83,2.55],[-1.32,1.55],[-1.08,0],[-1.32,-1.55],[-.83,-2.55],[-1.38,-3.8]];
   for(const side of[-1,1]){
    // Both carriages close together and dwell at their travel limits. The
-   // narrowest central lane remains 4.64 m wide before encounter offsets.
-   poly(jaw.map(p=>[...p]),side*4.85,0,side<0?0:Math.PI,{x:-side*(1.35+variant*.06),y:0,phase:0},'truss-jaw',1);
+   // central shortcut closes during the stroke; clear outer lanes open as
+   // the jaws move inward. There is always a choice of reachable passages.
+   poly(jaw.map(p=>[...p]),side*4.85,0,side<0?0:Math.PI,{x:-side*(3.55+variant*.08),y:0,phase:0},'truss-jaw',1);
    solids.push({type:'box',x:side*6.55,y:0,hx:.19,hy:2.65,hz:.55,a:0,role:'guide-stator',signalStyle:1});
   }
  }else{

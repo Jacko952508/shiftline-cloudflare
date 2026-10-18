@@ -20,14 +20,16 @@ for(const [course,families]of [[1,['dock-clamps','security-segments']],[2,['pres
    assert.equal(g.attributes.hazardStyle.getX(0),shutter?1:2);assert.ok(g.attributes.position.count<18000);
    assert.ok([...g.attributes.hazardLight.array].some(x=>x>.9)||p.type==='sphere');g.dispose();
   }
+  if(shutter){assert.ok(moving[0].drive.x>3);}
   const o={...familySpecifications(course,4000).find(o=>o.family===family),variant,solids,forceDodge:false};
+  if(shutter){assert.ok(localDistance(o,familyState(o,-o.seed),0,0,0)>3.5);assert.ok(clearance(o,familyState(o,3.4-o.seed),0,0)<.1,'Closing stroke never challenges the centre line');}
   let previousAngle=null;
   for(let t=0;t<20;t+=.125){
    const st=familyState(o,t);assert.equal(st.x,0);assert.equal(st.y,0);assert.equal(st.a,o.orientation);
    if(shutter){
     assert.ok(Math.abs(st.pieces[0]+st.pieces[12])<1e-9,'Jaws do not close symmetrically');
-    // A fixed centred line must stay open throughout a complete stroke.
-    assert.ok(localDistance(o,st,0,0,0)>2.3);
+    // Every stroke offers a reachable passage; the centre is deliberately
+    // not always safe, so this mechanism requires reading its movement.
    }else{
     const angles=moving.map(p=>st.pieces[solids.indexOf(p)*6+3]);
     assert.ok(angles.every(a=>Math.abs(a-angles[0])<1e-10),'Rotor petals lost their mechanical registration');
