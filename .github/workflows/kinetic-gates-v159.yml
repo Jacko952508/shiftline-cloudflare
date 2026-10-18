@@ -1,10 +1,11 @@
 name: SHIFTLINE V159 Kinetic Gates
 on:
   push:
-    branches: [graphics-v159, main]
+    branches: [graphics-v159, lighting-v160, main]
     paths:
       - 'public/**'
       - 'test/kinetic-gates-*.mjs'
+      - 'test/obstacle-lighting-v160.mjs'
       - 'test/kinetic-gates-browser-v159.mjs'
       - 'test/sightlines-*'
       - 'test/readability-*'
@@ -37,6 +38,7 @@ jobs:
           node-version: '24'
       - name: Shared physics, attached equipment and fair passage
         run: |
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-lighting-v160.mjs
           node --experimental-loader ./test/three-loader.mjs test/kinetic-gates-v159.mjs
           node --experimental-loader ./test/three-loader.mjs test/sightlines-v158.mjs
           node --experimental-loader ./test/three-loader.mjs test/readability-v157.mjs

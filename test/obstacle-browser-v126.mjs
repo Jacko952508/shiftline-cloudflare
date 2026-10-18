@@ -14,14 +14,19 @@ async function check(kind,courses){
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|VALIDATE_STATUS|shader error/i.test(e.text()))shaders.push(e.text())});
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
-  await page.goto(base+'/?shipqa=1&obstacleqa=1',{waitUntil:'domcontentloaded',timeout:65000});
+  await page.goto(base+'/?shipqa=1&obstacleqa=1&lightqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=159');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=160');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await page.locator('#obsOpen').click({timeout:35000});
    await page.waitForFunction(n=>window.__shiftlineObstacleQA?.course===n&&window.__shiftlineObstacleQA.obstacles>5,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineObstacleQA);
+   await page.waitForFunction(()=>window.__shiftlineLightingQA?.version===160,null,{timeout:30000});
+   const signal=await page.evaluate(()=>window.__shiftlineLightingQA);
+   assert.ok(signal.activeCount<=1,'More than one warning ring is active');
+   if(signal.distance!==null&&signal.distance>0&&signal.distance<300)
+    assert.equal(signal.activeCount,1,'The approaching hazard must receive its startup signal');
    assert.equal(info.decorOnly,true);
    assert.equal(info.clipped,true,'Every moving decoration must respect original tunnel boundary');
    assert.ok(info.metalParts>info.obstacles*.7);

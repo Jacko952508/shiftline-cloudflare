@@ -15,8 +15,10 @@ function depthCue(material){
   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nrouteGuideDepth=max(0.,-mvPosition.z);');
   shader.fragmentShader='varying float routeGuideDepth;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-   float routeGuideVisible=1.-smoothstep(35.,300.,routeGuideDepth);
-   diffuseColor.rgb*=.04+.96*routeGuideVisible*routeGuideVisible*routeGuideVisible;
+   // A lower nearby peak and a longer low-level tail prevents the sharp
+   // contrast between the current tunnel and the unexplored road.
+   float routeGuideVisible=1.-smoothstep(22.,490.,routeGuideDepth);
+   diffuseColor.rgb*=.16+.69*routeGuideVisible;
   `);
  };
  material.customProgramCacheKey=()=>key+'/route-depth-158';material.userData.sightline158=true;material.needsUpdate=true;return material;
