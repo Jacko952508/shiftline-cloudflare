@@ -1,7 +1,7 @@
 import {hazardGeometry} from './hazard-construction-v156.js?v=159';
 import {upcomingHazard,cueEnvelope,idleHazardGlow} from './obstacle-lighting-v160.js?v=160';
 import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=156';
-import {markHazardGeometry} from './obstacle-glow-v155.js?v=159';
+import {markHazardGeometry} from './obstacle-glow-v155.js?v=161';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
 import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=159';
 export function specifications(course,length){return sharedSpecifications(course,length)}
@@ -10,7 +10,7 @@ export function solidDistance(p,x,y,z){return sharedSolidDistance(p,x,y,z)}
 export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,x,y,z)}
 import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-colliders.js?v=67';
 const RACING_LINES=[];for(let r=0;r<=5.8;r+=.65)for(let k=0;k<24;k++){const a=k*Math.PI*2/24;RACING_LINES.push({x:Math.cos(a)*r,y:Math.sin(a)*r})}
-import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=159';
+import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=161';
 import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=156';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=159';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
@@ -75,7 +75,11 @@ function createWarningRing(){
  const b=new THREE.Mesh(arcGeometry,a.material.clone());
  for(const mesh of [base,a,b]){mesh.castShadow=false;mesh.receiveShadow=false;mesh.userData.obstacleDecoration=true;}
  group.add(base,a,b);group.visible=false;group.position.z=.12;
- return {group,base,a,b,owner:null};
+ const alarmMaterial=new THREE.MeshBasicMaterial({color:0xff4d21,transparent:true,opacity:0,depthWrite:false,toneMapped:false});
+ const alarmA=new THREE.Mesh(new THREE.TorusGeometry(6.87,.12,6,20,Math.PI*.28),alarmMaterial);
+ const alarmB=new THREE.Mesh(alarmA.geometry,alarmMaterial.clone());
+ for(const m of [alarmA,alarmB]){m.castShadow=false;m.receiveShadow=false;m.userData.obstacleDecoration=true;group.add(m)}
+ return {group,base,a,b,alarmA,alarmB,owner:null};
 }
 export function buildObstacles(scene,track,course,select=null){
  const generated=specifications(course,track.length),specs=select?generated.filter(select):generated;
@@ -112,6 +116,11 @@ export function updateObstacles(specs,along,time){
    warning.base.material.opacity=active.ring;
    warning.a.material.opacity=active.sweep;
    warning.b.material.opacity=active.sweep*.57;
+   const alarm=.18+.82*Math.pow(.5+.5*Math.sin(time*11.3),2);
+   warning.alarmA.material.opacity=active.energy*.95*alarm;
+   warning.alarmB.material.opacity=active.energy*.88*(1.18-alarm);
+   warning.alarmA.rotation.z=time*.26+Math.PI*.2;
+   warning.alarmB.rotation.z=time*.26+Math.PI*1.2;
    // Scanning arcs animate first; the solid rim powers up near the crossing.
    const rotation=time*.82+active.energy*3.8;
    warning.a.rotation.z=rotation;warning.b.rotation.z=rotation+Math.PI;
@@ -127,10 +136,11 @@ export function updateObstacles(specs,along,time){
   o.material.emissive.copy(tint);
   o.material.userData.hazardTime.value=time+o.seed;
   o.material.userData.hazardGlowStrength.value=focus?focus.glow:idleHazardGlow(d);
+  o.material.userData.hazardAlert.value=energy;
   if(o.bodywork?.indicatorMaterial){
    const hz=[0,1.4,.95,1.1,1.85,.72,1.34][o.course]||1.2;
    const pulse=.93+.07*Math.sin(time*hz+o.seed*.73);
-   o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar((focus?focus.indicators:.72)*pulse);
+   o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar((focus?focus.indicators*.85:.33)*pulse);
   }
   for(const h of o.ringHalos||[])h.material.opacity=.035+.21*energy;
   const st=obstacleState(o,time);
@@ -142,4 +152,4 @@ export function updateObstacles(specs,along,time){
    activeCount:warning?.group.visible?1:0,ringOpacity:warning?.group.visible?warning.base.material.opacity:0,
    sweepOpacity:warning?.group.visible?warning.a.material.opacity:0};
 }
-export function disposeObstacles(scene,specs){if(specs.warningRing){const w=specs.warningRing;w.group.parent?.remove(w.group);for(const m of [w.base,w.a,w.b])m.material.dispose();w.base.geometry.dispose();w.a.geometry.dispose();specs.warningRing=null;}for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}
+export function disposeObstacles(scene,specs){if(specs.warningRing){const w=specs.warningRing;w.group.parent?.remove(w.group);for(const m of [w.base,w.a,w.b,w.alarmA,w.alarmB])m.material.dispose();w.base.geometry.dispose();w.a.geometry.dispose();w.alarmA.geometry.dispose();specs.warningRing=null;}for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}
