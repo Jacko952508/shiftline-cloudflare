@@ -1,13 +1,13 @@
-name: SHIFTLINE V162 Authored Fleet
+name: SHIFTLINE V163 Paint and Flight
 on:
   push:
-    branches: [fleet-v162, main]
-    paths: ['public/**', 'test/fleet-v162.mjs', 'test/fleet-browser-v162.mjs', '.github/workflows/fleet-v162.yml']
+    branches: [fleet-v163, main]
+    paths: ['public/**', 'test/fleet-*.mjs', 'test/fleet-shapes-v162.json', '.github/workflows/fleet-v162.yml']
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: fleet-v162-${{ github.ref }}
+  group: fleet-v163-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   geometry:
@@ -22,7 +22,10 @@ jobs:
           node --check public/menu.js
           node --check public/fleet-sculpture-v162.js
           node --check public/garage-scene.js
+          node --check public/fleet-paint-v163.js
+          node --check public/garage-flight-v163.js
           node --experimental-loader ./test/three-loader.mjs test/fleet-v162.mjs
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v163.mjs
           node --experimental-loader ./test/three-loader.mjs test/fleet-v121.mjs
           node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
           node --experimental-loader ./test/three-loader.mjs test/sightlines-v158.mjs

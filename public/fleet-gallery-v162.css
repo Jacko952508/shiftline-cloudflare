@@ -62,3 +62,8 @@ body.garageOpen #garagePage .garageControls.garageDock{max-height:none;overflow:
 @media(min-width:1000px){body.garageOpen #garagePage:not(.off){display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);align-items:stretch}body.garageOpen #garagePage #craftDisplay{height:480px!important}}
 @media(max-width:600px){body.garageOpen #menu .dashboard{width:calc(100% - 22px)}body.garageOpen #garagePage #craftDisplay{height:300px!important}#garagePage #craftDisplay .garageLighting{left:16px;top:14px}}
 @media(max-height:560px) and (orientation:landscape){body.garageOpen #garagePage:not(.off){display:grid;grid-template-columns:minmax(0,1.3fr) minmax(275px,1fr);gap:14px}body.garageOpen #garagePage #craftDisplay{height:260px!important}body.garageOpen #menu .dashboard{padding-top:5px}}
+
+/* Flight preview keeps the controls readable against moving tunnel lights. */
+#garagePage .garageFrame button:disabled{opacity:.35;cursor:default}
+#garagePage #craftDisplay[data-flight=true] .garageSpec{color:#c0e5ee;text-shadow:0 1px 5px #000;background:#081723bd;border-radius:5px;padding:6px 8px;left:17px;bottom:13px;max-width:150px}
+#garagePage #craftDisplay[data-flight=true] .garageLighting button{background:#081723d9}

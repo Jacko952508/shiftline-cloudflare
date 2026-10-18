@@ -1,4 +1,4 @@
-import {editionIndex} from './fleet-designs-v162.js?v=162';
+import {editionIndex} from './fleet-designs-v162.js?v=163';
 export const SHIP_SCALE=.83;
 export const MODELS=[
 {name:'VECTOR',tag:'Grand touring interceptor',xp:0,desc:'Sculpted titanium fuselage and swept aerofoils.'},

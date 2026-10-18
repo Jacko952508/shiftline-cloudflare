@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {fleetEdition,editionIndex} from './fleet-designs-v162.js?v=162';
+import {fleetEdition,editionIndex} from './fleet-designs-v162.js?v=163';
+import {surfaceFinish as finish,fleetPaint} from './fleet-paint-v163.js?v=163';
 import {batchStaticAirframe} from './fleet-batching-v152.js?v=152';
-import {installShipExhaust} from './ship-exhaust-v119.js?v=162';
+import {installShipExhaust} from './ship-exhaust-v119.js?v=163';
 
 // Closed, capped surfaces. Every aerodynamic panel has thickness; all roots
 // deliberately penetrate the structure they attach to, including the underside.
@@ -47,16 +48,6 @@ function aerofoil(points,depth=.075,rounded=false,baseY=0){
  }
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.userData.sealed=true;return g;
 }
-function finish(color,metalness,roughness,coat=.6){
- const m=new THREE.MeshPhysicalMaterial({color,metalness,roughness,clearcoat:coat,clearcoatRoughness:.19,envMapIntensity:1.05});
- // Object-space micrograin needs no UV atlas, eliminating texture seams across
- // end caps and bevels. Broad highlights remain clean even at phone resolution.
- m.onBeforeCompile=s=>{
-  s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 finishPosition;').replace('#include <begin_vertex>','#include <begin_vertex>\nfinishPosition=position;');
-  s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 finishPosition;').replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat grain=fract(sin(dot(floor(finishPosition*540.0),vec3(12.9898,78.233,37.719)))*43758.5453);roughnessFactor=clamp(roughnessFactor+(grain-.5)*.024,.15,1.);');
- };
- m.customProgramCacheKey=()=> 'fleet-micrograin-v162';return m;
-}
 const NAMES=['VECTOR','RAZOR','PHANTOM','MANTA','GEMINI','SPECTRE'];
 const PLANS=[
  [[.08,-.49],[.30,-.66],[.52,-.42],[1.04,.52],[.88,.74],[.40,.46],[.10,.65]],
@@ -68,15 +59,16 @@ const PLANS=[
 ];
 export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  const e=editionIndex(custom),design=fleetEdition(index,custom),root=new THREE.Group();root.name='FLIGHTWORKS / '+NAMES[index]+' / '+design.name;ship.add(root);
- const body=finish(design.body,.48,.29),dark=finish(design.secondary,.5,.42,.24),titanium=finish(design.metal,.86,.25,.32),glass=finish(design.glass,.42,.13,.95);
+ const body=fleetPaint(design.body,index,custom),dark=finish(design.secondary,.64,.32,.5),titanium=finish(design.metal,.96,.18,.65),glass=finish(design.glass,.42,.10,1);
  glass.iridescence=.16;glass.iridescenceThicknessRange=[180,320];
- const light=new THREE.MeshBasicMaterial({color:new THREE.Color(design.accent).multiplyScalar(1.45),toneMapped:false});
- const nozzleMat=finish(0x101b26,.72,.45,.1),wingPaint=finish(design.body,.44,.30,.65),materials=[body,dark,titanium,glass,light,nozzleMat,wingPaint];
+ const light=new THREE.MeshStandardMaterial({color:design.accent,emissive:design.accent,emissiveIntensity:2.3,metalness:.2,roughness:.2,toneMapped:false});
+ const nozzleMat=finish(0x101b26,.72,.45,.1),wingPaint=fleetPaint(design.body,index,custom),materials=[body,dark,titanium,glass,light,nozzleMat,wingPaint];
  const original=wingPaint.onBeforeCompile;
  wingPaint.onBeforeCompile=shader=>{original(shader);shader.uniforms.fleetPanelColor={value:new THREE.Color(design.secondary)};
  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\n uniform vec3 fleetPanelColor;');
  shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n float ax=abs(finishPosition.x);float pz=finishPosition.z;float panel=smoothstep(.23,.27,ax)*(1.-smoothstep(.86,.94,ax))*smoothstep(-.76,-.68,pz)*(1.-smoothstep(.51,.61,pz));float marking=(1.-smoothstep(.005,.012,abs(ax-(.36+.16*pz))))*smoothstep(-.8,-.6,pz)*(1.-smoothstep(.50,.58,pz));diffuseColor.rgb=mix(diffuseColor.rgb,fleetPanelColor,panel*.64);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.45,.52,.57),marking*.44);');};
- wingPaint.customProgramCacheKey=()=> 'fleet-curved-wing-coating-v162';
+ wingPaint.customProgramCacheKey=()=> 'fleet-curved-wing-coating-v163';
+ ship.userData.paint={finish:body.userData.fleetFinish,metalness:body.metalness,roughness:body.roughness,iridescence:body.iridescence};
  ship.userData.sculptMaterials=materials;
  const structural=[];
  const add=(geometry,material,position=[0,0,0],name='surface',structure=false)=>{

@@ -10,4 +10,9 @@ export const FLEET_EDITIONS=[
 ];
 export function editionIndex(custom={}){const n=custom?.edition??custom?.livery;return Number.isInteger(n)&&n>=0&&n<3?n:0;}
 export function fleetEdition(model=0,custom={}){return FLEET_EDITIONS[Math.max(0,Math.min(5,model|0))][editionIndex(custom)];}
+// Each existing edition receives a complete factory coating, without adding
+// another customisation menu or changing its approved colour and bodywork.
+const FINISHES=[['pearl','metallic','chrome'],['metallic','chrome','pearl'],['metallic','pearl','chrome'],['pearl','chrome','metallic'],['metallic','chrome','pearl'],['chrome','pearl','metallic']];
+export function fleetFinish(model=0,custom={}){return FINISHES[Math.max(0,Math.min(5,model|0))][editionIndex(custom)];}
+export function fleetFinishLabel(model,custom){return{metallic:'METALLIC',chrome:'CHROME',pearl:'PEARLESCENT'}[fleetFinish(model,custom)];}
 export function equipEdition(p,index){const edition=Math.max(0,Math.min(2,index|0));p.custom={edition,livery:edition,finish:0,wing:0,engine:0,canopy:0,fin:0,trail:[0,1,2][edition],cabin:0,instrument:edition,stick:0};return p;}

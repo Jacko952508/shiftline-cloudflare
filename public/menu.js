@@ -1,7 +1,7 @@
-import {FLEET_EDITIONS,fleetEdition,editionIndex,equipEdition} from './fleet-designs-v162.js?v=162';
+import {FLEET_EDITIONS,fleetEdition,fleetFinishLabel,editionIndex,equipEdition} from './fleet-designs-v162.js?v=163';
 import{EXPANSIONS}from'./expansion-courses.js?v=58';
-import{MODELS,PARTS,COLORS,BUILDS,appearance,modelUnlocked}from'./ship-catalog.js?v=162';
-import{TRACKS,readProgress,saveProgress,selectShip,formatTime}from'./progress.js?v=162';
+import{MODELS,PARTS,COLORS,BUILDS,appearance,modelUnlocked}from'./ship-catalog.js?v=163';
+import{TRACKS,readProgress,saveProgress,selectShip,formatTime}from'./progress.js?v=163';
 let course=1,raceMode='race',page='race',garageCategory='ship';const $=s=>document.querySelector(s),notice=s=>{$('#menuNotice').textContent=s};
 const canvas=$('#menuArt'),cx=canvas.getContext('2d'),preview=$('#previewArt'),px=preview.getContext('2d');
 document.querySelector('.craftChoices').innerHTML=MODELS.map((v,i)=>'<button data-craft="'+i+'"><b>0'+(i+1)+'</b>'+v.name+'<small>'+v.tag+'</small></button>').join('');
@@ -28,13 +28,13 @@ function renderGarageOptions(p){
  const d=fleetEdition(p.craft,p.custom),selected=editionIndex(p.custom);
  $('#garagePage').style.setProperty('--fleet-accent',hex(d.accent));
  $('#garageFinishLabel').textContent=d.name;
- $('#garageFinishDescription').textContent=d.description;
+ $('#garageFinishDescription').textContent=fleetFinishLabel(p.craft,p.custom)+' · '+d.description.split(' · ').slice(1).join(' · ');
  $('#garageDescription').textContent=MODELS[p.craft].tag;
  $('#garageBuildBadge').textContent='EQUIPPED';
  $('#garageCategoryTitle').textContent='CHOOSE YOUR EDITION';
- $('#garageCategorySubtitle').textContent='Complete colour and bodywork editions.';
+ $('#garageCategorySubtitle').textContent='Metallic, chrome and pearlescent factory finishes.';
  $('#fleetShips').innerHTML=MODELS.map((m,i)=>'<button type="button" class="fleetShip'+(p.craft===i?' selected':'')+'" data-fleet-ship="'+i+'" aria-pressed="'+(p.craft===i)+'"><span class="fleetNumber">0'+(i+1)+'</span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="'+MODEL_SHAPES[i]+'"/></svg><strong>'+m.name+'</strong><small>'+m.tag+'</small></button>').join('');
- $('#garageOptionRail').innerHTML=FLEET_EDITIONS[p.craft].map((e,i)=>'<button type="button" class="fleetEdition'+(selected===i?' selected':'')+'" data-fleet-edition="'+i+'" aria-pressed="'+(selected===i)+'"><span class="editionSwatches"><i style="background:'+hex(e.body)+'"></i><i style="background:'+hex(e.secondary)+'"></i><i style="background:'+hex(e.accent)+'"></i></span><strong>'+e.name+'</strong><small>EDITION 0'+(i+1)+'</small></button>').join('');
+ $('#garageOptionRail').innerHTML=FLEET_EDITIONS[p.craft].map((e,i)=>'<button type="button" class="fleetEdition'+(selected===i?' selected':'')+'" data-fleet-edition="'+i+'" aria-pressed="'+(selected===i)+'"><span class="editionSwatches"><i style="background:'+hex(e.body)+'"></i><i style="background:'+hex(e.secondary)+'"></i><i style="background:'+hex(e.accent)+'"></i></span><strong>'+e.name+'</strong><small>'+fleetFinishLabel(p.craft,{edition:i})+'</small></button>').join('');
  $('#garageNote').textContent='Your selected ship and edition save automatically.';
 }
 $('#fleetShips').addEventListener('click',e=>{const b=e.target.closest('[data-fleet-ship]');if(!b)return;updateBuild(p=>selectShip(p,+b.dataset.fleetShip));});

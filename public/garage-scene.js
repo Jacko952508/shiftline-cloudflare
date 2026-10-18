@@ -1,9 +1,11 @@
 import * as THREE from 'three';
-import {createCockpit,updateCockpit,renderCockpit,disposeCockpit} from './cockpit.js?v=162';
-import {craft,animateCraft,disposeCraft} from './race-craft.js?v=162';
-import {hdrEnvironment,tuneTextureFiltering} from './material-lab.js?v=147';
-import {fleetEdition} from './fleet-designs-v162.js?v=162';
-import {PAINT} from './progress.js?v=162';
+import {createCockpit,updateCockpit,renderCockpit,disposeCockpit} from './cockpit.js?v=163';
+import {craft,animateCraft,disposeCraft} from './race-craft.js?v=163';
+import {tuneTextureFiltering} from './material-lab.js?v=147';
+import {fleetEnvironment} from './fleet-paint-v163.js?v=163';
+import {createGarageFlight,updateGarageFlight,disposeGarageFlight} from './garage-flight-v163.js?v=163';
+import {fleetEdition} from './fleet-designs-v162.js?v=163';
+import {PAINT} from './progress.js?v=163';
 
 // A restrained architectural atelier: broad soft lighting and honest materials.
 function installShowroomArchitecture(scene){
@@ -36,23 +38,40 @@ function installShowroomArchitecture(scene){
  scene.add(group);return{group,glow,rail,floor,shadowTexture};
 }
 export function createGarage(p){
- const scene=new THREE.Scene();scene.background=new THREE.Color(0x101a24);scene.environment=hdrEnvironment();scene.environmentIntensity=1;
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x101a24);scene.environment=fleetEnvironment();scene.environmentIntensity=1;
  const key=new THREE.DirectionalLight(0xfff2de,3.1);key.position.set(-3,4,2);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-3;key.shadow.camera.right=3;key.shadow.camera.top=3;key.shadow.camera.bottom=-3;key.shadow.normalBias=.018;
  const fill=new THREE.DirectionalLight(0xc0d9ef,1.45);fill.position.set(3,1.7,2.5);
  const rim=new THREE.DirectionalLight(0xe0f6ff,3.3);rim.position.set(-.8,3,-3);
  const ambient=new THREE.HemisphereLight(0xe1eaf1,0x263444,1.05);scene.add(key,fill,rim,ambient);
  const architecture=installShowroomArchitecture(scene);
- const g={scene,key,fill,rim,ambient,architecture,floor:architecture.floor,ship:null,yaw:2.62,pitch:.08,drag:null,auto:true,zoom:false,lightingMode:'studio',camera:new THREE.PerspectiveCamera(35,1,.1,45)};
+ const g={scene,key,fill,rim,ambient,architecture,floor:architecture.floor,ship:null,yaw:2.62,pitch:.08,drag:null,auto:true,zoom:false,lightingMode:'studio',lightTarget:new THREE.Object3D(),camera:new THREE.PerspectiveCamera(35,1,.1,45)};
  equipGarage(g,p);setGarageLighting(g,'studio');return g;
 }
 export function equipGarage(g,p){
  const design=fleetEdition(p.craft,p.custom);disposeCockpit(g.cockpit);g.cockpit=createCockpit(p.custom,p.craft,design.accent,g.scene.environment);
- const previous=g.ship;g.ship=craft(g.scene,PAINT[p.color]||PAINT[0],p.craft,true,p.custom);if(previous)disposeCraft(g.scene,previous);
+ const previous=g.ship,active=g.lightingMode==='track'&&g.flight?g.flight.scene:g.scene;g.ship=craft(active,PAINT[p.color]||PAINT[0],p.craft,true,p.custom);if(previous)disposeCraft(active,previous);
+ // One bounded lamp lets the actual inlaid lights colour nearby bodywork.
+ g.paintLight=new THREE.PointLight(design.accent,g.lightingMode==='night'?1.15:.6,2.4,2);g.paintLight.position.set(0,.29,.72);g.ship.add(g.paintLight);
+ if(g.flight){g.flight.glow.color.setHex(design.accent);if(g.lightingMode==='track')for(const l of[g.key,g.fill,g.rim])l.target=g.ship;}
  g.architecture.glow.color.setHex(design.accent).multiplyScalar(.64);g.architecture.rail.color.setHex(design.accent).multiplyScalar(.21);tuneTextureFiltering(g.scene,4);
 }
 export function setGarageLighting(g,mode='studio'){
- if(!g)return;const modes={studio:{background:0x101a24,key:3.1,fill:1.45,rim:3.3,ambient:1.05,env:1.04,exposure:1.14},night:{background:0x060d17,key:1.45,fill:.55,rim:3.9,ambient:.62,env:.78,exposure:1.12},track:{background:0x223848,key:3.7,fill:1.9,rim:2.7,ambient:1.3,env:1.2,exposure:1.12}};
+ if(!g)return;const modes={studio:{background:0x101a24,key:2.6,fill:1.15,rim:2.5,ambient:.8,env:.95,exposure:1.02},night:{background:0x060d17,key:.85,fill:.3,rim:2.6,ambient:.36,env:.55,exposure:1.02},track:{background:0x06111c,key:2.7,fill:1.1,rim:2.6,ambient:.8,env:.9,exposure:1.08}};
+ const previousMode=g.lightingMode;
  const s=modes[mode]||modes.studio;g.lightingMode=modes[mode]?mode:'studio';g.scene.background.setHex(s.background);g.scene.environmentIntensity=s.env;for(const light of['key','fill','rim','ambient'])g[light].intensity=s[light];g.exposure=s.exposure;
+ const flying=g.lightingMode==='track';g.drag=null;
+ if(flying){
+  g.flight??=createGarageFlight(g.scene.environment,g.paintLight.color.getHex());g.flight.scene.environmentIntensity=s.env;
+  if(previousMode!=='track')g.flight.startedAt=null;
+  g.activeScene=g.flight.scene;g.viewCockpit=false;g.flight.scene.add(g.ship,g.key,g.fill,g.rim,g.ambient);for(const l of[g.key,g.fill,g.rim])l.target=g.ship;
+ }else{
+  g.activeScene=g.scene;g.scene.add(g.ship,g.key,g.fill,g.rim,g.ambient);for(const l of[g.key,g.fill,g.rim])l.target=g.lightTarget;
+  g.key.position.set(-3,4,2);g.fill.position.set(3,1.7,2.5);g.rim.position.set(-.8,3,-3);g.scene.environmentRotation.y=mode==='night'?-.35:.15;g.ship.position.set(0,0,0);
+ }
+ g.key.castShadow=!flying;g.paintLight.intensity=mode==='night'?1.15:.6;
+ const host=typeof document==='undefined'?null:document.querySelector('#craftDisplay');
+ if(host){host.dataset.flight=String(flying);host.setAttribute('aria-label',flying?'Selected ship flying automatically around a figure-eight tunnel. Chase camera.':'Interactive 3D ship showroom. Drag to rotate.');host.querySelector('.garageSpec').textContent=flying?'FIGURE-EIGHT FLIGHT · CHASE CAMERA':'DRAG TO ROTATE · INSPECT EVERY ANGLE';document.querySelector('#garageCockpitView').disabled=flying;document.querySelector('#garageCockpitView').textContent=g.viewCockpit?'EXTERIOR':'COCKPIT';}
+ if(typeof window!=='undefined')window.__shiftlineFlightQA=flying?{active:true}: {active:false};
  if(typeof location!=='undefined'&&location.search.includes('shipqa=1'))window.__shiftlineLightingQA={mode:g.lightingMode,exposure:g.exposure};
 }
 export function renderGarage(g,renderer,rect,time){
@@ -60,11 +79,19 @@ export function renderGarage(g,renderer,rect,time){
  if(host&&!g.previewRenderer){try{const c=document.createElement('canvas');c.className='garage3DCanvas';c.setAttribute('aria-hidden','true');host.prepend(c);g.previewRenderer=new THREE.WebGLRenderer({canvas:c,alpha:false,antialias:true,powerPreference:'low-power'});g.previewRenderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));g.previewRenderer.outputColorSpace=THREE.SRGBColorSpace;g.previewRenderer.toneMapping=THREE.ACESFilmicToneMapping;g.previewRenderer.shadowMap.enabled=true;g.previewRenderer.shadowMap.type=THREE.PCFSoftShadowMap;}catch(e){console.warn('Garage renderer unavailable',e);}}
  if(!rect||rect.width<1||rect.height<1||rect.bottom<0||rect.top>innerHeight)return;
  if(g.previewRenderer){const w=Math.round(rect.width),h=Math.round(rect.height);if(g.previewWidth!==w||g.previewHeight!==h){g.previewRenderer.setSize(w,h,false);g.previewWidth=w;g.previewHeight=h;}renderer=g.previewRenderer;rect={left:0,top:0,bottom:h,width:w,height:h};}
- g.ship.rotation.set(g.pitch,g.yaw+(g.auto?Math.sin(time*.13)*.17:0),0);g.ship.position.y=.015+Math.sin(time*.65)*.007;animateCraft(g.ship,time,false,1,0,true);
- g.camera.aspect=rect.width/rect.height;const distance=(g.zoom?3.05:3.8)*Math.max(1,.78/g.camera.aspect);g.camera.position.set(0,distance*.25,distance);g.camera.lookAt(0,-.06,0);g.camera.updateProjectionMatrix();
+ g.camera.aspect=rect.width/rect.height;const flying=g.lightingMode==='track';
+ if(flying){
+  const f=updateGarageFlight(g.flight,g.ship,g.camera,time,g.zoom),lightAt=(light,x,y,z)=>light.position.copy(f.point).addScaledVector(f.right,x).addScaledVector(f.up,y).addScaledVector(f.forward,z);
+  lightAt(g.key,-3,4,1.5);lightAt(g.fill,3,1.7,-2);lightAt(g.rim,-.8,3,-3);
+ }else{
+  g.ship.rotation.set(g.pitch,g.yaw+(g.auto?Math.sin(time*.13)*.17:0),0);g.ship.position.set(0,.015+Math.sin(time*.65)*.007,0);
+  g.camera.fov=35;g.camera.near=.1;g.camera.far=45;g.camera.up.set(0,1,0);const distance=(g.zoom?3.05:3.8)*Math.max(1,.78/g.camera.aspect);g.camera.position.set(0,distance*.25,distance);g.camera.lookAt(0,-.06,0);g.camera.updateProjectionMatrix();
+ }
+ animateCraft(g.ship,time,flying&&Math.sin(g.flight.elapsed*.45)>.8,1,0,!flying);
  const exposure=renderer.toneMappingExposure;renderer.toneMappingExposure=g.exposure;renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,g.previewRenderer?rect.width:innerWidth,g.previewRenderer?rect.height:innerHeight);renderer.clear();renderer.setViewport(rect.left,g.previewRenderer?0:innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissor(rect.left,g.previewRenderer?0:innerHeight-rect.bottom,rect.width,rect.height);renderer.setScissorTest(true);
- try{if(g.viewCockpit){updateCockpit(g.cockpit,.033,{time,speed:0,energy:100,boost:false,lateral:0,vertical:0,lock:'FLIGHTWORKS / COCKPIT'}, {left:rect.width*.45,top:rect.height*.79,width:rect.width*.1,height:rect.width*.1},rect.width,rect.height);renderCockpit(g.cockpit,renderer);}else {renderer.render(g.scene,g.camera);g.ship.userData.fleet162.rendered=true;}}finally{renderer.toneMappingExposure=exposure;renderer.setScissorTest(false);}
+ try{if(g.viewCockpit&&!flying){updateCockpit(g.cockpit,.033,{time,speed:0,energy:100,boost:false,lateral:0,vertical:0,lock:'FLIGHTWORKS / COCKPIT'}, {left:rect.width*.45,top:rect.height*.79,width:rect.width*.1,height:rect.width*.1},rect.width,rect.height);renderCockpit(g.cockpit,renderer);}else {renderer.render(g.activeScene||g.scene,g.camera);g.ship.userData.fleet162.rendered=true;}}finally{renderer.toneMappingExposure=exposure;renderer.setScissorTest(false);}
+ if(typeof location!=='undefined'&&location.search.includes('shipqa=1')){window.__shiftlinePaintQA={...g.ship.userData.paint,rendered:true,model:g.ship.userData.fleet162.index,edition:g.ship.userData.fleet162.edition};window.__shiftlineFlightQA=flying?{...g.flight.qa,rendered:true,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}:{active:false};}
 }
 export function disposeGarage(g){
- if(!g)return;g.previewRenderer?.dispose();g.previewRenderer?.domElement?.remove();disposeCockpit(g.cockpit);disposeCraft(g.scene,g.ship);g.scene.environment.dispose();g.key.shadow.map?.dispose();g.architecture.shadowTexture.dispose();const geometries=new Set(),materials=new Set();g.scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});geometries.forEach(x=>x.dispose());materials.forEach(x=>x.dispose());g.scene.clear();
+ if(!g)return;g.previewRenderer?.dispose();g.previewRenderer?.domElement?.remove();disposeCockpit(g.cockpit);disposeCraft(g.ship.parent||g.scene,g.ship);disposeGarageFlight(g.flight);g.scene.environment.dispose();g.key.shadow.map?.dispose();g.architecture.shadowTexture.dispose();const geometries=new Set(),materials=new Set();g.scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});geometries.forEach(x=>x.dispose());materials.forEach(x=>x.dispose());g.scene.clear();if(typeof window!=='undefined')window.__shiftlineFlightQA={active:false};
 }
