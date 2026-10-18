@@ -9,7 +9,11 @@ for(let course=1;course<=6;course++){
  assert.ok(objects.length>20);
  for(let i=0;i<objects.length;i++){
   const o=objects[i];
-  assert.equal(upcomingHazard(objects,o.s-340),o,'The next hazard should be the nearest ahead');
+  // The first obstacle must have been passed before the next becomes active.
+  // A fixed 340m lookback can still be *before* a previous encounter.
+  const last=i?objects[i-1].s+5:0;
+  const approach=Math.max(last,o.s-340);
+  assert.equal(upcomingHazard(objects,approach),o,'The next hazard should be the nearest ahead');
   assert.equal(upcomingHazard(objects,o.s+5),objects[i+1]||null,'Passed hazard must hand off');
   const remote=cueEnvelope(520,0,o.seed),powering=cueEnvelope(300,0,o.seed),locked=cueEnvelope(55,0,o.seed);
   assert.equal(remote.energy,0);
