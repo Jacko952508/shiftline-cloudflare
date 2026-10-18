@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {fleetSurfaceMaps} from './fleet-materials-v118.js?v=150';
+import {fleetSurfaceMaps} from './fleet-materials-v118.js?v=161';
 import {bevelBox} from './art-direction-v148.js?v=153';
 const BODY=[0xb4c3cf,0xa9233e,0x253b50,0xe4eef0,0x7e929f,0xa5b9ce];
 export function refineFleetAppearance(ship,root,index,custom,m,high){
