@@ -1,7 +1,7 @@
 import{effectBuffer}from'./audio-effects.js?v=54';
 // Recorded menu/Eclipse/Leviathan soundtracks, decoded once and looped by Web Audio.
 let ctx,master,music,sfx,track=0,scene=1,src=null,srcTrack=-1,userVolume=1,boosted=false,lastBoost=false;
-let synth=null,playGeneration=0,engine=null,engineNext=0,sfxLimiter;
+let synth=null,playGeneration=0,engine=null,engineNext=0,engineQuiet=true,sfxLimiter;
 let warmQueue=null,warmPending=false;
 const buffers=new Map(),pending=new Map(),voices=new Set(),musicVoices=new Set(),noiseCache=new Map(),effectTimes=new Map(),timings=new WeakMap(),missingRecordings=new Set();
 function ac(){if(ctx&&ctx.state!=='closed')return ctx;if(ctx?.state==='closed')audioStop();ctx=new(window.AudioContext||window.webkitAudioContext)();ctx.addEventListener?.('statechange',()=>{if(ctx.state==='running'&&userVolume>0&&!document.hidden){warmEffects();if(!src||srcTrack!==track)play();}});master=ctx.createGain();master.gain.value=.7*userVolume;master.connect(ctx.destination);music=ctx.createGain();music.gain.value=.52;music.connect(master);sfx=ctx.createGain();sfx.gain.value=.72;sfxLimiter=ctx.createDynamicsCompressor();sfxLimiter.threshold.value=-12;sfxLimiter.knee.value=6;sfxLimiter.ratio.value=4;sfxLimiter.attack.value=.003;sfxLimiter.release.value=.14;sfx.connect(sfxLimiter);sfxLimiter.connect(master);return ctx}
@@ -43,6 +43,24 @@ function warmEffects(){
  const run=()=>{warmPending=false;if(!ctx||ctx.state!=='running'||!userVolume)return;const [name,water]=warmQueue.shift();effectBuffer(ctx,name,water);warmEffects();};
  if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:1500});else setTimeout(run,40);
 }
+// Prepare the first-use sounds before the countdown, one buffer per task.
+// Background idle warming may otherwise leave the first crash at the end of its queue.
+export async function prepareRaceAudio(valid=()=>true){
+ if(!ctx||!userVolume)return;
+ const water=scene===2;
+ for(const name of ['engineBody','engineTurbine','engineAir','crash','boost','release','pulse','shield','hull']){
+  if(!valid())return;
+  effectBuffer(ctx,name,name.startsWith('engine')?false:water);
+  await new Promise(resolve=>setTimeout(resolve,0));
+ }
+ if(!valid())return;
+ noise(.55);
+ if(ctx.state==='running'){
+  engineSound(84,false,0);
+  for(const v of engine||[]) {v.gain.gain.cancelScheduledValues(ctx.currentTime);v.gain.gain.setValueAtTime(0,ctx.currentTime);}
+  engineQuiet=true;
+ }
+}
 export async function audioStart(gesture=false){
  if(!userVolume)return;const c=ac();const resume=c.state!=='running'?c.resume().catch(()=>{}):Promise.resolve();
  if(gesture&&c.state!=='running'){
@@ -61,7 +79,7 @@ export function installAudioActivation(canPlay=()=>true){
 }
 export async function audioResume(gesture=false){await audioStart(gesture);if(music)music.gain.setTargetAtTime(boosted?.6:.52,ctx.currentTime,.1)}
 export async function audioSuspend(){if(ctx?.state==='running')try{await ctx.suspend()}catch{}}
-export function audioStop(){playGeneration++;for(const v of [...musicVoices]){try{v.source.stop()}catch{}clean(v)}for(const v of [...voices]){try{v.source.stop()}catch{}clean(v)}src=null;srcTrack=-1;lastBoost=boosted=false;effectTimes.clear();if(ctx&&music){music.gain.cancelScheduledValues(ctx.currentTime);music.gain.setValueAtTime(.52,ctx.currentTime)}engineSound(0,false,0)}
+export function audioStop(){playGeneration++;for(const v of [...musicVoices]){try{v.source.stop()}catch{}clean(v)}for(const v of [...voices]){try{v.source.stop()}catch{}clean(v)}src=null;srcTrack=-1;lastBoost=boosted=false;effectTimes.clear();if(ctx&&music){music.gain.cancelScheduledValues(ctx.currentTime);music.gain.setValueAtTime(.52,ctx.currentTime)}stopEngine()}
 export function setMasterVolume(v){const previous=userVolume;userVolume=Math.max(0,Math.min(1,Number(v)||0));if(ctx){master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setTargetAtTime(.7*userVolume,ctx.currentTime,.02);if(userVolume===0){audioStop();ctx.suspend().catch(()=>{})}else if(previous===0)audioResume().catch(()=>{})}}
 function tone(f,end,duration,volume,type='sine',delay=0){if(!ctx||ctx.state!=='running'||!userVolume)return;const t=ctx.currentTime+delay,o=ctx.createOscillator(),g=ctx.createGain(),v={source:o,nodes:[g]};o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(end,t+duration);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(sfx);voices.add(v);o.onended=()=>clean(v);o.start(t);o.stop(t+duration+.02)}
 function noise(sec){const key=Math.ceil(sec*10);if(noiseCache.has(key))return noiseCache.get(key);const b=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*key/10),ctx.sampleRate),x=b.getChannelData(0);let seed=7251;for(let i=0;i<x.length;i++){seed=(Math.imul(seed,1664525)+1013904223)|0;x[i]=(seed>>>0)/2147483648-1}noiseCache.set(key,b);return b}
@@ -77,9 +95,9 @@ function effect(name,volume=1,gap=.04){
 export function setAudioBoost(v){boosted=!!v;if(!ctx||ctx.state!=='running')return;if(boosted===lastBoost)return;lastBoost=boosted;music.gain.setTargetAtTime(boosted?.6:.52,ctx.currentTime,.18);effect(boosted?'boost':'release',boosted?.38:.22,.12)}
 function stopEngine(){if(!engine)return;for(const v of engine){try{v.source.stop()}catch{}v.source.disconnect();v.filter.disconnect();v.gain.disconnect();}engine=null;}
 export function engineSound(speed,boost,draft){
- if(!speed){stopEngine();return;}if(!ctx||ctx.state!=='running'||!userVolume)return;
+ if(!speed){if(engine&&ctx&&!engineQuiet){for(const v of engine)v.gain.gain.setTargetAtTime(0,ctx.currentTime,.035);engineQuiet=true;}return;}if(!ctx||ctx.state!=='running'||!userVolume)return;
  if(!engine){engine=['engineBody','engineTurbine','engineAir'].map(name=>{const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=effectBuffer(ctx,name);source.loop=true;filter.type='lowpass';filter.frequency.value=800;gain.gain.value=0;source.connect(filter);filter.connect(gain);gain.connect(sfx);source.start();return{source,filter,gain};});engineNext=0;}
- const t=ctx.currentTime;if(t<engineNext)return;engineNext=t+.05;
+ const t=ctx.currentTime;if(!engineQuiet&&t<engineNext)return;engineNext=t+.05;engineQuiet=false;
  const drive=Math.max(0,Math.min(1.7,speed/84)),water=scene===2,heavy=scene===3,voice=[1,1,.88,.9,1.06,.96,.93][scene]||1;
  const rates=[.72+drive*.35+(boost?.17:0),.7+drive*.43+(boost?.22:0),.8+drive*.2];
  const levels=[.105+(boost?.04:0),water?.016:.034+(boost?.012:0),.038*drive+(boost?.03:0)+(draft||0)*.008];

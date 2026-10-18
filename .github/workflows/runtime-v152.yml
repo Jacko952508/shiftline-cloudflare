@@ -1,0 +1,62 @@
+name: SHIFTLINE V152 Six-Course Runtime Audit
+on:
+  push:
+    branches: [performance-v152]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: runtime-v152-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: |
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
+          node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v121.mjs
+  course-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        course: [1, 2, 3, 4, 5, 6]
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install comparison browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Prepare exact V151 reference and instrument both test copies
+        run: |
+          mkdir -p .runtime-baseline
+          git archive 341914e289732d46869c3f9d835ca22942a9c96f public | tar -x -C .runtime-baseline
+          cat test/runtime-bridge-v152.js >> .runtime-baseline/public/race-engine.js
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          python3 -m http.server 8764 --bind 127.0.0.1 --directory .runtime-baseline/public >/tmp/shiftline-reference.log 2>&1 &
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-candidate.log 2>&1 &
+          sleep 2
+      - name: Compare grid, collisions, recovery, cockpit and retained quality
+        env:
+          RUNTIME_COURSE: ${{ matrix.course }}
+          RUNTIME_BROWSER: ${{ matrix.browser }}
+        run: node test/runtime-browser-v152.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-v152-${{ matrix.course }}-${{ matrix.browser }}
+          path: runtime-v152-artifacts
+          if-no-files-found: ignore

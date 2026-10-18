@@ -41,7 +41,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 60); do
-            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v148' | grep -q 'race-engine.js?v=151'; then
+            if curl -fsSL --connect-timeout 10 --max-time 20 'https://shiftline-game.beyondthebox.workers.dev/?cachecheck=v148' | grep -q 'race-engine.js?v=152'; then
               echo "PASS Cloudflare serving new game engine"
               exit 0
             fi

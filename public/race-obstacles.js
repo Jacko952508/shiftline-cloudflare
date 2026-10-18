@@ -26,7 +26,25 @@ export function clearance(o,state,x,y){return Math.min(localDistance(o,state,x+B
 export function collisionAt(track,specs,s,x,y,time,bank=0,onClearance=null){let first=0,last=specs.length;while(first<last){const mid=(first+last)>>>1;if(specs[mid].s<s-10)first=mid+1;else last=mid}if(first===specs.length||specs[first].s>s+10)return null;const F=track.frame(s),cx=F.p.x+F.r.x*x+F.u.x*y,cy=F.p.y+F.r.y*x+F.u.y*y,cz=F.p.z+F.r.z*x+F.u.z*y,c=Math.cos(bank),si=Math.sin(bank);for(let i=first;i<specs.length;i++){const o=specs[i];if(o.s>s+10)break;const O=o.frame||track.frame(o.s),state=obstacleState(o,time);let gap=Infinity;for(const b of BODY){const bx=b.x*c-b.y*si,by=b.x*si+b.y*c,px=cx+F.r.x*bx+F.u.x*by-F.f.x*b.z-O.p.x,py=cy+F.r.y*bx+F.u.y*by-F.f.y*b.z-O.p.y,pz=cz+F.r.z*bx+F.u.z*by-F.f.z*b.z-O.p.z;const d=localDistance(o,state,px*O.r.x+py*O.r.y+pz*O.r.z,px*O.u.x+py*O.u.y+pz*O.u.z,-(px*O.f.x+py*O.f.y+pz*O.f.z))-b.r;if(d<0)return o;gap=Math.min(gap,d);}if(onClearance&&gap<=.55)onClearance(o,gap);}return null;}
 export function safeTarget(o,time,x=0,y=0){const state=obstacleState(o,time);let best=null,score=Infinity;for(let r=0;r<6.25;r+=.65)for(let k=0;k<24;k++){const a=k*TAU/24,nx=Math.cos(a)*r,ny=Math.sin(a)*r,d=clearance(o,state,nx,ny);if(d<.3)continue;const cost=Math.hypot(nx-x,ny-y)+r*.015;if(cost<score){score=cost;best={x:nx,y:ny,clearance:d}}}return best;}
 // Predict the complete crossing window, then choose a line with margin for wings and motion.
-export function planTarget(o,at,x=0,y=0,traffic=[],preference=0){const states=[-.13,0,.13].map(t=>obstacleState(o,at+t));let best=null,score=Infinity;const candidates=[{x,y},...RACING_LINES];for(const p of candidates){let d=clearance(o,states[1],p.x,p.y);if(d<.55)continue;d=Math.min(d,clearance(o,states[0],p.x,p.y),clearance(o,states[2],p.x,p.y));if(d<.5)continue;const crowd=traffic.reduce((n,r)=>n+Math.max(0,2.1-Math.hypot(r.x-p.x,r.y-p.y)),0),cost=Math.hypot(p.x-x,p.y-y)*.45+Math.max(0,1.4-d)*1.4+crowd*.55+Math.abs(p.x-preference)*.035;if(cost<score){score=cost;best={...p,clearance:d}}}return best||safeTarget(o,at,x,y)}
+export function planTarget(o,at,x=0,y=0,traffic=[],preference=0){
+ const states=[-.13,0,.13].map(t=>obstacleState(o,at+t));let best=null,score=Infinity;
+ // All score penalties are nonnegative. Reject candidates whose cheap lower
+ // bound already loses, before evaluating nine signed-distance envelopes.
+ // Candidate order and the exact crossing/safety tests remain unchanged.
+ const candidates=[{x,y},...RACING_LINES];
+ for(const p of candidates){
+  const travel=Math.hypot(p.x-x,p.y-y)*.45;
+  const crowd=traffic.reduce((n,r)=>n+Math.max(0,2.1-Math.hypot(r.x-p.x,r.y-p.y)),0);
+  const preferred=Math.abs(p.x-preference)*.035;
+  if(travel+crowd*.55+preferred>score+1.e-10)continue;
+  let d=clearance(o,states[1],p.x,p.y);if(d<.55)continue;
+  d=Math.min(d,clearance(o,states[0],p.x,p.y),clearance(o,states[2],p.x,p.y));if(d<.5)continue;
+  const cost=travel+Math.max(0,1.4-d)*1.4+crowd*.55+preferred;
+  if(cost<score){score=cost;best={...p,clearance:d};}
+ }
+ return best||safeTarget(o,at,x,y);
+}
+
 function shapeGeometry(p){if(p.type==='torus')return new THREE.TorusGeometry(p.R,p.tube,20,96);if(p.type==='box')return new THREE.BoxGeometry(p.hx*2,p.hy*2,p.hz*2);if(p.type==='sphere')return new THREE.SphereGeometry(p.r,32,20);const sh=new THREE.Shape();p.points.forEach(([x,y],i)=>i?sh.lineTo(x,y):sh.moveTo(x,y));sh.closePath();const g=new THREE.ExtrudeGeometry(sh,{depth:p.hz*2,bevelEnabled:false,steps:1});g.translate(0,0,-p.hz);return g;}
 function trimToTunnel(material,frame){if(material.userData.tunnelTrim)return;material.userData.tunnelTrim=true;const previous=material.onBeforeCompile,previousKey=material.customProgramCacheKey();
  material.onBeforeCompile=shader=>{previous?.call(material,shader);shader.uniforms.obstacleCentre={value:frame.p};shader.uniforms.obstacleRight={value:frame.r};shader.uniforms.obstacleUp={value:frame.u};

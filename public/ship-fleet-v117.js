@@ -1,3 +1,4 @@
+import {batchStaticAirframe} from './fleet-batching-v152.js?v=152';
 import {refineFleetAppearance} from './fleet-refinement-v150.js?v=150';
 import * as THREE from 'three';
 import {installShipFinish} from './art-direction-v148.js?v=150';
@@ -366,6 +367,7 @@ function builder(ship,index,c,m,high=true){
  root.scale.x*=scale;root.updateMatrixWorld(true);
  const finalBox=new THREE.Box3().setFromObject(root);
  const actualSpan=finalBox.max.x-finalBox.min.x;
+ if(!high)ship.userData.airframeBatch=batchStaticAirframe(root);
  installShipExhaust(ship,root,index,c,high);
  root.userData.designId=NAMES[index];
  root.userData.wingspan=SPAN;
@@ -376,7 +378,7 @@ function builder(ship,index,c,m,high=true){
  ship.userData.modelWidth=SPAN;
  ship.userData.designOptions={wing:c.wing,engine:c.engine,fin:c.fin,livery:c.livery};
  // An optional diagnostic for browser tests: no gameplay state is exposed.
- if(typeof window!=='undefined'&&location.search.includes('shipqa=1')){
+ if(high&&typeof window!=='undefined'&&location.search.includes('shipqa=1')){
   let textured=0,finShoes=0;
   root.traverse(o=>{if(o.isMesh&&o.material?.map)textured++;if(o.name?.includes('fin-root-shoe')||o.name==='spectre-blade-foot')finShoes++;});
   const members=root.children.filter(o=>o.userData.structuralHull);

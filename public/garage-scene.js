@@ -1,6 +1,6 @@
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=150';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=152';
 import * as THREE from 'three';
-import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=150';
+import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=152';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=147';
 import{PAINT}from'./progress.js?v=112';
 export function createGarage(p){

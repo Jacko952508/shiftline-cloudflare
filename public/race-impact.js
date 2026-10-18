@@ -23,12 +23,12 @@ export function burstImpact(pool,position,frame,time,underwater=false,course=und
  for(let i=0;i<48;i++){
   const a=i*2.399963,r=1+(i%7)*.36,v=slot.particles[i].copy(frame.r).multiplyScalar(Math.cos(a)*r).addScaledVector(frame.u,Math.sin(a)*r).addScaledVector(frame.f,-2-(i%5));
   const color=pool.color.setHex((i%3===0)?palette.b:palette.a);
-  slot.colors.set([color.r*2,color.g*2,color.b*2],i*3);
-  slot.p.set([position.x,position.y,position.z],i*3);
+  const j=i*3;slot.colors[j]=color.r*2;slot.colors[j+1]=color.g*2;slot.colors[j+2]=color.b*2;
+  slot.p[j]=position.x;slot.p[j+1]=position.y;slot.p[j+2]=position.z;
  }
  slot.sparks.geometry.attributes.color.needsUpdate=true;
  slot.sparks.visible=slot.shards.visible=true;
 }
-export function updateImpacts(pool,time){for(const s of pool.slots){const age=Math.max(0,time-s.started);s.sparks.visible=s.shards.visible=age<1.25;if(age>=1.25)continue;const drag=(1-Math.exp(-age*2.4))/2.4;for(let i=0;i<48;i++){const p=pool.scratch.copy(s.origin).addScaledVector(s.particles[i],drag);p.y-=age*age*.6;s.p.set([p.x,p.y,p.z],i*3);if(i<12){pool.dummy.position.copy(p);pool.dummy.rotation.set(age*(i%3+2),age*(i%5+1),age*(i%4+1));pool.dummy.scale.setScalar(Math.max(.05,1-age*.4));pool.dummy.updateMatrix();s.shards.setMatrixAt(i,pool.dummy.matrix)}}s.sparks.geometry.attributes.position.needsUpdate=true;s.shards.instanceMatrix.needsUpdate=true;s.sparks.material.opacity=Math.pow(1-age/1.25,2);s.shards.material.opacity=1-age/1.25;}}
-export function impactPose(ship,time,started,reduced=false){const age=time-started;if(age<0||age>=1)return;const kick=Math.sin(Math.min(1,age/.32)*Math.PI)*Math.exp(-age*2);ship.rotateZ(kick*(reduced?.05:.4));ship.rotateX(kick*(reduced?.02:.12));ship.scale.setScalar(.9*(age>.72?THREE.MathUtils.smoothstep(age,.72,1):1));}
+export function updateImpacts(pool,time){for(const s of pool.slots){const age=Math.max(0,time-s.started);s.sparks.visible=s.shards.visible=age<1.25;if(age>=1.25)continue;const drag=(1-Math.exp(-age*2.4))/2.4;for(let i=0;i<48;i++){const p=pool.scratch.copy(s.origin).addScaledVector(s.particles[i],drag);p.y-=age*age*.6;const j=i*3;s.p[j]=p.x;s.p[j+1]=p.y;s.p[j+2]=p.z;if(i<12){pool.dummy.position.copy(p);pool.dummy.rotation.set(age*(i%3+2),age*(i%5+1),age*(i%4+1));pool.dummy.scale.setScalar(Math.max(.05,1-age*.4));pool.dummy.updateMatrix();s.shards.setMatrixAt(i,pool.dummy.matrix)}}s.sparks.geometry.attributes.position.needsUpdate=true;s.shards.instanceMatrix.needsUpdate=true;s.sparks.material.opacity=Math.pow(1-age/1.25,2);s.shards.material.opacity=1-age/1.25;}}
+export function impactPose(ship,time,started,reduced=false){const age=time-started;if(age<0||age>=1)return;const kick=Math.sin(Math.min(1,age/.32)*Math.PI)*Math.exp(-age*2);ship.rotateZ(kick*(reduced?.05:.4));ship.rotateX(kick*(reduced?.02:.12));ship.scale.multiplyScalar(age>.72?THREE.MathUtils.smoothstep(age,.72,1):1);}
 export function disposeImpacts(scene,pool){const geometries=new Set();for(const s of pool.slots){scene.remove(s.sparks,s.shards);geometries.add(s.sparks.geometry);geometries.add(s.shards.geometry);s.sparks.material.dispose();s.shards.material.dispose()}for(const g of geometries)g.dispose();}
