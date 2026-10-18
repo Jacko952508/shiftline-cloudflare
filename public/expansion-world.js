@@ -103,7 +103,7 @@ export function createExpansionWorld(scene,track){
  trunks.castShadow=false;foliage.castShadow=false;
  root.add(trunks,foliage);
  if(typeof window!=='undefined'&&location.search.includes('sceneryqa=1'))
-  window.__shiftlineFoliageQA={version:139,trees:n,crowns:l,partsPerTree:5,geometry:foliage.geometry.type,usesInstancedColors:true,collisionObjects:0};
+  window.__shiftlineFoliageQA={version:139,trees:n,crowns:l,partsPerTree:5,geometry:foliage.geometry.type,crownName:foliage.geometry.name,crownVertices:foliage.geometry.attributes.position.count,usesInstancedColors:true,collisionObjects:0};
  const wind={value:0};leaf.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x += sin(windTime*.8+transformed.y*.7)*.018*transformed.y;');};leaf.customProgramCacheKey=()=> 'verdant-leaf-wind-v139';materials.leaf=leaf;dynamic.push(foliage);
  // Waterfalls are sheets tied to rock escarpments, with scrolling surface texture.
  for(let i=0;i<5;i++){const s=track.length*(.27+i*.035),F=track.frame(s),x=F.p.x+65,z=F.p.z,y=ground(x,z),wallBox=clearance.bounds(x,y+75,z,17,75,11);if(!clearance.boxClear(wallBox))continue;sceneryBounds.push(wallBox);const wall=add(root,new THREE.BoxGeometry(34,150,20),rock,x,y+75,z);const water=new THREE.MeshPhysicalMaterial({color:0x83c9d4,roughness:.32,transparent:true,opacity:.45,metalness:.05,side:THREE.DoubleSide});const sheet=add(root,new THREE.PlaneGeometry(28,145,4,16),water,x,y+75,z+10.2);machines.push({g:sheet,s,water:true,phase:i});}materials.wind=wind;

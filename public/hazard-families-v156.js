@@ -90,8 +90,9 @@ export function familySpecifications(course,length){
  }
  return out;
 }
+export function actuationPeriod(family){return family==='forge-press'?5.4:family==='furnace-shutters'?6.2:6.8;}
 export function familyState(o,time){
- const clock=time+o.seed,period=o.family==='forge-press'?5.4:o.family==='furnace-shutters'?6.2:6.8;
+ const clock=time+o.seed,period=actuationPeriod(o.family);
  // A smooth dwell at each end of a cycle makes direction changes readable.
  const cycle=phase=>{const v=.5-.5*Math.cos(clock*TAU/period+phase);return v*v*(3-2*v);};
  let x=0,y=0,a=0;

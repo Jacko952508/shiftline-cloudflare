@@ -11,7 +11,7 @@ for(const kind of [chromium,webkit]){
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:0,engine:0,fin:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto('http://127.0.0.1:8765/?shipqa=1&obstacleqa=1',{waitUntil:'domcontentloaded',timeout:65000});await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=157');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=158');
   await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off')&&window.__shiftlineRaceReadyQA?.version===152,null,{timeout:180000});
   for(const fraction of [.10,.39,.72]){

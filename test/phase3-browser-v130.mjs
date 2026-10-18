@@ -16,7 +16,7 @@ async function run(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1&landmarkqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=157');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=158');
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -57,7 +57,9 @@ async function run(kind,courses){
     assert.equal(forest?.version,139,'New VERDANT canopies did not load');
     assert.ok(forest.trees>=20,'Not enough trees survived course clearance tests');
     assert.equal(forest.crowns,forest.trees*5);
-    assert.equal(forest.geometry,'IcosahedronGeometry');
+    assert.equal(forest.geometry,'BufferGeometry');
+    assert.equal(forest.crownName,'layered broadleaf crown');
+    assert.ok(forest.crownVertices>100,'Authored crown lobes are missing');
     assert.equal(forest.usesInstancedColors,true);
     assert.equal(forest.collisionObjects,0);
     console.log('PASS V139 foliage '+JSON.stringify(forest));

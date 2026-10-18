@@ -36,7 +36,7 @@ jobs:
           node --check public/tunnel-geometry.js
           node --check public/race-engine.js
           node --check test/glass-safety-v125.mjs
-          grep -q 'race-engine.js?v=157' public/index.html
+          grep -q 'race-engine.js?v=158' public/index.html
       - name: Install real WebGL browsers
         run: |
           npm install --no-save playwright pngjs

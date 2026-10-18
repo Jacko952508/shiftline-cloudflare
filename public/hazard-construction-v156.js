@@ -1,7 +1,7 @@
 import {staghornCoral} from './coral-v154.js?v=154';
 import * as THREE from 'three';
 import {bevelBox} from './art-direction-v148.js?v=153';
-import {solidDistance} from './course-colliders.js?v=157';
+import {solidDistance} from './course-colliders.js?v=158';
 // Surface equipment is baked into the solid draw, not added as dozens of
 // separate meshes. The authored collider remains the primary silhouette.
 let livingCoral;
@@ -76,6 +76,9 @@ export function hazardGeometry(p,course,quality='auto'){
    // Dark inset, raised rails and steel fastening blocks give the face depth.
    addBox(x,y,z,w,h,.045,p.role==='root'?[.30,.34,.23]:.27);
    const channel=new THREE.PlaneGeometry(w*.70,Math.min(.055,h*.12));channel.translate(x,y-h*.19,z+.03);parts.push([channel,1,.65]);
+   if(p.drive)for(let k=-1;k<=1;k++){
+    const indicator=new THREE.PlaneGeometry(w*.10,Math.min(.08,h*.18));indicator.translate(x+k*w*.25,y+h*.20,z+.031);parts.push([indicator,1,.9]);
+   }
    for(const side of[-1,1]){
     addBox(x,y+side*h*.51,z+.035,w*1.03,.055,.07,.91);
     addBox(x+side*w*.42,y,z+.055,.09,h*.78,.09,1.10);

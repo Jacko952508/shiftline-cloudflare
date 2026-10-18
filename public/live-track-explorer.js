@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {updateWorld} from './race-world.js?v=157';
-import {updateObstacles} from './race-obstacles.js?v=157';
+import {updateWorld} from './race-world.js?v=158';
+import {updateObstacles} from './race-obstacles.js?v=158';
 
 // SHIFTLINE Observatory: independently directed camera over the exact ACTIVE
 // racing scene. No stand-in map, cloned geometry, materials or textures.
