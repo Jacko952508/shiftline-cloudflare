@@ -1,10 +1,26 @@
 import {chromium,webkit} from 'playwright';
 import {PNG} from 'pngjs';
 import assert from 'node:assert/strict';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const args=['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox'];
 await mkdir('phase3-v130-frames',{recursive:true});
+const localHtml=await readFile('public/index.html','utf8');
+const expectedEngine=localHtml.match(/race-engine\\.js\\?v=\\d+/)?.[0];
+assert.ok(expectedEngine,'Missing versioned race-engine.js in public/index.html');
+// A canvas in an active race never becomes visually "stable"; element.screenshot()
+// waits for layout stability and can time out even while frames are rendering.
+// Snapshot its clipped viewport directly without waiting for animations to stop.
+async function captureVisible(page,selector,options={}){
+ const box=await page.locator(selector).boundingBox();
+ const viewport=page.viewportSize();
+ assert.ok(box&&viewport,'Cannot capture '+selector+': element or viewport unavailable');
+ const x=Math.max(0,box.x),y=Math.max(0,box.y);
+ const width=Math.min(viewport.width,box.x+box.width)-x;
+ const height=Math.min(viewport.height,box.y+box.height)-y;
+ assert.ok(width>10&&height>10,'Cannot capture '+selector+': outside viewport');
+ return page.screenshot({clip:{x,y,width,height},animations:'disabled',caret:'hide',timeout:65000,...options});
+}
 async function run(kind,courses){
  const browser=await kind.launch(kind===chromium?{headless:true,args}:{headless:true});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,
@@ -16,7 +32,7 @@ async function run(kind,courses){
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1&landmarkqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=159');
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),expectedEngine);
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
    await page.locator('#obsOpen').click();
@@ -64,23 +80,23 @@ async function run(kind,courses){
     assert.equal(forest.collisionObjects,0);
     console.log('PASS V139 foliage '+JSON.stringify(forest));
    }
-   const ss=await page.locator('#game').screenshot({timeout:65000});
+   const ss=await captureVisible(page,'#game');
    const png=PNG.sync.read(ss);
    let colored=0,bright=0;
    for(let i=0;i<png.width*png.height;i+=17){const p=i*4,r=png.data[p],g=png.data[p+1],b=png.data[p+2];if(Math.max(r,g,b)-Math.min(r,g,b)>17)colored++;if(r+g+b>250)bright++}
    assert.ok(colored>120&&bright>80,'Blank or dark viewport '+course+': '+JSON.stringify({colored,bright}));
    console.log('PASS V136 '+kind.name()+' '+course+' '+JSON.stringify({name:info.name,landmarks:info.landmarks,minClearance:info.minClearance,colored,bright}));
    if(course===1||course===3||course===4||course===5||course===6){
-    await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-course-'+course+'.png'});
+    await captureVisible(page,'#game',{path:'phase3-v130-frames/'+kind.name()+'-course-'+course+'.png'});
     await page.locator('#obsScrub').evaluate(el=>{el.value='520';el.dispatchEvent(new Event('input',{bubbles:true}));});
     await page.waitForTimeout(450);
-    await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-midcourse-'+course+'.png'});
+    await captureVisible(page,'#game',{path:'phase3-v130-frames/'+kind.name()+'-midcourse-'+course+'.png'});
    }
    await page.locator('#obsClose').click();
    if(course===4){
     await page.waitForFunction(()=>!document.querySelector('#menu').classList.contains('off'),null,{timeout:18000});
     const menu=page.locator('#menu');
-    await menu.screenshot({path:'phase3-v130-frames/'+kind.name()+'-tempest-menu.png'});
+    await captureVisible(page,'#menu',{path:'phase3-v130-frames/'+kind.name()+'-tempest-menu.png'});
     const info=await menu.evaluate(el=>({background:getComputedStyle(el).backgroundImage,title:el.querySelector('#trackTitle')?.textContent,visible:getComputedStyle(el).display!=='none'}));
     assert.equal(info.visible,true,'Main menu must return after Observatory');
     assert.equal(info.title,'TEMPEST');
@@ -98,7 +114,7 @@ async function run(kind,courses){
    contextLost:document.getElementById('game').getContext('webgl2')?.isContextLost()
   }));
   assert.equal(state.record,112000);assert.equal(state.contextLost,false);
-  const png=PNG.sync.read(await page.locator('#game').screenshot({path:'phase3-v130-frames/'+kind.name()+'-race.png'}));
+  const png=PNG.sync.read(await captureVisible(page,'#game',{path:'phase3-v130-frames/'+kind.name()+'-race.png'}));
   let lit=0;for(let i=0;i<png.width*png.height;i+=14){const p=i*4;if(png.data[p]+png.data[p+1]+png.data[p+2]>90)lit++}
   assert.ok(lit>1100,'Race black screen '+lit);
   assert.deepEqual(errs,[]);assert.deepEqual(shaders,[]);
