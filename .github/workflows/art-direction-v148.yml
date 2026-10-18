@@ -83,15 +83,15 @@ jobs:
           set -euo pipefail
           base='https://shiftline-game.beyondthebox.workers.dev'
           for i in $(seq 1 30); do
-            if curl -fsSL --connect-timeout 8 --max-time 15 "$base/?release=150-$i" -o /tmp/live.html && grep -q 'race-engine.js?v=150' /tmp/live.html; then
+            if curl -fsSL --connect-timeout 8 --max-time 15 "$base/?release=151-$i" -o /tmp/live.html && grep -q 'race-engine.js?v=151' /tmp/live.html; then
               break
             fi
             sleep 6
           done
           cmp public/index.html /tmp/live.html
-          for file in alpine-v150.js fleet-refinement-v150.js fleet-materials-v118.js world-finish.js expansion-world.js garage-scene.js ship-exhaust-v119.js orbital-city-v149.js art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js far-scenery-v129.js; do
-            curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=150" -o /tmp/live-module.js
+          for file in tempest-horizon-v151.js alpine-v150.js fleet-refinement-v150.js fleet-materials-v118.js world-finish.js expansion-world.js garage-scene.js ship-exhaust-v119.js orbital-city-v149.js art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js far-scenery-v129.js; do
+            curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=151" -o /tmp/live-module.js
             cmp "public/$file" /tmp/live-module.js
             echo "PASS public source matches $file"
           done
-          echo 'PASS Cloudflare V150 HTML and all four graphics systems match tested source'
+          echo 'PASS Cloudflare V151 HTML and all four graphics systems match tested source'

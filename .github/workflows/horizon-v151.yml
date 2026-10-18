@@ -1,0 +1,38 @@
+name: SHIFTLINE V151 Continuous Tempest Horizon
+on:
+  push:
+    branches: [graphics-v151-horizon]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  horizon-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Whole-course clearance and geometry regressions
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/tempest-horizon-v151.mjs
+          node --experimental-loader ./test/three-loader.mjs test/terrain-v141.mjs
+          node --experimental-loader ./test/three-loader.mjs test/chapter-landmarks-v143.mjs
+          node --experimental-loader ./test/three-loader.mjs test/far-scenery-v130.mjs
+      - name: Install mobile browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-mountain.log 2>&1 &
+          sleep 2
+      - name: Review Tempest horizon at four chapters and wide camera angles
+        run: node test/tempest-horizon-browser-v151.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v151-horizon
+          path: horizon-v151-frames
+          if-no-files-found: ignore

@@ -1,4 +1,4 @@
-import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=150';
+import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=151';
 import{attachChapterLandmarks,updateChapterLandmarks,disposeChapterLandmarks}from'./chapter-landmarks-v143.js?v=150';
 import{attachBiomeAtmosphere,updateBiomeAtmosphere,disposeBiomeAtmosphere}from'./biome-atmosphere-v142.js?v=150';
 import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=150';
