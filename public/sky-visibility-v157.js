@@ -33,12 +33,12 @@ const riftSky=`varying vec3 ray;uniform float time;uniform vec3 base;
  void main(){vec3 d=normalize(ray);float band=exp(-pow(dot(d,normalize(vec3(.25,.84,.48)))*3.2,2.));float cloud=field(d*4.+vec3(time*.0008,0.,0.));float dust=field(d*13.+cloud*2.);float thread=smoothstep(.34,.68,cloud)*band;
  vec3 c=vec3(.004,.006,.016)+base*.45;c+=mix(vec3(.018,.035,.085),vec3(.095,.031,.102),dust)*thread;c+=vec3(.032,.052,.085)*pow(thread,2.)*(.45+dust);c*=1.-smoothstep(.5,.73,dust)*thread*.40;gl_FragColor=vec4(c,1.);}`;
 
-// Direction-space clouds have no horizon division, texture seam or mirrored
+// A true 3D cloud field has no projection axis, horizon division or mirrored
 // underside. Four filtered scales give soft banks and fine wisps in one draw.
 const naturalSky=`varying vec3 v;uniform float time,level,shift;uniform vec3 base;
- float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
- float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
- void main(){vec3 d=normalize(v);vec2 q=d.xz*4.2+d.y*vec2(1.1,-.7),drift=vec2(time*.006,-time*.004);float broad=noise(q+drift);float middle=noise(q*2.17+drift*.75+3.8);float fine=noise(q*5.3-drift*.4);float wisp=noise(q*12.7+drift*.25);float n=broad*.53+middle*.28+fine*.13+wisp*.06;
+ float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+ float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1)),f.x),f.y),f.z);}
+ void main(){vec3 d=normalize(v);vec3 q=d*5.4,drift=vec3(time*.006,0.,-time*.004);float broad=noise(q+drift);float middle=noise(q*2.17+drift*.75+3.8);float fine=noise(q*5.3-drift*.4);float wisp=noise(q*12.7+drift*.25);float n=broad*.53+middle*.28+fine*.13+wisp*.06;
  float horizon=pow(1.-clamp(abs(d.y)*3.4,0.,1.),3.);float overhead=smoothstep(-.015,.28,d.y);float cloud=smoothstep(.38,.72,n)*overhead;float sun=pow(max(0.,dot(d,normalize(vec3(-.6,.35,.7)))),12.);
  vec3 c=base*(.72+.48*max(0.,d.y));
  if(level<4.5){
