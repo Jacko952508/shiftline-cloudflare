@@ -4,7 +4,6 @@ import{installWorldFinish}from'./world-finish.js?v=153';
 import{glassDetail}from'./surface-detail.js?v=147';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
-import {canopyGeometry} from './race-finish-v147.js?v=147';
 import{EXPANSIONS,expansionShift,expansionAct}from'./expansion-courses.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=58';
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
@@ -61,7 +60,7 @@ export function createExpansionWorld(scene,track){
   const roof=add(g,new THREE.ConeGeometry(14,6,8),dark,0,h*.42+17);roof.scale.z=.85;
   for(const side of[-1,1])add(g,new THREE.BoxGeometry(1,12,1),dark,side*12,h*.42+7);
  }else{
-  for(const side of[-1,1]){const solar=add(g,new THREE.BoxGeometry(15,.3,16),dark,side*20,h*.42+9);solar.rotation.z=side*.22;for(let k=0;k<4;k++)add(g,new THREE.BoxGeometry(.18,.34,16),steel,side*20+(k-1.5)*3,h*.42+9);}
+  for(const side of[-1,1]){const solar=add(g,new THREE.BoxGeometry(15,.3,16),dark,side*20,h*.42+9);solar.rotation.z=side*.22;for(let k=0;k<4;k++){const dx=(k-1.5)*3,m=add(g,new THREE.BoxGeometry(.18,.34,16),steel,side*20+Math.cos(side*.22)*dx,h*.42+9+Math.sin(side*.22)*dx);m.rotation.z=side*.22;}}
   add(g,new THREE.CylinderGeometry(.6,.9,15,8),steel,0,h*.42+21);
  }
  rotor=new THREE.Group();rotor.position.y=h*.42+20;g.add(rotor);

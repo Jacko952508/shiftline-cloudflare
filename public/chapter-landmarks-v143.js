@@ -1,7 +1,7 @@
+import {ancientTrunk,forestCrown,lunarRubble,miningHabitat,ventStack} from './world-identity-v153.js?v=153';
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import * as THREE from 'three';
 import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
-import {canopyGeometry} from './race-finish-v147.js?v=147';
 import {actAt} from './race-track.js?v=58';
 
 // V144: deliberately recognisable exterior set pieces instead of repeated
@@ -13,7 +13,7 @@ const PROFILES={
  3:{name:'Furnace refinery',metal:0x665354,detail:0xa7795d,glow:[0xaacbd8,0xffaf63,0xff774b,0xffb485]},
  4:{name:'Mountain observatory',metal:0x596c81,detail:0xced9df,glow:[0x83c8f0,0xc0b5ff,0x84daff,0xffd2a3]},
  5:{name:'Ancient forest giant',metal:0x46614b,detail:0x6f9855,glow:[0xb5ea94,0x8ce6c6,0xe1d89a,0xb2b5e7]},
- 6:{name:'Fractured monolith',metal:0x505573,detail:0xa29bba,glow:[0xf0bb98,0x82b7fc,0xc8a9ff,0xffabdf]}
+ 6:{name:'Lunar excavation complex',metal:0x656b76,detail:0xa5adb8,glow:[0xf0bb98,0x82b7fc,0xc8a9ff,0xffabdf]}
 };
 const UP=new THREE.Vector3(0,1,0);
 function geos(course,low){
@@ -21,10 +21,10 @@ function geos(course,low){
  switch(course){
   case 1:return [skylineBlock(),new THREE.TorusGeometry(1,.075,low?4:7,low?14:32),new THREE.BoxGeometry(1,1,1)];
   case 2:return [new THREE.CylinderGeometry(.45,.85,1,radial),weatheredRock(low?0:1),new THREE.OctahedronGeometry(1,0)];
-  case 3:return [new THREE.CylinderGeometry(.65,.92,1,radial),new THREE.TorusGeometry(1,.18,low?4:6,low?12:24),new THREE.ConeGeometry(1,1,radial)];
+  case 3:return [ventStack(low),new THREE.TorusGeometry(1,.18,low?4:6,low?12:24),new THREE.ConeGeometry(1,1,radial)];
   case 4:return [alpineRidgeGeometry(low),new THREE.BoxGeometry(1,1,1),new THREE.IcosahedronGeometry(1,0)];
-  case 5:return [new THREE.CylinderGeometry(.40,.85,1,radial),canopyGeometry(low?0:2),new THREE.OctahedronGeometry(1,0)];
-  default:return [new THREE.OctahedronGeometry(1,0),new THREE.TetrahedronGeometry(1,0),new THREE.TorusGeometry(1,.12,low?4:6,low?14:28)];
+  case 5:return [ancientTrunk(low),forestCrown(low),new THREE.OctahedronGeometry(1,0)];
+  default:return [lunarRubble(low),miningHabitat(low),new THREE.TorusGeometry(1,.12,low?4:6,low?14:28)];
  }
 }
 function recipe(course,chapter,base,w,h,seed){
@@ -87,13 +87,13 @@ function recipe(course,chapter,base,w,h,seed){
    add(1,w*.75,h*.69,w*.12,w*1.00,h*.26,w*.87);
    add(1,-w*.65,h*.70,-w*.3,w*.87,h*.26,w*.94);
    add(2,w*.9,h*.53,w*.4,w*.18,h*.15,w*.18);break;
-  default: // Fracture: giant rift shard and vertical portal rings.
-   add(0,0,h*.59,0,w*.63,h*.83,w*.71,0,turn,.17);
-   add(0,-w*.68,h*.42,w*.36,w*.49,h*.51,w*.41,.2,turn);
-   add(1,w*.83,h*.66,-w*.4,w*.57,h*.59,w*.47,.33,turn);
-   add(1,-w*.28,h*1.05,0,w*.34,h*.39,w*.37,.4,turn);
-   add(2,0,h*.78,0,w*1.25,w*1.25,w*.25,0,turn);
-   add(2,0,h*1.03,0,w*.18,h*.12,w*.2);
+  default: // Grounded excavation terraces and a powered ring facility.
+   add(0,0,h*.22,0,w*1.5,h*.45,w*1.3,0,turn);
+   add(0,-w*.80,h*.18,w*.36,w*.70,h*.32,w*.65,0,turn);
+   add(1,w*.70,h*.39,-w*.4,w*1.25,h*.35,w*1.2,0,turn);
+   add(1,-w*.65,h*.30,w*.25,w*.9,h*.26,w*.9,0,turn);
+   add(2,0,h*.50,0,w*1.25,w*1.25,w*.25,0,turn);
+   add(2,-w*.65,h*.42,w*.25,w*.10,h*.025,w*.12);
  }
  return parts;
 }
@@ -145,7 +145,7 @@ export function attachChapterLandmarks(world,track,course,quality='auto'){
    if(typeof world.ground==='function')y=world.ground(x,z);
    else if(typeof world.vista?.seabed?.heightAt==='function')y=world.vista.seabed.heightAt(x,z);
    if(course===1)y=frame.p.y-height*.52+((n+chapter)%2?28:-28);
-   if(course===6)y=frame.p.y-height*.43+((n+chapter)%2?22:-22);
+   if(course===6&&typeof world.ground!=='function')y=frame.p.y-height*.43+((n+chapter)%2?22:-22);
    if(!Number.isFinite(y))continue;
    v.set(x,y,z);centre.copy(v).addScaledVector(UP,height*.59);
    margin=check(centre,bound);

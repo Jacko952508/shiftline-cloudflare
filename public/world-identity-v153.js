@@ -46,7 +46,7 @@ export function forestCrown(low=false){
  // Overlapping flattened lobes produce an open, spreading crown instead of
  // vertically stretched capsules, while keeping the original unit bounds.
  const parts=[[rock(low?0:1),[.71,.55,.65],[0,.15,0]]];
- for(let i=0;i<4;i++){const a=i*2.39996;parts.push([rock(low?0:1),[.55,.35,.51],[Math.cos(a)*.41,-.12+(i%2)*.15,Math.sin(a)*.41]]);}
+ for(let i=0;i<4;i++){const a=i*2.39996;parts.push([rock(),[.55,.35,.51],[Math.cos(a)*.41,-.12+(i%2)*.15,Math.sin(a)*.41]]);}
  return bake(parts,'layered broadleaf crown');
 }
 export function miningHabitat(low=false){

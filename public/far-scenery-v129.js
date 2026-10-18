@@ -3,7 +3,6 @@ import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import {orbitalCityShapes} from './orbital-city-v149.js?v=153';
 import * as THREE from 'three';
 import {finishSurface,skylineBlock,weatheredRock} from './art-direction-v148.js?v=150';
-import {canopyGeometry} from './race-finish-v147.js?v=147';
 
 // V133 / Phase 3 worldscapes: six independent distant silhouettes.
 // Keep every scenic mesh opaque, unlit by shadow maps, and separate from
@@ -111,7 +110,7 @@ function shapes(kind,quality){
  case 'forge':return [
   basaltMass(low),
   ventStack(low),cylinder(.65,.83,8),
-  new THREE.OctahedronGeometry(1,0),
+  cylinder(.35,.35,7),
   cylinder(.38,.44,7)];
  case 'storm':return [
   alpineRidgeGeometry(low,true),weatheredRock(low?0:2,true),
@@ -153,7 +152,7 @@ function recipes(profile,anchor,width,height,seed,chapter){
    a(0,height*.17,0,width*1.2,height*.36,width*1.13),
    a(0,height*.62,0,width*.62,height*.96,width*.62),
    a(0,height*.87,0,width*.77,height*.15,width*.77),
-   a(0,height*1.00,0,width*.36,height*.16,width*.36)];
+   a(0,height*1.11,0,width*.36,height*.025,width*.36)];
  }else if(kind==='storm'){
   // Irregular Alpine rock mass; its lowest ring follows terrain height.
   parts=[
