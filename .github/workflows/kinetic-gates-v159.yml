@@ -1,7 +1,19 @@
 name: SHIFTLINE V159 Kinetic Gates
 on:
   push:
-    branches: [graphics-v159]
+    branches: [graphics-v159, main]
+    paths:
+      - 'public/**'
+      - 'test/kinetic-gates-*.mjs'
+      - 'test/kinetic-gates-browser-v159.mjs'
+      - 'test/sightlines-*'
+      - 'test/readability-*'
+      - 'test/hazard-families-*'
+      - 'test/runtime-*'
+      - 'test/obstacle-v126.mjs'
+      - 'test/racing-polish-v146.mjs'
+      - 'test/three-loader.mjs'
+      - '.github/workflows/kinetic-gates-v159.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 15
+          fetch-depth: 0 # ensure pinned V158 baseline remains available on main
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
