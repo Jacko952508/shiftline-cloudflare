@@ -59,7 +59,9 @@ for(const kind of browsers){
   await page.locator('#garageZoomView').click();await page.locator('#garageResetView').click();
   await page.waitForFunction(()=>window.__shiftlineFlightQA?.rendered&&window.__shiftlineFlightQA.elapsed<1,null,{timeout:60000});
   for(let i=0;i<2;i++)for(const mode of['studio','night','track']){await page.locator('[data-garage-light="'+mode+'"]').click();await page.waitForFunction(m=>window.__shiftlineLightingQA?.mode===m,mode);}
-  await page.setViewportSize({width:932,height:430});await page.screenshot({path:'qa-v162/'+kind.name()+'-landscape.png',fullPage:true});
+  await page.setViewportSize({width:932,height:430});await page.locator('.garage3DCanvas').scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>{const c=document.querySelector('.garage3DCanvas'),q=window.__shiftlineFlightQA;return q?.active&&q.rendered&&c.width===Math.floor(Math.round(c.getBoundingClientRect().width)*Math.min(devicePixelRatio,1.75));},null,{timeout:60000});
+  await page.screenshot({path:'qa-v162/'+kind.name()+'-landscape.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Landscape has no horizontal overflow');
   await page.locator('[data-garage-light="studio"]').click();await page.waitForFunction(()=>window.__shiftlineFlightQA?.active===false);
   assert.ok(await page.locator('#garageCockpitView').isEnabled());await page.locator('#garageCockpitView').click();await page.locator('#garageCockpitView').click();
