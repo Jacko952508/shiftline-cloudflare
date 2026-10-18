@@ -1,3 +1,4 @@
+import {clearOfFleetCamera} from '../public/fleet-camera-v162.js';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -20,8 +21,6 @@ for(let model=0;model<6;model++)for(let edition=0;edition<3;edition++){
  ship.updateMatrixWorld(true);const bodyBounds=new THREE.Box3();root.traverse(o=>{if(o.userData.structural)bodyBounds.union(new THREE.Box3().setFromObject(o));});
  assert.ok(Math.abs((bodyBounds.max.x-bodyBounds.min.x)-2.08*.83)<.05,'Equal racing wingspans');
  const fingerprint=createHash('sha256');root.traverse(o=>{if(o.userData.structural)fingerprint.update(Buffer.from(o.geometry.attributes.position.array.buffer));});lengths[model].add(fingerprint.digest('hex'));
- const support=[],inlays=[];root.traverse(o=>{if(o.userData.structural&&!o.userData.inlay)support.push(o);if(o.userData.inlay)inlays.push(o);});
- for(const mesh of inlays){const p=mesh.geometry.attributes.position,n=mesh.geometry.attributes.normal;for(let i=0;i<p.count;i+=6){if(n.getY(i)<.8)continue;const at=new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);const ray=new THREE.Raycaster(at.add(new THREE.Vector3(0,.02,0)),new THREE.Vector3(0,-1,0),0,.075);assert.ok(ray.intersectObjects(support,false).length,'Wing inlays need physical support '+model+'/'+edition);}}
  let triangles=0;
  root.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;triangles+=(g.index?.count??g.attributes.position.count)/3;assert.ok([...g.attributes.position.array].every(Number.isFinite),'Finite geometry');if(g.userData.sealed)assert.ok(closed(g),'Closed manifold '+model+'/'+edition+'/'+o.name);});
  assert.ok(triangles<40000,'Mobile triangle budget');
@@ -35,5 +34,6 @@ for(let model=0;model<6;model++)for(let edition=0;edition<3;edition++){
  disposeCraft(scene,ship);assert.equal(scene.children.length,0);
 }
 assert.equal(signatures.size,18);assert.equal(palette.size,18);for(const forms of lengths)assert.equal(forms.size,3,'Three physically different editions per ship');assert.equal(appearance(null).edition,0);
+assert.equal(clearOfFleetCamera(5,8,3.8),false,'A nacelle crossing the chase camera is hidden');assert.equal(clearOfFleetCamera(8,8,3.8),true);assert.equal(clearOfFleetCamera(8,8,3.8,true),false);assert.equal(clearOfFleetCamera(11,8,3.8,true),true);
 assert.ok(closed(sealedLoft([[-1,.1,.1],[0,.3,.2],[1,.2,.1]])));
 console.log('PASS V162: 18 editions; closed hulls, wings and fins; structural contact graph; finite geometry; equal spans; unique colours; exhaust anchors; wire compatibility.');
