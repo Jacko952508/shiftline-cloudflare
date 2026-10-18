@@ -12,7 +12,7 @@ for(const kind of[chromium,webkit]){
  try{
   // Exercise a real legacy save without XP: migration must expose the collection
   // while preserving records, XP and selected editions on reload.
-  await page.addInitScript(()=>{if(!localStorage.getItem('fleet162TestSeeded')){localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:42,craft:0,color:0,custom:{wing:4,fin:4,livery:4},records:{1:120000},ghosts:{},medals:{1:'BRONZE'},races:4}));localStorage.setItem('fleet162TestSeeded','1');}localStorage.setItem('shiftlineQuality','low');});
+  await page.addInitScript(()=>{if(!localStorage.getItem('fleet162TestSeeded')){localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({courseRevisions:{1:2,2:3},seaRevision:3,xp:42,craft:0,color:0,custom:{wing:4,fin:4,livery:4},records:{1:120000},ghosts:{},medals:{1:'BRONZE'},races:4}));localStorage.setItem('fleet162TestSeeded','1');}localStorage.setItem('shiftlineQuality','low');});
   await page.goto(base+'/?shipqa=1',{waitUntil:'domcontentloaded',timeout:65000});await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
   await page.locator('[data-tab="garage"]').click();
   await page.waitForSelector('.garage3DCanvas',{timeout:60000});
