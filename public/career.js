@@ -1,4 +1,4 @@
-import{readProgress,saveProgress,TRACKS}from'./progress.js?v=112';
+import{readProgress,saveProgress,TRACKS}from'./progress.js?v=162';
 export const DIFFICULTIES={rookie:{name:'ROOKIE',pace:.94,mistakes:1.65},contender:{name:'CONTENDER',pace:1,mistakes:1},elite:{name:'ELITE',pace:1.035,mistakes:.65}};
 export const POINTS=[25,18,15,12,10,8,6,4];
 export const REWARDS=[{color:6,name:'POLAR CHROME',rule:'Finish a championship'},{color:7,name:'CHAMPION GOLD',rule:'Win a championship'},{color:8,name:'NEBULA ROSE',rule:'Complete 12 track challenges'}];

@@ -1,0 +1,50 @@
+/* Flightworks collection: a product gallery with eighteen complete editions. */
+body.garageOpen .dashboard{max-width:1240px;width:calc(100% - 32px)}
+body.garageOpen .mast{padding-bottom:12px}body.garageOpen .brand small{display:none}
+#garagePage{--fleet-accent:#77e4ee;gap:18px;padding-top:8px}
+#garagePage.off{display:none!important}
+#garagePage .garageStage{border:1px solid #9bb5c52b;background:#101a24;border-radius:20px;overflow:hidden;position:relative;box-shadow:0 22px 70px #0005}
+#garagePage .garageHeader{padding:23px 26px 0;background:transparent;position:relative;z-index:2;pointer-events:none}
+#garagePage .garageTopLine{color:#8296a8;font-size:9px;letter-spacing:.2em}
+#garagePage .garageSeries{color:#8296a8}
+#garagePage .garageTitleBar{margin-top:15px;align-items:center;gap:12px}
+#garagePage #garageModel{font-size:clamp(38px,5.5vw,67px);line-height:1;letter-spacing:-.015em;color:#edf3f5;margin:0}
+#garagePage #garageFinishLabel{border:1px solid color-mix(in srgb,var(--fleet-accent) 45%,transparent);border-radius:30px;padding:8px 12px;color:var(--fleet-accent);font-size:9px;letter-spacing:.13em;background:#0d1621}
+#garagePage #garageDescription{font-size:11px;letter-spacing:.07em;color:#9eafbe;margin:10px 0 5px}
+#garagePage #garageFinishDescription{font-size:10px;color:#708998;display:block;line-height:1.5}
+#garagePage .craftDisplay{height:390px;min-height:0;max-height:none;width:100%;margin:0;position:relative;background:transparent;isolation:isolate;overflow:hidden;border:0;border-radius:0;touch-action:none}
+#garagePage .craftDisplay:before,#garagePage .craftDisplay:after{display:none}
+#garagePage .garage3DCanvas{position:absolute!important;inset:0;width:100%!important;height:100%!important;display:block;z-index:0!important;opacity:1!important}
+#garagePage .garageFrame{top:auto;bottom:18px;right:20px;left:auto;gap:6px;z-index:2}
+#garagePage .garageFrame>span{display:none}
+#garagePage .garageFrame button{padding:9px 11px;background:#101d29b8;backdrop-filter:blur(12px);border:1px solid #819eae45;border-radius:7px;color:#b7c9d5;font-size:8px;letter-spacing:.06em}
+#garagePage .garageLighting{top:18px;left:24px;bottom:auto;z-index:2;border:0;background:transparent;padding:0;gap:5px;box-shadow:none}
+#garagePage .garageLighting button{border:1px solid #7995a034;border-radius:20px;background:#101b27a0;color:#8298a8;padding:7px 10px;font-size:8px;letter-spacing:.07em}
+#garagePage .garageLighting button[aria-pressed=true]{background:#c9dce51a;color:#d7e7ed;border-color:#afc4ce7a;box-shadow:none}
+#garagePage .garageSpec{bottom:21px;left:25px;right:auto;top:auto;z-index:2;color:#6f8796;font-size:8px;letter-spacing:.11em}
+#garagePage .garagePreviewMark{display:none}
+#garagePage .garageDock{border:0!important;background:none!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+.fleetCollectionHead{display:flex;justify-content:space-between;color:#8aa0af;font-size:9px;letter-spacing:.17em;margin:20px 2px 11px}
+#fleetShips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.fleetShip{position:relative;display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:13px 13px 11px;border:1px solid #7d9fb32a!important;border-radius:11px!important;background:linear-gradient(140deg,#192735,#0b1420)!important;text-align:left;overflow:hidden;transition:border-color .2s,background .2s}
+.fleetShip.selected{border-color:var(--fleet-accent)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--fleet-accent) 17%,#172433),#111c28)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fleet-accent) 18%,transparent)}
+.fleetShip .fleetNumber{font-size:8px;color:#668091;letter-spacing:.12em}
+.fleetShip svg{position:absolute;right:9px;top:8px;width:43px;height:43px;fill:#71899933;stroke:#a4bdce;stroke-width:.8;opacity:.8}
+.fleetShip.selected svg{stroke:var(--fleet-accent);fill:color-mix(in srgb,var(--fleet-accent) 14%,transparent)}
+.fleetShip strong{font-size:13px;color:#d9e8f0;letter-spacing:.07em;margin-top:23px}
+.fleetShip small{display:block;white-space:normal;text-transform:none;color:#6e899b;font-size:8px;line-height:1.4;margin-top:4px}
+#garagePage .garageSelectionHead{margin:24px 2px 11px;align-items:center}
+#garagePage #garageCategoryTitle{font-size:10px;letter-spacing:.12em;color:#a3b9c6}
+#garagePage #garageCategorySubtitle{font-size:9px;color:#5f7e91;margin-top:5px}
+#garagePage #garageBuildBadge{font-size:8px;letter-spacing:.14em;color:var(--fleet-accent)}
+#garagePage .garageOptionRail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;overflow:visible;padding:0!important;scroll-snap-type:none}
+.fleetEdition{display:flex;flex-direction:column;align-items:flex-start;position:relative;border:1px solid #8195a331!important;border-radius:10px!important;background:#111d29!important;padding:15px!important;min-width:0;text-align:left}
+.fleetEdition.selected{border-color:var(--fleet-accent)!important;background:linear-gradient(120deg,#1d3040,#101c27)!important}
+.editionSwatches{display:flex;gap:4px;margin-bottom:11px}
+.editionSwatches i{display:block;width:27px;height:12px;transform:skew(-15deg);border-radius:2px;box-shadow:inset 0 1px 1px #ffffff60}
+.fleetEdition strong{font-size:11px;color:#cbdce7;letter-spacing:.08em}
+.fleetEdition small{font-size:8px;color:#647e90;margin-top:5px;letter-spacing:.13em}
+#garagePage #garageNote{text-align:center;font-size:8px;color:#587385;margin:14px 0 8px;letter-spacing:.05em}
+@media(min-width:1000px){#garagePage:not(.off){display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);align-items:stretch}#garagePage .craftDisplay{height:480px}#garagePage .garageDock{padding:0 4px!important}#fleetShips{grid-template-columns:repeat(3,minmax(0,1fr))}.fleetCollectionHead{margin-top:5px}.fleetShip{min-height:113px}.fleetShip strong{margin-top:32px}.fleetEdition{padding:12px!important}.editionSwatches i{width:18px}#garagePage .garageSelectionHead{margin-top:25px}}
+@media(max-width:600px){body.garageOpen .dashboard{width:calc(100% - 22px)}#garagePage .garageHeader{padding:17px 18px 0}#garagePage .garageSeries{display:none}#garagePage .garageTitleBar{margin-top:10px}#garagePage #garageModel{font-size:42px}#garagePage .craftDisplay{height:300px}#garagePage .garageLighting{left:16px;top:14px}#garagePage .garageSpec{left:18px;bottom:18px;font-size:6px;max-width:115px;line-height:1.6}#garagePage .garageFrame{right:13px;bottom:14px;gap:4px}#garagePage .garageFrame button{padding:8px;font-size:7px}#fleetShips{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.fleetCollectionHead{margin-top:17px}.fleetShip{padding:10px;min-height:84px}.fleetShip svg{width:34px;height:34px;right:7px;top:6px}.fleetShip strong{font-size:11px;margin-top:20px}.fleetShip small{font-size:7px}.fleetEdition{padding:11px!important}.fleetEdition strong{font-size:9px}.editionSwatches i{width:21px;height:10px}#garagePage .garageSelectionHead{margin-top:19px}#garagePage #garageFinishDescription{font-size:9px}}
+@media(max-height:560px) and (orientation:landscape){body.garageOpen .mast{padding:7px 0}body.garageOpen .pilot{padding:5px 10px}#garagePage:not(.off){display:grid;grid-template-columns:minmax(0,1.3fr) minmax(275px,1fr);gap:14px}#garagePage .garageHeader{padding:14px 17px 0}#garagePage .garageTopLine{font-size:7px}#garagePage .garageSeries{display:none}#garagePage #garageModel{font-size:34px}#garagePage .craftDisplay{height:260px}#fleetShips{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.fleetCollectionHead{margin-top:0}.fleetShip{min-height:79px;padding:8px}.fleetShip strong{font-size:10px;margin-top:20px}.fleetShip small{font-size:7px}.fleetShip svg{width:30px;height:30px}#garagePage .garageSelectionHead{margin-top:16px}.fleetEdition{padding:9px!important}.fleetEdition strong{font-size:8px}.editionSwatches i{width:18px}#garagePage .garageCategorySubtitle{font-size:7px}body.garageOpen footer{display:none}}

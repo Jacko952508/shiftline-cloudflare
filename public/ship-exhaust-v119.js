@@ -121,10 +121,10 @@ function particlesMaterial(color){
 }
 const rand=i=>((Math.sin(i*127.1+45.97)*43758.5453)%1+1)%1;
 export function installShipExhaust(ship,root,index,custom,high=true){
- const colour=PALETTE[custom.trail|0]||PALETTE[0];
+ const colour=root.userData.exhaustColor??(PALETTE[custom.trail|0]||PALETTE[0]);
  const style=TRAIL_STYLES[custom.trail|0]||TRAIL_STYLES[0];
  const engineProfile=ENGINE_PROFILES[custom.engine|0]||ENGINE_PROFILES[0];
- const positions=LOCATIONS[index]||LOCATIONS[0];
+ const positions=root.userData.exhaustAnchors||LOCATIONS[index]||LOCATIONS[0];
  const fxGroup=new THREE.Group();fxGroup.name='dynamic-rocket-trails';root.add(fxGroup);
  const outerMat=plasmaMaterial(colour,high?.32:.24,style),innerMat=plasmaMaterial(colour,high?.72:.42,style);
  const coreMat=plasmaMaterial(0xf6ffff,high?.95:.68,style),particleMat=particlesMaterial(colour);

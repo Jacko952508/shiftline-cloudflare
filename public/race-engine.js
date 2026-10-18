@@ -4,16 +4,16 @@ import{recoveryPose,racerInView}from'./race-recovery.js?v=159';
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
 import{menuCamera,PREVIEW_CAMERA,prepareMenuCamera}from'./menu-camera.js?v=105';
 import{menuFrameProfile,createMenuFrameGovernor}from'./menu-pacing.js?v=105';
-import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=153';
-import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=72';
+import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=162';
+import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=162';
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
 import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=159';
 import{cinematicArrival,cinematicScenic}from'./cinematic-flight.js?v=56';
 import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=157';
-import{shipAppearance}from'./ship-wire.js?v=72';
-import{SHIP_SCALE}from'./ship-catalog.js?v=107';
+import{shipAppearance}from'./ship-wire.js?v=162';
+import{SHIP_SCALE}from'./ship-catalog.js?v=162';
 import{imperfectLine,ringAtCrossing,passReward}from'./race-balance.js?v=159';
-import{createGarage,equipGarage,renderGarage,disposeGarage,setGarageLighting}from'./garage-scene.js?v=161';
+import{createGarage,equipGarage,renderGarage,disposeGarage,setGarageLighting}from'./garage-scene.js?v=162';
 import{Combat,COMBAT_VERSION,PULSE_LIMIT,PULSE_COOLING,WEAPONS}from'./combat-core.js?v=159';
 import{createCombatView,updateCombatView,shieldHit,disposeCombatView}from'./combat-view.js?v=159';
 import{setNameTag,updateNameTag,disposeNameTag}from'./name-tags.js';
@@ -23,10 +23,10 @@ import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
 import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=161';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=160';
-import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=161';
+import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=162';
 import{shiftState}from'./race-theme.js';
 import{RaceEffects}from'./race-effects.js?v=145';
-import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=112';
+import{TRACKS,PAINT,readProgress,awardRace,ghostAt,formatTime}from'./progress.js?v=162';
 import{prepareRaceAudio,audioStart,installAudioActivation,audioResume,audioStop,audioSuspend,setAudioTrack,setAudioBoost,setMasterVolume,engineSound,crashSound,passSound,shiftSound,setAudioScene,countdownSound,finishSound,uiSound,weaponSound,shieldSound,hitSound}from'./audio.js?v=152';
 const selectors=new Map();const $=s=>{if(!selectors.has(s))selectors.set(s,document.querySelector(s));return selectors.get(s)},STEP=1/120,RELAY='wss://tuber-racers-relay.onrender.com';
 const aiPlayer={x:0,y:0,s:0,speed:0};
@@ -235,7 +235,7 @@ window.addEventListener('shiftline-garage-light',event=>{
  setGarageLighting(garage,event.detail?.mode);
 });
 
-const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageZoomView').onclick=()=>{if(garage){garage.zoom=!garage.zoom;$('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=.55;garage.pitch=.12;garage.auto=true;garage.drag=null;garage.zoom=false;$('#garageZoomView').textContent='ZOOM IN';}};
+const garagePad=$('#craftDisplay');garagePad.addEventListener('pointerdown',e=>{if(!garage||garage.drag!==null||e.target?.closest?.('button'))return;e.preventDefault();garage.drag={id:e.pointerId,x:e.clientX,y:e.clientY};garage.auto=false;garagePad.setPointerCapture?.(e.pointerId)});garagePad.addEventListener('pointermove',e=>{const d=garage?.drag;if(!d||d.id!==e.pointerId)return;e.preventDefault();garage.yaw+=(e.clientX-d.x)*.012;garage.pitch=clamp(garage.pitch+(e.clientY-d.y)*.006,-.35,.6);d.x=e.clientX;d.y=e.clientY});for(const type of['pointerup','pointercancel','lostpointercapture'])garagePad.addEventListener(type,e=>{if(garage?.drag?.id===e.pointerId)garage.drag=null});$('#garageCockpitView').onclick=()=>{if(garage){garage.viewCockpit=!garage.viewCockpit;$('#garageCockpitView').textContent=garage.viewCockpit?'EXTERIOR':'COCKPIT';}};$('#garageZoomView').onclick=()=>{if(garage){garage.zoom=!garage.zoom;$('#garageZoomView').textContent=garage.zoom?'ZOOM OUT':'ZOOM IN';}};$('#garageResetView').onclick=()=>{if(garage){garage.yaw=2.62;garage.pitch=.08;garage.auto=true;garage.drag=null;garage.zoom=false;$('#garageZoomView').textContent='ZOOM IN';}};
 function init(){bind();renderer=new THREE.WebGLRenderer({canvas:$('#game'),antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,qualityRatio()));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;effects=new RaceEffects(renderer);if(location.search.includes('graphicsqa=1'))window.__shiftlineGraphicsQA={contextAntialias:renderer.getContext().getContextAttributes().antialias};scene=new THREE.Scene();scene.updateMatrix();scene.matrixAutoUpdate=false;camera=new THREE.PerspectiveCamera(74,innerWidth/innerHeight,.15,14000);buildPreview();window.shiftlineReady=true;document.body.classList.add('gpuReady');renderer.setAnimationLoop(loop)}
 try{init()}catch(error){console.error(error);window.shiftlineReady=false;$('#loadError').classList.remove('off')}
 

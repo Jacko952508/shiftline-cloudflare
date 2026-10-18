@@ -1,5 +1,5 @@
 import{EXPANSIONS}from'./expansion-courses.js?v=58';
-import{appearance,MODELS,modelUnlocked}from'./ship-catalog.js?v=112';
+import{appearance,MODELS,modelUnlocked}from'./ship-catalog.js?v=162';
 export const TRACKS=[null,{name:'ECLIPSE',title:'ECLIPSE',desc:'One continuous descent into the Helix Engine. Storm-lit docks, a prismatic conduit, a full orbital loop and a burning reactor throat.',tag:'THE HELIX ENGINE / 4 ACTS',color:'#67e8ff',gold:112000,silver:140000,bronze:180000},{name:'LEVIATHAN',title:'LEVIATHAN',desc:'A continuous dive through the Pressure Dock, Reef Conduit, Abyss Vault and Tidal Engine. Thread drain portals, avoid pressure bulkheads and turbines, then dive through the final loop.',tag:'THE PRESSURE ENGINE / 4 ACTS',color:'#62ead0',gold:95000,silver:120000,bronze:160000},{name:'CINDER FORGE',title:'CINDER<br>FORGE',desc:'Descend into a volcanic power station. Race across open crater spans, navigate the foundry and loop around the reactor. Built for combat.',tag:'VOLCANIC COMBAT CIRCUIT / 4 ACTS',color:'#ffb276',gold:105000,silver:135000,bronze:180000}];
 for(const [id,p]of Object.entries(EXPANSIONS))TRACKS[+id]={name:p.name,title:p.name,desc:p.desc,tag:p.tag+' / 4 ACTS',color:p.color,gold:140000,silver:175000,bronze:240000};
 for(const t of TRACKS.slice(1))for(const k of ['gold','silver','bronze'])t[k]=Math.round(t[k]/1.5);

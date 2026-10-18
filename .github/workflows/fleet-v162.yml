@@ -1,0 +1,47 @@
+name: SHIFTLINE V162 Authored Fleet
+on:
+  push:
+    branches: [fleet-v162, main]
+    paths: ['public/**', 'test/fleet-v162.mjs', 'test/fleet-browser-v162.mjs', '.github/workflows/fleet-v162.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fleet-v162-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Closed surfaces and eighteen coherent editions
+        run: |
+          node --check public/menu.js
+          node --check public/fleet-sculpture-v162.js
+          node --check public/garage-scene.js
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v162.mjs
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v121.mjs
+          node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
+          node --experimental-loader ./test/three-loader.mjs test/sightlines-v158.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm install --no-save playwright pngjs
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v162.log 2>&1 &
+      - name: Render all eighteen designs and verify the garage
+        run: node test/fleet-browser-v162.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v162-review
+          path: qa-v162
+          if-no-files-found: ignore
