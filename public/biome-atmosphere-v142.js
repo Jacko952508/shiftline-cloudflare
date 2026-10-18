@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {atmosphereChapters} from './far-scenery-v129.js?v=153';
+import {atmosphereChapters} from './far-scenery-v129.js?v=154';
 // V142 reuses pre-existing scene fog and the authored sky shaders.
 // Never allocates meshes, lights, postprocess targets or colliders.
 const STYLES={

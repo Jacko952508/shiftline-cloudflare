@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {setFarSceneryQuality} from './far-scenery-v129.js?v=153';
+import {setFarSceneryQuality} from './far-scenery-v129.js?v=154';
 import {setChapterLandmarkQuality} from './chapter-landmarks-v143.js?v=153';
 // Scale pixel workload gently; reduced mode saves scenery work instead of blurring the race.
 export function graphicsRatio(quality,width,height){const budget=quality==='high'?4500000:quality==='low'?2200000:3600000,preset=quality==='high'?2:quality==='low'?1.25:1.75;return Math.min(preset,Math.sqrt(budget/Math.max(1,width*height)));}

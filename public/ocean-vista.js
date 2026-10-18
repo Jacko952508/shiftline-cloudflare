@@ -1,8 +1,9 @@
+import {createCoralShapes} from './coral-v154.js?v=154';
 import * as THREE from 'three';
 import {poseObject} from './race-track.js?v=58';
 
 // Exterior life is kept beyond every part of the racing corridor, including bends.
-export function createOceanVista(root,track,stone,coral,seabed){
+export function createOceanVista(root,track,stone,coral,seabed,coralShapes=createCoralShapes()){
   const chunks=[],kelp=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time:{value:0},tide:{value:0}},vertexShader:`uniform float time;uniform float tide;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;float tip=uv.y*uv.y;p.x+=sin(time*.65+position.y*.7)*tip*(.35+tide*.25);p.z+=cos(time*.42+position.y*.6)*tip*.25;
 #ifdef USE_INSTANCING
 p=(instanceMatrix*vec4(p,1.)).xyz;
@@ -11,18 +12,25 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varyi
   const rockGeo=new THREE.IcosahedronGeometry(1,2),bladeGeo=new THREE.PlaneGeometry(.65,5,4,18);bladeGeo.translate(0,2.5,0);
   bladeGeo.userData.groundKind='kelp';rockGeo.userData.groundKind='rock';const pos=rockGeo.attributes.position;for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i),n=1+.1*Math.sin(x*11+y*7+z*13);pos.setXYZ(i,x*n,y*n,z*n)}rockGeo.computeVertexNormals();
   const rockMat=stone.clone();rockMat.color.setHex(0x456b70);rockMat.emissive.setHex(0x102c33);rockMat.emissiveIntensity=.4;
-  const coralMat=coral.clone();coralMat.color.setHex(0xca9172);coralMat.emissive.setHex(0x38251c);coralMat.emissiveIntensity=.25;
-  const branchGeo=new THREE.CylinderGeometry(.12,.25,3,8,3),capGeo=new THREE.SphereGeometry(.65,16,10);
+  const coralMat=coral.clone();coralMat.color.setHex(0xffffff);coralMat.vertexColors=true;coralMat.emissive.setHex(0xffffff);coralMat.emissiveIntensity=.09;
+  const [branchGeo,capGeo]=coralShapes;branchGeo.userData.groundKind=capGeo.userData.groundKind='coral';
   const frames=track.frames.filter((_,i)=>i%3===0);
   function outside(mesh){mesh.updateWorldMatrix(true,false);mesh.geometry.computeBoundingSphere();const sphere=mesh.geometry.boundingSphere.clone().applyMatrix4(mesh.matrixWorld);return frames.every(f=>f.p.distanceTo(sphere.center)>10+sphere.radius+(mesh.material===kelp?.7:0))}
   for(let s=80,index=0;s<track.loopStart-140;s+=90,index++){
-    const g=new THREE.Group(),F=track.frame(s),right=F.r.clone().setY(0).normalize(),forward=F.f.clone().setY(0).normalize();g.position.copy(F.p);root.add(g);const add=(geo,mat,x,y,z,sx=1,sy=sx,sz=sx)=>{const m=new THREE.Mesh(geo,mat);const point=F.p.clone().addScaledVector(right,x).addScaledVector(forward,z);const floor=seabed.heightAt(point.x,point.z);const offset=mat===kelp?-.15:geo===branchGeo?1.5*sy-.15:geo===capGeo?y:sy*.25;m.position.copy(point).sub(g.position);m.position.y=floor+offset-g.position.y;m.scale.set(sx,sy,sz);g.add(m);if(!outside(m)){g.remove(m);return null}return m};
+    const g=new THREE.Group(),F=track.frame(s),right=F.r.clone().setY(0).normalize(),forward=F.f.clone().setY(0).normalize();g.position.copy(F.p);root.add(g);const add=(geo,mat,x,y,z,sx=1,sy=sx,sz=sx)=>{const m=new THREE.Mesh(geo,mat);const point=F.p.clone().addScaledVector(right,x).addScaledVector(forward,z);const floor=seabed.heightAt(point.x,point.z);const offset=mat===kelp?-.15:geo.userData.groundKind==='coral'?-.08:sy*.25;m.position.copy(point).sub(g.position);m.position.y=floor+offset-g.position.y;m.scale.set(sx,sy,sz);g.add(m);if(!outside(m)){g.remove(m);return null}return m};
     for(const side of[-1,1]){
       // Layered basalt reefs create parallax immediately beyond the windows.
       for(let k=0;k<5;k++)add(rockGeo,rockMat,side*(16+k*2.8),-12-k*.8,(k-2)*8,3+k*.4,2.4+k*.5,4+k*.4);
       if(index%3===0)add(rockGeo,rockMat,side*39,-12,12,8,15,7);if(index%4===0)add(rockGeo,rockMat,side*62,-12,-15,12,20+index%3*6,10);
       for(let k=0;k<9;k++){const blade=add(bladeGeo,kelp,side*(14.5+k%3*1.3),-10.5,(k-4)*2.8);if(blade)blade.rotation.y=k*.8+index*.6}
-      if(s>track.length*.18&&s<track.length*.51)for(let k=0;k<6;k++){const x=side*(15+k%3*1.4),z=(k-3)*4;add(branchGeo,coralMat,x,-8.5,z,.8,1+k%3*.25,.8);add(capGeo,coralMat,x,3*(1+k%3*.25)-.25,z,1.1,.35,1.1)}
+      // Root living colonies in the seabed beside every chapter, including
+      // the opening windows. Reuse two baked shapes in two instanced draws.
+      for(let k=0;k<6;k++){
+       const geo=k%2?capGeo:branchGeo,x=side*(13.5+k%3*2.3),z=(k-2.5)*5.5;
+       const size=7.5+(k+index)%3*1.15;
+       const m=add(geo,coralMat,x,0,z,size,size,size);
+       if(m){m.rotation.y=index*.61+k*1.73;m.scale.x*=1+(k%3)*.12;if(!outside(m))g.remove(m);}
+      }
     }
     // One draw per repeated exterior material/shape in each culled chunk.
     const batches=new Map();for(const m of [...g.children]){const key=m.geometry.uuid+':'+m.material.uuid;let list=batches.get(key);if(!list)batches.set(key,list=[]);list.push(m)}

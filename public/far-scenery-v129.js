@@ -1,3 +1,4 @@
+import {createCoralShapes} from './coral-v154.js?v=154';
 import {reefShelf,coralBranches,basaltMass,ventStack,ancientTrunk,forestCrown,lunarRubble,miningHabitat,quarryCrane,drillHead} from './world-identity-v153.js?v=153';
 import {alpineRidgeGeometry,alpineSurface} from './alpine-v150.js?v=150';
 import {orbitalCityShapes} from './orbital-city-v149.js?v=153';
@@ -102,11 +103,7 @@ function shapes(kind,quality){
  // beacon and a distinct biome accent (disabled on Low quality).
  switch(kind){
  case 'city':return orbitalCityShapes(low);
- case 'reef':return [
-  reefShelf(low),
-  coralBranches(low),reefShelf(low),
-  new THREE.IcosahedronGeometry(1,0),
-  coralBranches(low)];
+ case 'reef':{const coral=createCoralShapes();for(const g of coral)g.translate(0,-.5,0);return [reefShelf(low),coral[0],reefShelf(low),new THREE.IcosahedronGeometry(1,0),coral[1]];}
  case 'forge':return [
   basaltMass(low),
   ventStack(low),cylinder(.65,.83,8),
@@ -202,6 +199,7 @@ export function attachFarScenery(scene,world,track,course,quality='auto'){
   new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,depthWrite:true}),
   new THREE.MeshLambertMaterial({color:profile.accent,flatShading:true})
  ];
+ if(course===2)for(const i of [1,4]){materials[i].vertexColors=true;materials[i].color.setHex(0xffffff);}
  if(course===5){materials[1].flatShading=false;materials[1].vertexColors=true;finishSurface(materials[1],'canopy',course);}
  if(course===4)for(const i of [0,1,2,4]){materials[i].flatShading=false;alpineSurface(materials[i]);}
  for(const i of [0,1,2,4])if(!(course===5&&i===1))finishSurface(materials[i],course===1?'city':course===5?'organic':course===6&&i!==0?'tunnel':'landscape',course);

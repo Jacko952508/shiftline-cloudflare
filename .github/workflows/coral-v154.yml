@@ -1,0 +1,43 @@
+name: SHIFTLINE V154 Coral Reef
+on:
+  push:
+    branches: [graphics-v154]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reef:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Reef clearance and race regressions
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/coral-v154.mjs
+          node --experimental-loader ./test/three-loader.mjs test/world-identity-v153.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-coral.log 2>&1 &
+          sleep 2
+      - name: Inspect coral, native race and cockpit in Chromium and WebKit
+        env:
+          SHIFTLINE_ART_COURSES: '2'
+          SHIFTLINE_ART_RACE_COURSE: '2'
+          SHIFTLINE_GRAPHICS_OUTPUT: coral-v154-frames
+          SHIFTLINE_CORAL_REVIEW: '1'
+        run: node test/graphics-browser-v147.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coral-v154-reef
+          path: coral-v154-frames
+          if-no-files-found: ignore
