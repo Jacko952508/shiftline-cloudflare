@@ -14,7 +14,6 @@ const jaw=[[-1.65,-4.4],[.85,-4.4],[1.5,-3.75],[1.10,-2.7],[1.5,-2.35],[1.5,2.35
 const swept=[[.55,-.22],[2.8,-.58],[5.5,-.36],[6.65,.15],[6.45,.6],[4.8,.77],[2.8,.28],[.55,.26]];
 const head=[[-4.7,-.95],[-4.1,-1.3],[-1.3,-1.3],[-.8,-1.05],[.8,-1.05],[1.3,-1.3],[4.1,-1.3],[4.7,-.95],[4.7,.95],[4.1,1.25],[-4.1,1.25],[-4.7,.95]];
 const cargo=[[-1.25,-1.4],[.9,-1.4],[1.4,-.85],[1.4,1.05],[.85,1.4],[-1.25,1.4],[-1.45,.95],[-1.45,-.95]];
-function sector(inner,outer,start,end){const points=[],n=Math.max(6,Math.ceil((end-start)/.10));for(let i=0;i<=n;i++){const a=start+(end-start)*i/n;points.push([Math.cos(a)*outer,Math.sin(a)*outer]);}for(let i=n;i>=0;i--){const a=start+(end-start)*i/n;points.push([Math.cos(a)*inner,Math.sin(a)*inner]);}return points;}
 export function familySolids(course,family,variant=0){
  if(isKineticGate(family))return kineticGateSolids(family,variant);
  const out=[],shift=(variant-1)*.35;
@@ -77,7 +76,7 @@ export function familySpecifications(course,length){
  for(let i=0,s=190;s<length-270;i++){
   const bounds=course>=4?[.25,.5,.75]:course===2?[.2,.5,.78]:course===3?[.2,.48,.76]:[.18,.47,.76];
   const theme=1+bounds.filter(b=>s/length>=b).length,family=families[order[(i+theme-1)%order.length]],variant=(Math.floor(i/3)+theme)%3;
-  const forceDodge=i>1&&[0,3,6,8].includes(i%10),orientation=[0,.32,-.32,Math.PI/2,.22,-Math.PI/2][Math.floor(i/2)%6];
+  const forceDodge=isKineticGate(family)?/segments|gate/.test(family):i>1&&[0,3,6,8].includes(i%10),orientation=[0,.32,-.32,Math.PI/2,.22,-Math.PI/2][Math.floor(i/2)%6];
   out.push({id:i,s,kind:family,family,course,theme,variant,orientation,forceDodge,solids:familySolids(course,family,variant),seed:i*.731,spin:(i%2?1:-1)*.14,revision:157});
   s+=i<3?[188,168,156][i]:beats[(i-3)%beats.length]*(s/length>.72?.92:1);
  }
@@ -89,7 +88,7 @@ export function familyState(o,time){
  // A smooth dwell at each end of a cycle makes direction changes readable.
  const cycle=phase=>{const v=.5-.5*Math.cos(clock*TAU/period+phase);return v*v*(3-2*v);};
  let x=0,y=0,a=0;
- if(o.forceDodge){const axis=(Math.floor(o.id/3)%4)*Math.PI/2,offset=o.family==='root-arch'?4.35:o.family==='discharge-gate'?3.7:/segments/.test(o.family)?3.05:/press/.test(o.family)?2.1:2.8;x=Math.cos(axis)*offset;y=Math.sin(axis)*offset;}
+ if(o.forceDodge&&!isKineticGate(o.family)){const axis=(Math.floor(o.id/3)%4)*Math.PI/2,offset=o.family==='root-arch'?4.35:o.family==='discharge-gate'?3.7:/segments/.test(o.family)?3.05:/press/.test(o.family)?2.1:2.8;x=Math.cos(axis)*offset;y=Math.sin(axis)*offset;}
  else if(!isKineticGate(o.family)&&/segments|gate|arch|machinery/.test(o.family)){x=Math.sin(clock*.16)*.35;y=Math.cos(clock*.13)*.25;}
  if(/vanes|rotor|turbine|wheel|drill|assembly/.test(o.family))a=o.variant*.18+(o.orientation||0);
  else a=(o.orientation||0)+(isKineticGate(o.family)?0:Math.sin(clock*.12)*.055);

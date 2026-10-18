@@ -1,6 +1,5 @@
 // Authored racing mechanisms. Solids, drive axes and clear openings are shared
 // by rendering, AI and player collision; decorative light never defines a hit.
-const TAU=Math.PI*2;
 export const isKineticGate=family=>['dock-clamps','pressure-bulkhead','security-segments','discharge-gate'].includes(family);
 export function kineticGateSolids(family,variant=0){
  const solids=[],shutter=/clamps|bulkhead/.test(family),direction=variant===1?-1:1;

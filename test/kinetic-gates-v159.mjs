@@ -34,7 +34,7 @@ for(const [course,families]of [[1,['dock-clamps','security-segments']],[2,['pres
     previousAngle=angles[0];assert.ok(localDistance(o,st,0,0,0)<0,'Uninteresting straight-through core');
    }
    for(const forced of [false,true]){
-    o.forceDodge=forced;const target=planTarget(o,t,0,0);assert.ok(target);
+    o.forceDodge=forced;assert.equal(familyState(o,t).x,0);assert.equal(familyState(o,t).y,0);const target=planTarget(o,t,0,0);assert.ok(target);
     for(const dt of[-.13,0,.13])assert.ok(clearance(o,familyState(o,t+dt),target.x,target.y)>=.29,'Passage closes during a crossing');
    }
    o.forceDodge=false;samples++;
