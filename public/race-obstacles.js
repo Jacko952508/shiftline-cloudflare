@@ -95,7 +95,7 @@ export function buildObstacles(scene,track,course,select=null){
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&(/obstacleqa=1|shipqa=1/.test(location.search)))window.__shiftlineObstacleQA={course,obstacles:specs.length,detailMeshes:bodyworkCount,metalParts,glowParts,quality,collisionTypes:specs.reduce((n,o)=>n+o.solids.length,0),decorOnly:true,clipped:specs.every(o=>o.bodywork?.clipped),families:[...new Set(specs.map(o=>o.family))],version:157};
  return specs;
 }
-const HAZARD_COLORS=[0,0xffb86b,0xff8fce,0x73efff,0xffd078,0x73ffe7,0xffbc7e];
+const HAZARD_COLORS=[0,0xffb86b,0xff8fce,0x73efff,0xffd078,0x73ffe7,0xffbc7e],CUE_WHITE=new THREE.Color(0xffffff);
 function obstacleColor(o,time,color){if(o.family)return color.setHex(HAZARD_COLORS[o.course]);if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp(new THREE.Color(EXPANSIONS[o.course].shift),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(new THREE.Color(0xff8056),cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
 export function updateObstacles(specs,along,time){
  const next=upcomingHazard(specs,along),distance=next?next.s-along:Infinity;
@@ -107,8 +107,8 @@ export function updateObstacles(specs,along,time){
    warning.group.visible=true;
    const tint=obstacleColor(next,time,next.cachedTint??=new THREE.Color());
    warning.base.material.color.copy(tint);
-   warning.a.material.color.copy(tint).lerp(new THREE.Color(0xffffff),.38);
-   warning.b.material.color.copy(tint).lerp(new THREE.Color(0xffffff),.18);
+   warning.a.material.color.copy(tint).lerp(CUE_WHITE,.38);
+   warning.b.material.color.copy(tint).lerp(CUE_WHITE,.18);
    warning.base.material.opacity=active.ring;
    warning.a.material.opacity=active.sweep;
    warning.b.material.opacity=active.sweep*.57;
