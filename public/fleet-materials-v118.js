@@ -24,6 +24,17 @@ export function fleetSurfaceMaps(type='brushed'){
  for(const points of paths)for(const [ctx,color,width]of [[ac,s.seam,1.4],[rc,244,2.8],[bc,109,1.5]]){
   ctx.strokeStyle=gray(color);ctx.lineWidth=width;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
  }
+ // Directional satin-metal machining and recessed alloy inlays. The larger
+ // irregular facets produce readable surfaces rather than a flat grey shell.
+ const offsets=type==='stealth'?[28,137,303,427]:type==='pod'?[62,176,284,406]:[18,156,295,425];
+ for(let j=0;j<offsets.length;j++){
+  const x=offsets[j],w=42+(j%2)*27,top=72+j*86;
+  ac.fillStyle=gray(s.base-(j%2?23:34));
+  ac.beginPath();ac.moveTo(x,top);ac.lineTo(x+w,top+7);ac.lineTo(x+w-13,top+32);ac.lineTo(x+4,top+24);ac.closePath();ac.fill();
+  ac.strokeStyle=gray(s.seam+14);ac.lineWidth=1.5;ac.stroke();
+  rc.fillStyle=gray(Math.max(45,s.rough-33));rc.fillRect(x+9,top+8,Math.max(6,w-28),4);
+  bc.strokeStyle=gray(94);bc.lineWidth=2;bc.beginPath();bc.moveTo(x+4,top+24);bc.lineTo(x+w-13,top+32);bc.stroke();
+ }
  // A few broad access covers and flush screw heads; no repeated tile grids.
  for(const [x,y,w,h]of [[31,195,112,84],[290,390,155,67]]){
   ac.fillStyle=gray(s.base-7);ac.fillRect(x,y,w,h);ac.strokeStyle=gray(s.seam);ac.lineWidth=1;ac.strokeRect(x,y,w,h);

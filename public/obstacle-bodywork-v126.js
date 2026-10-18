@@ -20,7 +20,7 @@ export function installObstacleBodywork(obstacle,quality='auto'){
  const theme=THEMES[obstacle.course]||THEMES[1],low=quality==='low';
  const metal=[],light=[],drivers=[[],[]];let activePiece=0;const q=new THREE.Quaternion(),position=new THREE.Vector3(),scale=new THREE.Vector3(),matrix=new THREE.Matrix4();
  const metalMaterial=new THREE.MeshStandardMaterial({
-  color:theme.paint,metalness:theme.metalness,roughness:theme.roughness,
+  color:new THREE.Color(theme.paint).multiplyScalar(.58),metalness:theme.metalness,roughness:theme.roughness,
   emissive:obstacle.course===3?0x271008:0x050b0d,emissiveIntensity:.24,
   side:THREE.FrontSide
  });

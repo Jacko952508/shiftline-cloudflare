@@ -1,9 +1,10 @@
 import {batchStaticAirframe} from './fleet-batching-v152.js?v=152';
-import {refineFleetAppearance} from './fleet-refinement-v150.js?v=153';
+import {refineFleetAppearance} from './fleet-refinement-v150.js?v=161';
+import {installFleetIdentity} from './fleet-identity-v161.js?v=161';
 import * as THREE from 'three';
 import {installShipFinish} from './art-direction-v148.js?v=153';
-import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=150';
-import{installShipExhaust}from'./ship-exhaust-v119.js?v=150';
+import{fleetSurfaceMaps}from'./fleet-materials-v118.js?v=161';
+import{installShipExhaust}from'./ship-exhaust-v119.js?v=161';
 import{addFleetUpgrades}from'./fleet-upgrades-v119.js?v=119';
 import{installFleetPolish}from'./fleet-polish-v120.js?v=150';
 import{addSignatureKits}from'./fleet-signatures-v120.js?v=120';
@@ -359,6 +360,7 @@ function builder(ship,index,c,m,high=true){
  }
  installShipFinish(ship,root,index,c,{...m,polished,graphite,ceramic},high);
  refineFleetAppearance(ship,root,index,c,{...m,polished,graphite,ceramic},high);
+ installFleetIdentity(ship,root,index,owned,high);
  // Equal-width garage/race geometry independent of wing option or chosen airframe.
  root.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(root);

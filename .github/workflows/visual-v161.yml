@@ -1,0 +1,59 @@
+name: SHIFTLINE V161 Visual Upgrade
+on:
+  push:
+    branches: [visual-v161, main]
+    paths:
+      - 'public/**'
+      - 'test/visual-v161.mjs'
+      - 'test/visual-browser-v161.mjs'
+      - '.github/workflows/visual-v161.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: visual-v161-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: JS validity and six-airframe plus obstacle invariants
+        run: |
+          node --check public/fleet-identity-v161.js
+          node --check public/garage-scene.js
+          node --check public/ship-fleet-v117.js
+          node --check public/race-obstacles.js
+          node --check public/obstacle-glow-v155.js
+          node --experimental-loader ./test/three-loader.mjs test/visual-v161.mjs
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v121.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/sightlines-v158.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install native WebGL browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v161.log 2>&1 &
+          sleep 2
+      - name: Render six airframes, studio lighting and real hazard scenery
+        run: node test/visual-browser-v161.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-v161-visuals
+          path: visual-v161-frames
+          if-no-files-found: ignore

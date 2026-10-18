@@ -34,7 +34,7 @@ try{
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
  const engineURL=await page.locator('script[src^="race-engine.js?"]').getAttribute('src');
  const cssURL=await page.locator('link[href^="style.css?"]').getAttribute('href');
- assert.equal(engineURL,'race-engine.js?v=160','fresh game engine URL');
+ assert.equal(engineURL,'race-engine.js?v=161','fresh game engine URL');
  assert.equal(cssURL,'style.css?v=135','fresh garage stylesheet URL');
  await page.locator('[data-tab="garage"]').click();
  const first=await measure('01-razor-gold');
@@ -55,6 +55,10 @@ try{
   const meta=await page.evaluate(()=>window.__shiftlineModelQA);
   assert.equal((await page.evaluate(()=>window.__shiftlineAppearanceQA))?.version,150,'New craft finish not loaded');
   assert.equal(meta?.id,names[i],'Correct independent mesh for '+names[i]);
+  const idQA=await page.evaluate(()=>window.__shiftlineIdentityQA);
+  assert.equal(idQA?.version,161,'V161 visual identity is missing for '+names[i]);
+  assert.equal(idQA.index,i,'Wrong physical panel configuration '+names[i]);
+  assert.ok(idQA.lights>=6&&idQA.vents>=3,'Incomplete physical airframe detailing '+names[i]);
   assert.ok(Math.abs(meta.measuredSpan-2.08)<.002,names[i]+' unequal actual wingspan '+meta.measuredSpan);
   assert.ok(meta.parts>7,names[i]+' has insufficient unique geometry');
   const mountCount=[2,2,2,1,2,2][i];

@@ -26,18 +26,18 @@ function checkImage(buffer,label){
 }
 try{
  await page.goto(base+'/?candidate=v100',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
+ await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
  const start=await page.evaluate(()=>({menu:!document.querySelector('#menu').classList.contains('off'),six:document.querySelectorAll('.courseSelector [data-course]').length,quality:[...document.querySelector('#quality').options].map(o=>o.textContent),source:document.querySelector('script[src*="race-engine.js"]')?.getAttribute('src'),sentinel:JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')).sentinel}));
  assert.equal(start.six,6);assert.ok(start.menu);assert.deepEqual(start.quality,['ULTRA','ADAPTIVE','BATTERY SAVER']);assert.equal(start.source,expectedEngine,'Candidate should load this checkout engine');assert.equal(start.sentinel,'v100-retain');
  console.log('PASS launch, 6 course selector and progress-store compatibility '+JSON.stringify(start));
  checkImage(await page.screenshot({path:'upgrade-screenshots/01-menu.png'}),'menu');
  for(let course=1;course<=6;course++){
   await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
-  await page.waitForFunction(n=>document.querySelector('[data-course="'+n+'"]').classList.contains('selected'),course,{timeout:20000});
+  await page.waitForFunction(n=>document.querySelector('[data-course="'+n+'"]').classList.contains('selected'),course,null,{timeout:20000});
   const display=await page.evaluate(()=>({name:document.querySelector('#trackTitle').textContent,ready:window.shiftlineReady}));
   assert.ok(display.name.length>3&&display.ready);
   await page.evaluate(()=>document.querySelector('#obsOpen').click());
-  await page.waitForFunction(()=>!document.querySelector('#observatory').classList.contains('off'),{timeout:45000});
+  await page.waitForFunction(()=>!document.querySelector('#observatory').classList.contains('off'),null,{timeout:45000});
   assert.ok(await page.evaluate(()=>document.querySelector('#observatoryViewport').getBoundingClientRect().height>100));
   for(const mode of ['overhead','chase','fly','orbit']){await page.evaluate(m=>document.querySelector('[data-obs-mode="'+m+'"]').click(),mode);await sleep(140)}
   await page.evaluate(()=>document.querySelector('[data-obs-chapter="2"]').click());
@@ -45,7 +45,7 @@ try{
   await sleep(450);
   if(course===2||course===6)checkImage(await page.screenshot({path:'upgrade-screenshots/0'+course+'-observatory.png'}),'observatory course '+course);
   await page.evaluate(()=>document.querySelector('#obsClose').click());
-  await page.waitForFunction(()=>document.querySelector('#observatory').classList.contains('off'),{timeout:25000});
+  await page.waitForFunction(()=>document.querySelector('#observatory').classList.contains('off'),null,{timeout:25000});
   console.log('PASS WORLD '+course+' '+display.name+' / four camera modes, scrubbing, close');
  }
  // Battery saver and observability are opt-in; retain the original quality localStorage key.
@@ -59,24 +59,24 @@ try{
  await page.evaluate(()=>document.querySelector('#settingsBack').click());
  await page.evaluate(()=>document.querySelector('[data-course="1"]').click());
  await page.evaluate(()=>document.querySelector('#launch').click());
- await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),{timeout:40000});
+ await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),null,{timeout:40000});
  // Software WebGL can stretch the 3-second simulated countdown considerably;
  // wait for the actual race state rather than an arbitrary real-time sleep.
- await page.waitForFunction(()=>document.querySelector('#count').classList.contains('off'),{timeout:90000});
+ await page.waitForFunction(()=>document.querySelector('#count').classList.contains('off'),null,{timeout:90000});
  await page.evaluate(()=>document.querySelector('#cameraBtn').click());
- await page.waitForFunction(()=>document.body.classList.contains('cockpitActive'),{timeout:40000});
+ await page.waitForFunction(()=>document.body.classList.contains('cockpitActive'),null,{timeout:40000});
  assert.equal(await page.locator('#cameraBtn').getAttribute('aria-label'),'Switch to chase view');
- await page.waitForFunction(()=>{const h=document.querySelector('#perfHUD');return !!h.textContent&&!h.classList.contains('off')},{timeout:75000});
+ await page.waitForFunction(()=>{const h=document.querySelector('#perfHUD');return !!h.textContent&&!h.classList.contains('off')},null,{timeout:75000});
  checkImage(await page.screenshot({path:'upgrade-screenshots/07-cockpit.png'}),'cockpit');
  const hud=await page.evaluate(()=>({text:document.querySelector('#perfHUD').textContent,hidden:document.querySelector('#perfHUD').classList.contains('off')}));
  assert.ok(hud.text.includes('FPS')&&!hud.hidden,'Live performance overlay did not render: '+JSON.stringify(hud));
  console.log('PASS first-person cockpit, texture display and actual live device FPS metrics '+JSON.stringify(hud));
  await page.evaluate(()=>document.querySelector('#cameraBtn').click());
- await page.waitForFunction(()=>!document.body.classList.contains('cockpitActive'),{timeout:25000});
+ await page.waitForFunction(()=>!document.body.classList.contains('cockpitActive'),null,{timeout:25000});
  await page.evaluate(()=>document.querySelector('#pauseBtn').click());
- await page.waitForFunction(()=>!document.querySelector('#pause').classList.contains('off'),{timeout:25000});
+ await page.waitForFunction(()=>!document.querySelector('#pause').classList.contains('off'),null,{timeout:25000});
  await page.evaluate(()=>document.querySelector('#quit').click());
- await page.waitForFunction(()=>!document.querySelector('#menu').classList.contains('off'),{timeout:80000});
+ await page.waitForFunction(()=>!document.querySelector('#menu').classList.contains('off'),null,{timeout:80000});
  const final=await page.evaluate(()=>({progress:JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')),quality:localStorage.getItem('eclipseQualityV1')}));
  assert.equal(final.progress.sentinel,'v100-retain');assert.ok(final.progress.xp>=314);assert.equal(final.progress.records['3'],12345);assert.equal(final.quality,'low');
  assert.deepEqual(errors,[],'Uncaught page errors: '+errors.join('; '));
