@@ -19,16 +19,17 @@ export function illuminateHazard(material,{period=6.8,driveScale=1.8}={}){
  material.userData.hazardGlow155=true;
  const strength=material.userData.hazardGlowStrength={value:1};
  const clock=material.userData.hazardTime={value:0};
+ const alert=material.userData.hazardAlert={value:0};
  const timing=material.userData.hazardTiming={period:{value:period},scale:{value:driveScale}};
  const previous=material.onBeforeCompile,key=material.customProgramCacheKey();
  material.onBeforeCompile=function(shader,renderer){
   previous.call(this,shader,renderer);
   shader.uniforms.hazardGlowStrength=strength;
-  shader.uniforms.hazardTime=clock;
+  shader.uniforms.hazardTime=clock;shader.uniforms.hazardAlert=alert;
   shader.uniforms.hazardPeriod=timing.period;shader.uniforms.hazardDriveScale=timing.scale;
   shader.vertexShader='attribute float hazardStyle;varying float hazardMechanism;attribute vec4 hazardShape;attribute float hazardLight;attribute vec4 hazardFlow;attribute float hazardPhase;varying float hazardEnergy;varying float hazardMotionPhase;varying vec4 hazardDrive;varying vec4 hazardProfile;varying vec3 hazardPosition;\n'+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nhazardMechanism=hazardStyle;hazardProfile=hazardShape;hazardPosition=position;hazardEnergy=hazardLight;hazardDrive=hazardFlow;hazardMotionPhase=hazardPhase;');
-  shader.fragmentShader='varying float hazardMechanism;uniform float hazardGlowStrength;uniform float hazardTime;uniform float hazardPeriod;uniform float hazardDriveScale;varying float hazardEnergy;varying float hazardMotionPhase;varying vec4 hazardDrive;varying vec4 hazardProfile;varying vec3 hazardPosition;\n'+shader.fragmentShader;
+  shader.fragmentShader='varying float hazardMechanism;uniform float hazardGlowStrength;uniform float hazardTime;uniform float hazardAlert;uniform float hazardPeriod;uniform float hazardDriveScale;varying float hazardEnergy;varying float hazardMotionPhase;varying vec4 hazardDrive;varying vec4 hazardProfile;varying vec3 hazardPosition;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
    float hazardGap=100.,hazardWidth=.10;
    if(hazardProfile.w>.5&&hazardProfile.w<1.5){
@@ -74,8 +75,17 @@ export function illuminateHazard(material,{period=6.8,driveScale=1.8}={}){
     totalEmissiveRadiance*=.16;
     hazardBody=vec3(.04,.11,.20)*hazardFaceColor+hazardTint*hazardRim*.22;
    }
+   // Amber hazard-chevron channels over dark metal; alternating warning
+   // flash is intentionally tied to the NEXT obstacle only. Slow 1.8 Hz,
+   // broad contrast (not an extreme white strobe) remains legible on iPhone.
+   float warningFlash=0.45+0.55*smoothstep(-.30,.35,sin(hazardTime*11.3));
+   float stripe=step(.45,fract((hazardPosition.x*.66+hazardPosition.y*.42)*3.0));
+   vec3 warningAmber=mix(vec3(1.,.16,.025),vec3(1.,.66,.07),stripe);
+   float outline=max(hazardBand,hazardEnergy);
+   float danger=hazardAlert*warningFlash;
    totalEmissiveRadiance+=(hazardBody+hazardCore)*hazardGlowStrength;
+   totalEmissiveRadiance+=warningAmber*danger*(.36+2.75*outline+hazardRim*.38);
   `);
  };
- material.customProgramCacheKey=()=>key+'/hazard-light-159';material.needsUpdate=true;return material;
+ material.customProgramCacheKey=()=>key+'/hazard-light-161';material.needsUpdate=true;return material;
 }
