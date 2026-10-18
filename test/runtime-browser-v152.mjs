@@ -31,7 +31,10 @@ async function run(name,port){
    for(const family of families){
     const first=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,17.2),family);
     await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-'+family+'.png',timeout:90000});
-    const moved=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,19.2),family);
+    let moved=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,19.2),family);
+    // A reciprocating press can occupy the same position on opposite sides
+    // of its cycle. Sample a third phase before diagnosing a stuck mechanism.
+    if(!first.poses.some((v,i)=>Math.abs(v-moved.poses[i])>.01))moved=await page.evaluate(f=>window.__shiftlineFamilyTest.show(f,18.5),family);
     assert.ok(first.poseError<1e-7&&moved.poseError<1e-7,'Rendered moving parts do not match physics');assert.equal(moved.lost,false);assert.equal(moved.ratio,first.ratio);assert.equal(moved.quality,first.quality);
     assert.ok(first.poses.some((v,i)=>Math.abs(v-moved.poses[i])>.01),'Family has no moving mechanism');
     await page.screenshot({path:out+'/'+course+'-'+kind.name()+'-'+family+'-moving.png',timeout:90000});

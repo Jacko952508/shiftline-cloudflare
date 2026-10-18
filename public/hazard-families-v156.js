@@ -56,7 +56,7 @@ export function familySolids(course,family,variant=0){
   for(let k=0;k<4;k++)poly([[.65,-.3],[3.5,-.3],[4.2,-.75],[5.8,-.75],[6.0,.7],[4.3,.7],[3.5,.3],[.65,.3]],0,0,k*TAU/4+shift,.9,spin(.12),'paddle');
  }else if(family==='root-arch'){
   for(const [start,end]of [[.15,2.55],[3.15,5.75]])out.push({type:'arc',x:0,y:0,R:5.15,tube:1.12,start,end,a:shift,drive:{rock:.09,phase:start},role:'root'});
-  poly([[3.3,-.45],[5.9,-.75],[6.7,-.3],[6.8,.5],[4.2,.85],[3.1,.3]],0,0,1.05+variant*.35,.8,{rock:.12},'root');
+  out.push({type:'arc',x:0,y:0,R:3.9,tube:.55,start:.8,end:1.65,a:variant*.35,drive:{rock:.12},role:'root'});
  }else if(family==='irrigation-valves'){
   for(const side of[-1,1]){
    ring(side*3.1,side*(1.1+shift),2.0,.38,null,'valve');
