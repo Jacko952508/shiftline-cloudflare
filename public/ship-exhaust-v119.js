@@ -167,7 +167,7 @@ export function installShipExhaust(ship,root,index,custom,high=true){
    if(!Number.isFinite(time))time=0;
    const targetPower=boost?1:.27;
    const raceView=!!this.racing;
-   const targetLen=(boost?(raceView?2.85:4.35):(reduced?1.25:raceView?1.65:2.25))*style.length*engineProfile.length;
+   const targetLen=(boost?(raceView?3.3:4.8):(reduced?1.45:raceView?1.93:2.55))*style.length*engineProfile.length;
    const dt=Math.min(.1,Math.max(.008,time-this.lastTime));this.lastTime=time;
    const response=1-Math.exp(-dt*(boost?17:10));
    this.length+=(targetLen-this.length)*response;
