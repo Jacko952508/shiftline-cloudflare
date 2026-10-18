@@ -36,8 +36,10 @@ function safePosition(track,s,p,x,y,world){
   return v;
 }
 function resolveShot(track,course,shot,world){
-  const p=PREVIEW_CAMERA[course],base=clamp(track.length*p.shots[shot],60,track.length-170);
-  const [ox,oy]=p.offsets[shot];
+  const p=PREVIEW_CAMERA[course]||PREVIEW_CAMERA[1];
+  const index=Number.isFinite(shot)?((Math.trunc(shot)%p.shots.length)+p.shots.length)%p.shots.length:0;
+  const base=clamp(track.length*p.shots[index],60,track.length-170);
+  const [ox,oy]=p.offsets[index]||[p.x,p.y];
   const candidate=course<4?[[ox,oy]]:[[ox,oy],[-ox,oy],[ox,oy+16],[-ox,oy+16],[.85,.65]];
   const target=track.pose(Math.min(track.length-4,base+p.front+30),0,0);
   const chosen=candidate.find(([x,y])=>candidateClear(safePosition(track,base,p,x,y,world),target,world))||[.85,.65];
@@ -54,6 +56,9 @@ export function prepareMenuCamera(track,course,world){
 // The fade happens only when changing edited shots, so we never swipe through
 // several kilometres of unseen track or teleport the camera while visible.
 export function menuCamera(track,course,camera,t,world,reduced=false){
+  // Frame-clock discontinuities can briefly produce a negative time. Keep the
+  // carousel on its first shot instead of indexing offsets[-1].
+  t=Number.isFinite(t)?Math.max(0,t):0;
   const p=PREVIEW_CAMERA[course]||PREVIEW_CAMERA[1],shot=reduced?0:Math.floor(t/SHOT_SECONDS)%p.shots.length;
   const elapsed=reduced?0:t%SHOT_SECONDS;
   const progress=reduced?0:Math.min(1,elapsed/(SHOT_SECONDS-CUT_SECONDS));
