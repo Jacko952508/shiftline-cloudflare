@@ -3,8 +3,11 @@
 import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import assert from 'node:assert/strict';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
+const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
+const expectedEngine=html.match(/race-engine[.]js[?]v=[0-9]+/)?.[0];
+assert.ok(expectedEngine,'Missing revisioned race engine reference');
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 await mkdir('upgrade-screenshots',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox']});
@@ -25,7 +28,7 @@ try{
  await page.goto(base+'/?candidate=v100',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.shiftlineReady===true,{timeout:120000});
  const start=await page.evaluate(()=>({menu:!document.querySelector('#menu').classList.contains('off'),six:document.querySelectorAll('.courseSelector [data-course]').length,quality:[...document.querySelector('#quality').options].map(o=>o.textContent),source:document.querySelector('script[src*="race-engine.js"]')?.getAttribute('src'),sentinel:JSON.parse(localStorage.getItem('shiftlineEclipseProgressV1')).sentinel}));
- assert.equal(start.six,6);assert.ok(start.menu);assert.deepEqual(start.quality,['ULTRA','ADAPTIVE','BATTERY SAVER']);assert.equal(start.source,'race-engine.js?v=105');assert.equal(start.sentinel,'v100-retain');
+ assert.equal(start.six,6);assert.ok(start.menu);assert.deepEqual(start.quality,['ULTRA','ADAPTIVE','BATTERY SAVER']);assert.equal(start.source,expectedEngine,'Candidate should load this checkout engine');assert.equal(start.sentinel,'v100-retain');
  console.log('PASS launch, 6 course selector and progress-store compatibility '+JSON.stringify(start));
  checkImage(await page.screenshot({path:'upgrade-screenshots/01-menu.png'}),'menu');
  for(let course=1;course<=6;course++){
