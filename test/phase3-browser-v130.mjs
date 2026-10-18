@@ -6,7 +6,7 @@ const base=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const args=['--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox'];
 await mkdir('phase3-v130-frames',{recursive:true});
 const localHtml=await readFile('public/index.html','utf8');
-const expectedEngine=localHtml.match(/race-engine\\.js\\?v=\\d+/)?.[0];
+const expectedEngine=localHtml.match(/race-engine[.]js[?]v=[0-9]+/)?.[0];
 assert.ok(expectedEngine,'Missing versioned race-engine.js in public/index.html');
 // A canvas in an active race never becomes visually "stable"; element.screenshot()
 // waits for layout stability and can time out even while frames are rendering.
