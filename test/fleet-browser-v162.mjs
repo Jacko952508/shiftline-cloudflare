@@ -21,11 +21,17 @@ for(const kind of[chromium,webkit]){
    await page.locator('[data-fleet-ship="'+model+'"]').click();
    for(let edition=0;edition<3;edition++){
     await page.locator('[data-fleet-edition="'+edition+'"]').click();
-    await page.waitForFunction(({model,edition})=>window.__shiftlineFleetQA?.index===model&&window.__shiftlineFleetQA?.edition===edition,{model,edition},{timeout:45000});
+    await page.waitForFunction(({model,edition})=>window.__shiftlineFleetQA?.index===model&&window.__shiftlineFleetQA?.edition===edition&&window.__shiftlineFleetQA?.rendered===true,{model,edition},{timeout:45000});
     const canvas=page.locator('.garage3DCanvas');
     await canvas.screenshot({path:'qa-v162/'+kind.name()+'-'+model+'-'+edition+'.png',timeout:60000});
     assert.equal(await page.locator('[data-fleet-edition][aria-pressed="true"]').count(),1);
    }
+   const canvas=page.locator('.garage3DCanvas');await canvas.scrollIntoViewIfNeeded();const box=await canvas.boundingBox(),cy=box.y+box.height*.51;
+   await page.mouse.move(box.x+75,cy);await page.mouse.down();await page.mouse.move(box.x+335,cy,{steps:18});await page.mouse.up();
+   await canvas.screenshot({path:'qa-v162/'+kind.name()+'-rear-'+model+'.png',timeout:60000});
+   await page.mouse.move(box.x+215,cy);await page.mouse.down();await page.mouse.move(box.x+215,cy-70,{steps:10});await page.mouse.up();
+   await canvas.screenshot({path:'qa-v162/'+kind.name()+'-inspection-'+model+'.png',timeout:60000});
+   await page.locator('#garageResetView').click();console.log('Rendered '+kind.name()+' ship '+model+' with three editions and rear inspection');
   }
   await page.screenshot({path:'qa-v162/'+kind.name()+'-portrait.png',fullPage:true});
   await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await page.locator('[data-tab="garage"]').click();

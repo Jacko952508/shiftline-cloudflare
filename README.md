@@ -63,3 +63,10 @@ Native-framebuffer anti-aliasing smooths iPhone race edges while retaining the s
 ## V148 complete surface art pass
 
 Adds fitted procedural panel seams, vents, stencil markings and filtered wear to tunnel and obstacle surfaces; bevels the existing service and obstacle hardware inside its original bounds. All six ship families receive layered coatings and manufactured surface detail while preserving their silhouettes and cosmetic selections. Distant orbital façades gain filtered window lights and stepped crowns; rock relief, leaf mottling and rounded hero canopies improve the six world backgrounds. The material shaders add no lights or rendering passes. Public-source verification compares deployed asset hashes with this commit.
+
+
+## V162 Flightworks collection
+
+Replaces the modular garage with six selectable airframes and three authored editions per airframe. Each edition defines complete wing geometry, nose proportions, stabilisers, materials, colour and matching exhaust. All eighteen are available in the collection; records and XP remain in the existing save. Editions persist per ship and encode through the existing multiplayer livery field as well as the new edition field.
+
+The fleet uses closed capped lofts, sealed aerofoils, continuous canopy sockets and seated nozzles. Object-space micrograin avoids UV atlas seams. Static bodywork is batched by material for racing and the new architectural showroom. `test/fleet-v162.mjs` checks manifold surfaces, structural contacts, ray-tested wing inlay support, distinct physical editions, wingspans and network compatibility. `test/fleet-browser-v162.mjs` renders eighteen editions in Chromium and WebKit, checks legacy saves and mobile layouts, and launches a race.

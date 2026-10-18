@@ -17,17 +17,35 @@ export function sealedLoft(stations,sides=32){
   for(let k=0;k<=sides;k++){const a=k/sides*tau;p.push(Math.cos(a)*rx,cy+Math.sin(a)*ry,z);uv.push(.5+Math.cos(a)*.5,.5+Math.sin(a)*.5);}
   for(let k=0;k<sides;k++){const a=center+1+k,b=a+1;ix.push(center,...(end===0?[b,a]:[a,b]));}
  }
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.userData.sealed=true;return g;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();
+ const normal=g.attributes.normal;
+ for(let i=0;i<stations.length;i++){const first=i*(sides+1),last=first+sides,n=new THREE.Vector3().fromBufferAttribute(normal,first).add(new THREE.Vector3().fromBufferAttribute(normal,last)).normalize();normal.setXYZ(first,n.x,n.y,n.z);normal.setXYZ(last,n.x,n.y,n.z);}
+ g.userData.sealed=true;return g;
 }
-function aerofoil(points,depth=.075,rounded=false){
+function aerofoil(points,depth=.075,rounded=false,baseY=0){
  const shape=new THREE.Shape();
- if(rounded){
-  const count=points.length,mid=(a,b)=>[(a[0]+b[0])/2,-(a[1]+b[1])/2];
-  shape.moveTo(...mid(points.at(-1),points[0]));
-  for(let i=0;i<count;i++)shape.quadraticCurveTo(points[i][0],-points[i][1],...mid(points[i],points[(i+1)%count]));
- }else points.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));
- shape.closePath();
- const g=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSize:.018,bevelThickness:.014,bevelSegments:3,steps:1,curveSegments:8});g.rotateX(-Math.PI/2);g.userData.sealed=true;return g;
+ if(rounded){const mid=(a,b)=>[(a[0]+b[0])/2,-(a[1]+b[1])/2];shape.moveTo(...mid(points.at(-1),points[0]));for(let i=0;i<points.length;i++)shape.quadraticCurveTo(points[i][0],-points[i][1],...mid(points[i],points[(i+1)%points.length]));}
+ else points.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
+ let outline=shape.getPoints(rounded?5:1);if(outline[0].distanceTo(outline.at(-1))<1e-7)outline.pop();
+ const triangles=THREE.ShapeUtils.triangulateShape(outline,[]),p=[],uv=[],ix=[],vertices=new Map(),N=rounded?3:7;
+ const edgeDistance=(x,z)=>{let distance=Infinity;for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length],dx=b.x-a.x,dz=-(b.y-a.y),t=Math.max(0,Math.min(1,((x-a.x)*dx+(z+a.y)*dz)/(dx*dx+dz*dz)));distance=Math.min(distance,Math.hypot(x-a.x-dx*t,z+a.y-dz*t));}return distance;};
+ const height=(x,z,top)=>{const d=edgeDistance(x,z),t=Math.min(1,Math.abs(x)/1.1),camber=.023*Math.sin(t*Math.PI),full=1-Math.exp(-d*15);return baseY*(1-.48*t)+camber+(top?.012+depth*.64*full:-.012-depth*.18*full);};
+ const vertex=(x,z,top)=>{const y=height(x,z,top),key=[x,y,z].map(v=>Math.round(v*1e6)).join('/');if(vertices.has(key))return vertices.get(key);const at=p.length/3;p.push(x,y,z);uv.push(x*.5+.5,z*.3+.5);vertices.set(key,at);return at;};
+ const face=(a,b,c,up)=>{const A=new THREE.Vector3().fromArray(p,a*3),B=new THREE.Vector3().fromArray(p,b*3),C=new THREE.Vector3().fromArray(p,c*3),n=B.sub(A).cross(C.sub(A));if((n.y>0)===up)ix.push(a,b,c);else ix.push(a,c,b);};
+ for(const tri of triangles){
+  const [a,b,c]=tri.map(i=>outline[i]);const point=(i,j)=>[a.x+(b.x-a.x)*i/N+(c.x-a.x)*j/N,-a.y-(b.y-a.y)*i/N-(c.y-a.y)*j/N];
+  for(const top of[true,false])for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){
+   const v0=vertex(...point(i,j),top),v1=vertex(...point(i+1,j),top),v2=vertex(...point(i,j+1),top);face(v0,v1,v2,top);
+   if(j<N-i-1){const v3=vertex(...point(i+1,j+1),top);face(v1,v3,v2,top);}
+  }
+ }
+ // The same subdivision is used on shared top/bottom edges and the closed rim.
+ const clockwise=THREE.ShapeUtils.isClockWise(outline);
+ for(let i=0;i<outline.length;i++)for(let k=0;k<N;k++){
+  const a=outline[i],b=outline[(i+1)%outline.length],at=t=>[a.x+(b.x-a.x)*t,-a.y-(b.y-a.y)*t],A=at(k/N),B=at((k+1)/N),a0=vertex(...A,true),a1=vertex(...B,true),b0=vertex(...A,false),b1=vertex(...B,false);
+  if(!clockwise)ix.push(a0,b1,a1,a0,b0,b1);else ix.push(a0,a1,b1,a0,b1,b0);
+ }
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.userData.sealed=true;return g;
 }
 function finish(color,metalness,roughness,coat=.6){
  const m=new THREE.MeshPhysicalMaterial({color,metalness,roughness,clearcoat:coat,clearcoatRoughness:.19,envMapIntensity:1.05});
@@ -53,7 +71,12 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  const body=finish(design.body,.48,.29),dark=finish(design.secondary,.5,.42,.24),titanium=finish(design.metal,.86,.25,.32),glass=finish(design.glass,.42,.13,.95);
  glass.iridescence=.16;glass.iridescenceThicknessRange=[180,320];
  const light=new THREE.MeshBasicMaterial({color:new THREE.Color(design.accent).multiplyScalar(1.45),toneMapped:false});
- const nozzleMat=finish(0x101b26,.72,.45,.1),materials=[body,dark,titanium,glass,light,nozzleMat];
+ const nozzleMat=finish(0x101b26,.72,.45,.1),wingPaint=finish(design.body,.44,.30,.65),materials=[body,dark,titanium,glass,light,nozzleMat,wingPaint];
+ const original=wingPaint.onBeforeCompile;
+ wingPaint.onBeforeCompile=shader=>{original(shader);shader.uniforms.fleetPanelColor={value:new THREE.Color(design.secondary)};
+ shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\n uniform vec3 fleetPanelColor;');
+ shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n float ax=abs(finishPosition.x);float pz=finishPosition.z;float panel=smoothstep(.23,.27,ax)*(1.-smoothstep(.86,.94,ax))*smoothstep(-.76,-.68,pz)*(1.-smoothstep(.51,.61,pz));float marking=(1.-smoothstep(.005,.012,abs(ax-(.36+.16*pz))))*smoothstep(-.8,-.6,pz)*(1.-smoothstep(.50,.58,pz));diffuseColor.rgb=mix(diffuseColor.rgb,fleetPanelColor,panel*.64);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.45,.52,.57),marking*.44);');};
+ wingPaint.customProgramCacheKey=()=> 'fleet-curved-wing-coating-v162';
  ship.userData.sculptMaterials=materials;
  const structural=[];
  const add=(geometry,material,position=[0,0,0],name='surface',structure=false)=>{
@@ -66,32 +89,27 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
   mesh.position.copy(A.add(B).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),d.normalize());return mesh;
  };
  const stroke=(points,mat=light,r=.007)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),points.length*6,r,6,false),mat,[0,0,0],'inlaid running light');
- const width=index===4?.205:index===2?.27:index===3?.235:.23;
- const front=[-1.49,-1.67,-1.22,-1.38,-.98,-1.70][index],rear=index===4?.70:.86;
+ const width=(index===4?.205:index===2?.27:index===3?.235:.23)*[1,1.08,.91][e];
+ const front=[-1.49,-1.67,-1.22,-1.38,-.98,-1.70][index]*[1,.89,1.10][e],rear=index===4?.70:.86;
  const stations=[[front,.012,.018,-.014],[front+.28,width*.32,.055,0],[-.60,width*.76,.105,.015],[-.24,width,.16,.023],[.22,width*.96,.145,.018],[.57,width*.72,.11,0],[rear,width*.42,.075,-.012]];
  // The two main nacelles lead GEMINI's cockpit, giving a recognisable catamaran.
  hull(stations);hull(stations.map(([z,rx,ry,cy])=>[z,rx*.91,ry*.58,cy-.055]),dark,0,0,'continuous lower keel');
- const shell=(points,side,mat=body,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3),mat,[0,top,0],'integrated wing',true);
+ const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
  for(const side of[-1,1]){
   const points=PLANS[index].map(([x,z],k)=>{
    // Editions have their own complete wing sweep and trailing edge, not loose kits.
-   const delta=e===1?(.18*(x-.1)):(e===2?-.16*(x-.1):0);
-   return[x,z+delta+(e===2&&k===pointsLength(index)-2?.10:0)];
+   const delta=e===1?(.34*(x-.1)):(e===2?-.32*(x-.1):0);
+   return[e===1&&x>.6?x*.91:x,z+delta+(e===2&&k===pointsLength(index)-2?.18:0)];
   });
   shell(points,side);
-  // Fitted contrasting upper skins are inset from the silhouette and seated in
-  // the wing thickness; these never float above a cut-out or bridge empty space.
-  if(index!==4){
-   const inset=points.map(([x,z])=>[.12+(x-.12)*.77,z*.83]);
-   shell(inset,side,dark,.078,.022);
-  }
   if(index===4){
    for(const z of[-.32,.34,.56])crossbeam([side*.10,.025,z],[side*.78,.025,z],.15,.12,z===.34?titanium:body);
   }
  }
  const podX=[.64,.48,.31,.30,.76,.255][index],podY=index===4?.02:-.025,podRear=[.94,.88,.77,.78,1.02,.90][index];
  const podFront=index===4?-1.43:index===0?-.47:-.32;
- const radius=index===4?.205:index===0?.165:.135;
+ const radius=(index===4?.205:index===0?.165:.135)*[1,1.10,.88][e];
+ if(e===1&&[0,1,5].includes(index))for(const side of[-1,1])shell([[.045,-.73],[.26,-1.04],[.59,-.91],[.44,-.66],[.045,-.52]],side,body,.008,.067);
  const exhaustAnchors=[];
  for(const side of[-1,1]){
   const px=podX*side;
@@ -138,7 +156,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root),scale=2.08/(bounds.max.x-bounds.min.x);root.scale.x=scale;root.updateMatrixWorld(true);
  const parts=structural.map(mesh=>({name:mesh.name,box:new THREE.Box3().setFromObject(mesh)}));
- ship.userData.fleet162={version:162,index,edition:e,name:design.name,parts:parts.length,span:2.08,structure:parts.map(p=>({name:p.name,min:p.box.min.toArray(),max:p.box.max.toArray()}))};
+ ship.userData.fleet162={version:162,index,edition:e,name:design.name,rendered:false,parts:parts.length,span:2.08,structure:parts.map(p=>({name:p.name,min:p.box.min.toArray(),max:p.box.max.toArray()}))};
  root.userData.exhaustAnchors=exhaustAnchors;root.userData.exhaustColor=design.accent;
  if(options.batchStatic!==false)ship.userData.airframeBatch=batchStaticAirframe(root);
  installShipExhaust(ship,root,index,{...custom,engine:0,trail:e},high);

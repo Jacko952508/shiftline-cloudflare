@@ -32,7 +32,7 @@ function renderGarageOptions(p){
  $('#garageDescription').textContent=MODELS[p.craft].tag;
  $('#garageBuildBadge').textContent='EQUIPPED';
  $('#garageCategoryTitle').textContent='CHOOSE YOUR EDITION';
- $('#garageCategorySubtitle').textContent='Three complete designs. Every detail belongs.';
+ $('#garageCategorySubtitle').textContent='Complete colour and bodywork editions.';
  $('#fleetShips').innerHTML=MODELS.map((m,i)=>'<button type="button" class="fleetShip'+(p.craft===i?' selected':'')+'" data-fleet-ship="'+i+'" aria-pressed="'+(p.craft===i)+'"><span class="fleetNumber">0'+(i+1)+'</span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="'+MODEL_SHAPES[i]+'"/></svg><strong>'+m.name+'</strong><small>'+m.tag+'</small></button>').join('');
  $('#garageOptionRail').innerHTML=FLEET_EDITIONS[p.craft].map((e,i)=>'<button type="button" class="fleetEdition'+(selected===i?' selected':'')+'" data-fleet-edition="'+i+'" aria-pressed="'+(selected===i)+'"><span class="editionSwatches"><i style="background:'+hex(e.body)+'"></i><i style="background:'+hex(e.secondary)+'"></i><i style="background:'+hex(e.accent)+'"></i></span><strong>'+e.name+'</strong><small>EDITION 0'+(i+1)+'</small></button>').join('');
  $('#garageNote').textContent='Your selected ship and edition save automatically.';

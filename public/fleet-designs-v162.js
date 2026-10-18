@@ -8,6 +8,6 @@ export const FLEET_EDITIONS=[
  [edition('COBALT',0x2855ad,0xb9d1df,0x71ddff,0x8eabca,0x173d63,'Cobalt enamel · paired turbine hulls · silver bridge'),edition('IGNITION',0xd76c24,0x31333a,0xffd292,0xb9a58d,0x473222,'Burnt orange · armoured twin nacelles · champagne titanium'),edition('POLAR',0xe2e7e9,0x40596f,0xa4e4ff,0x9eb4c9,0x21435e,'Arctic porcelain · long twin pontoons · ice blue glass')],
  [edition('QUICKSILVER',0xb9c7d4,0x303449,0x9caeff,0xd1dce2,0x26344f,'Liquid silver · sculpted spear · raised scissor aerofoils'),edition('SOVEREIGN',0x55417d,0x242537,0xffd39a,0xbba172,0x352c4b,'Royal aubergine · champagne edges · swept crown fins'),edition('SINGULARITY',0x1b393b,0x11262d,0x4df1cc,0x86b3ad,0x17423f,'Dark petrol lacquer · emerald accents · reverse sweep blades')]
 ];
-export function editionIndex(custom={}){const n=custom.edition??custom.livery;return Number.isInteger(n)&&n>=0&&n<3?n:0;}
+export function editionIndex(custom={}){const n=custom?.edition??custom?.livery;return Number.isInteger(n)&&n>=0&&n<3?n:0;}
 export function fleetEdition(model=0,custom={}){return FLEET_EDITIONS[Math.max(0,Math.min(5,model|0))][editionIndex(custom)];}
 export function equipEdition(p,index){const edition=Math.max(0,Math.min(2,index|0));p.custom={edition,livery:edition,finish:0,wing:0,engine:0,canopy:0,fin:0,trail:[0,1,2][edition],cabin:0,instrument:edition,stick:0};return p;}

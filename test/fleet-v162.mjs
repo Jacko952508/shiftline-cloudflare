@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {craft,disposeCraft} from '../public/race-craft.js';
@@ -7,17 +8,20 @@ import {sealedLoft} from '../public/fleet-sculpture-v162.js';
 import {shipAppearance} from '../public/ship-wire.js';
 
 function closed(geo){
- const p=geo.attributes.position,ix=geo.index,edges=new Map(),point=i=>[p.getX(i),p.getY(i),p.getZ(i)].map(v=>Math.round(v*1e5)).join(',');
- for(let i=0;i<(ix?.count??p.count);i+=3){const tri=[0,1,2].map(k=>point(ix?ix.getX(i+k):i+k));for(let j=0;j<3;j++){const a=tri[j],b=tri[(j+1)%3];if(a===b)continue;const key=[a,b].sort().join('/');edges.set(key,(edges.get(key)||0)+1);}}
- return [...edges.values()].every(n=>n===2);
+ const p=geo.attributes.position,ix=geo.index,edges=new Map(),directions=new Map(),point=i=>[p.getX(i),p.getY(i),p.getZ(i)].map(v=>Math.round(v*1e5)).join(',');
+ for(let i=0;i<(ix?.count??p.count);i+=3){const tri=[0,1,2].map(k=>point(ix?ix.getX(i+k):i+k));for(let j=0;j<3;j++){const a=tri[j],b=tri[(j+1)%3];if(a===b)continue;const key=[a,b].sort().join('/');edges.set(key,(edges.get(key)||0)+1);directions.set(key,(directions.get(key)||0)+(a<b?1:-1));}}
+ return [...edges.values()].every(n=>n===2)&&[...directions.values()].every(n=>n===0);
 }
-const signatures=new Set(),palette=new Set();
+const signatures=new Set(),palette=new Set(),lengths=Array.from({length:6},()=>new Set());
 for(let model=0;model<6;model++)for(let edition=0;edition<3;edition++){
  const scene=new THREE.Scene(),p={craft:model,custom:{},color:0};equipEdition(p,edition);
  const ship=craft(scene,0xffffff,model,true,p.custom,{batchStatic:false}),root=ship.children[0],qa=ship.userData.fleet162;
  assert.equal(qa.edition,edition);assert.equal(qa.index,model);assert.ok(modelUnlocked({xp:0},model));
  ship.updateMatrixWorld(true);const bodyBounds=new THREE.Box3();root.traverse(o=>{if(o.userData.structural)bodyBounds.union(new THREE.Box3().setFromObject(o));});
  assert.ok(Math.abs((bodyBounds.max.x-bodyBounds.min.x)-2.08*.83)<.05,'Equal racing wingspans');
+ const fingerprint=createHash('sha256');root.traverse(o=>{if(o.userData.structural)fingerprint.update(Buffer.from(o.geometry.attributes.position.array.buffer));});lengths[model].add(fingerprint.digest('hex'));
+ const support=[],inlays=[];root.traverse(o=>{if(o.userData.structural&&!o.userData.inlay)support.push(o);if(o.userData.inlay)inlays.push(o);});
+ for(const mesh of inlays){const p=mesh.geometry.attributes.position,n=mesh.geometry.attributes.normal;for(let i=0;i<p.count;i+=6){if(n.getY(i)<.8)continue;const at=new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);const ray=new THREE.Raycaster(at.add(new THREE.Vector3(0,.02,0)),new THREE.Vector3(0,-1,0),0,.075);assert.ok(ray.intersectObjects(support,false).length,'Wing inlays need physical support '+model+'/'+edition);}}
  let triangles=0;
  root.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;triangles+=(g.index?.count??g.attributes.position.count)/3;assert.ok([...g.attributes.position.array].every(Number.isFinite),'Finite geometry');if(g.userData.sealed)assert.ok(closed(g),'Closed manifold '+model+'/'+edition+'/'+o.name);});
  assert.ok(triangles<40000,'Mobile triangle budget');
@@ -30,6 +34,6 @@ for(let model=0;model<6;model++)for(let edition=0;edition<3;edition++){
  signatures.add(model+'/'+edition+'/'+FLEET_EDITIONS[model][edition].name);palette.add(FLEET_EDITIONS[model][edition].body);
  disposeCraft(scene,ship);assert.equal(scene.children.length,0);
 }
-assert.equal(signatures.size,18);assert.equal(palette.size,18);
+assert.equal(signatures.size,18);assert.equal(palette.size,18);for(const forms of lengths)assert.equal(forms.size,3,'Three physically different editions per ship');assert.equal(appearance(null).edition,0);
 assert.ok(closed(sealedLoft([[-1,.1,.1],[0,.3,.2],[1,.2,.1]])));
 console.log('PASS V162: 18 editions; closed hulls, wings and fins; structural contact graph; finite geometry; equal spans; unique colours; exhaust anchors; wire compatibility.');
