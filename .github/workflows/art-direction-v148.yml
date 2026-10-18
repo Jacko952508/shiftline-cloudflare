@@ -83,15 +83,18 @@ jobs:
           set -euo pipefail
           base='https://shiftline-game.beyondthebox.workers.dev'
           for i in $(seq 1 30); do
-            if curl -fsSL --connect-timeout 8 --max-time 15 "$base/?release=156-$i" -o /tmp/live.html && grep -q 'race-engine.js?v=156' /tmp/live.html; then
+            if curl -fsSL --connect-timeout 8 --max-time 15 "$base/?release=157-$i" -o /tmp/live.html && grep -q 'race-engine.js?v=157' /tmp/live.html; then
               break
             fi
             sleep 6
           done
           cmp public/index.html /tmp/live.html
-          for file in hazard-families-v156.js hazard-construction-v156.js course-colliders.js obstacle-bodywork-v126.js combat-core.js race-balance.js obstacle-glow-v155.js obstacle-surfaces.js sea-obstacles.js coral-v154.js ocean-vista.js leviathan-world.js world-identity-v153.js race-preparation-v152.js fleet-batching-v152.js audio.js race-impact.js tempest-horizon-v151.js alpine-v150.js fleet-refinement-v150.js fleet-materials-v118.js world-finish.js expansion-world.js garage-scene.js ship-exhaust-v119.js orbital-city-v149.js art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js far-scenery-v129.js; do
-            curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=156" -o /tmp/live-module.js
+          for file in sky-visibility-v157.js graphics-policy.js hazard-families-v156.js hazard-construction-v156.js course-colliders.js obstacle-bodywork-v126.js combat-core.js race-balance.js obstacle-glow-v155.js obstacle-surfaces.js sea-obstacles.js coral-v154.js ocean-vista.js leviathan-world.js world-identity-v153.js race-preparation-v152.js fleet-batching-v152.js audio.js race-impact.js tempest-horizon-v151.js alpine-v150.js fleet-refinement-v150.js fleet-materials-v118.js world-finish.js expansion-world.js garage-scene.js ship-exhaust-v119.js orbital-city-v149.js art-direction-v148.js race-engine.js race-world.js race-obstacles.js ship-fleet-v117.js tunnel-detail.js chapter-landmarks-v143.js far-scenery-v129.js; do
+            for attempt in $(seq 1 12); do
+              if curl -fsSL --connect-timeout 8 --max-time 20 "$base/$file?v=157" -o /tmp/live-module.js && cmp -s "public/$file" /tmp/live-module.js; then break; fi
+              sleep 5
+            done
             cmp "public/$file" /tmp/live-module.js
             echo "PASS public source matches $file"
           done
-          echo 'PASS Cloudflare V156 HTML and all four graphics systems match tested source'
+          echo 'PASS Cloudflare V157 HTML and all four graphics systems match tested source'

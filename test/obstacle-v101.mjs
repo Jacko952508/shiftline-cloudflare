@@ -13,7 +13,7 @@ try{
  const result=await page.evaluate(async()=>{
   const THREE=await import('three');
   const {createTrack}=await import('./race-track.js?v=58');
-  const {specifications,buildObstacles,updateObstacles,disposeObstacles,obstacleState}=await import('./race-obstacles.js?v=156');
+  const {specifications,buildObstacles,updateObstacles,disposeObstacles,obstacleState}=await import('./race-obstacles.js?v=157');
   const results=[],colors=new Set(),checks=(ok,what)=>{if(!ok)throw Error(what)};
   for(let course=1;course<=6;course++){
    const track=createTrack(course),before=specifications(course,track.length).map(o=>JSON.stringify({id:o.id,s:o.s,kind:o.kind,theme:o.theme,forceDodge:o.forceDodge,solids:o.solids,seed:o.seed,spin:o.spin}));

@@ -1,17 +1,17 @@
-import {hazardGeometry} from './hazard-construction-v156.js?v=156';
+import {hazardGeometry} from './hazard-construction-v156.js?v=157';
 import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=156';
-import {markHazardGeometry} from './obstacle-glow-v155.js?v=156';
+import {markHazardGeometry} from './obstacle-glow-v155.js?v=157';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
-import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=156';
+import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=157';
 export function specifications(course,length){return sharedSpecifications(course,length)}
 export function obstacleState(o,time){return sharedObstacleState(o,time)}
 export function solidDistance(p,x,y,z){return sharedSolidDistance(p,x,y,z)}
 export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,x,y,z)}
 import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-colliders.js?v=67';
 const RACING_LINES=[];for(let r=0;r<=5.8;r+=.65)for(let k=0;k<24;k++){const a=k*Math.PI*2/24;RACING_LINES.push({x:Math.cos(a)*r,y:Math.sin(a)*r})}
-import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=156';
+import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInstancedRingClamps}from'./obstacle-surfaces.js?v=157';
 import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=156';
-import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=156';
+import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=157';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
 import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js';
 const TAU=Math.PI*2;
@@ -73,17 +73,15 @@ export function buildObstacles(scene,track,course,select=null){
    const g=markHazardGeometry(hazardGeometry(p,course,quality),p),node=new THREE.Group(),m=new THREE.Mesh(g,o.material);
    node.position.set(p.x||0,p.y||0,p.z||0);node.rotation.z=p.a||0;node.add(m);o.motion.add(node);o.pieces.push(node);m.castShadow=m.receiveShadow=true;m.userData.collider=true;detailObstacleSolid(o,m,p);
    if(p.type==='torus'&&p.R<=2.5)smallRingGlow(o,m,p);
-   if(p.type==='torus'){
-    const light=new THREE.Mesh(new THREE.TorusGeometry(p.R,p.tube*.20,8,96),new THREE.MeshBasicMaterial({color:0x9cdbeb,toneMapped:false}));light.position.z=p.tube*.94;light.material.userData.smallRing=p.R<=2.5;o.trim.push(light.material);node.add(light);
-   }
    // Organic reef structures retain their bioluminescent edge construction.
    if(o.course===2&&/reef/.test(o.family))seaDetail(o,m,p);
   }
   const kit=installObstacleBodywork(o,quality);bodyworkCount+=kit.meshes.length;metalParts+=kit.metal;glowParts+=kit.lit;finishObstacleGeometry(o);scene.add(o.rig);
  }
- if(typeof window!=='undefined'&&typeof location!=='undefined'&&(/obstacleqa=1|shipqa=1/.test(location.search)))window.__shiftlineObstacleQA={course,obstacles:specs.length,detailMeshes:bodyworkCount,metalParts,glowParts,quality,collisionTypes:specs.reduce((n,o)=>n+o.solids.length,0),decorOnly:true,clipped:specs.every(o=>o.bodywork?.clipped),families:[...new Set(specs.map(o=>o.family))],version:156};
+ if(typeof window!=='undefined'&&typeof location!=='undefined'&&(/obstacleqa=1|shipqa=1/.test(location.search)))window.__shiftlineObstacleQA={course,obstacles:specs.length,detailMeshes:bodyworkCount,metalParts,glowParts,quality,collisionTypes:specs.reduce((n,o)=>n+o.solids.length,0),decorOnly:true,clipped:specs.every(o=>o.bodywork?.clipped),families:[...new Set(specs.map(o=>o.family))],version:157};
  return specs;
 }
-function obstacleColor(o,time,color){if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp(new THREE.Color(EXPANSIONS[o.course].shift),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(new THREE.Color(0xff8056),cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
-export function updateObstacles(specs,along,time){for(const o of specs){o.rig.visible=o.s>along-55&&o.s<along+520;if(!o.rig.visible)continue;const tint=obstacleColor(o,time,o.cachedTint??=new THREE.Color());for(const m of o.trim)m.color.copy(tint).multiplyScalar(m.userData.smallRing?3.4:3);o.material.emissive.copy(tint);if(o.bodywork?.indicatorMaterial){const hz=[0,1.4,.95,1.1,1.85,.72,1.34][o.course]||1.2;const pulse=.86+.14*Math.sin(time*hz+o.seed*.73);o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar(2.4*pulse);}for(const h of o.ringHalos||[])h.material.opacity=.16+.08*Math.max(0,Math.min(1,(520-(o.s-along))/400));const st=obstacleState(o,time);o.motion.position.set(st.x,st.y,0);o.motion.rotation.set(0,0,st.a);o.motion.scale.setScalar(st.scale);if(st.pieces){for(let i=0;i<o.pieces.length;i++){const j=i*6,node=o.pieces[i];node.position.set(st.pieces[j],st.pieces[j+1],st.pieces[j+2]);node.rotation.z=st.pieces[j+3];}updateObstacleBodywork(o,st);}}}
+const HAZARD_COLORS=[0,0xffb86b,0xff8fce,0x73efff,0xffd078,0x73ffe7,0xffbc7e];
+function obstacleColor(o,time,color){if(o.family)return color.setHex(HAZARD_COLORS[o.course]);if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp(new THREE.Color(EXPANSIONS[o.course].shift),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(new THREE.Color(0xff8056),cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
+export function updateObstacles(specs,along,time){for(const o of specs){o.rig.visible=o.s>along-55&&o.s<along+520;if(!o.rig.visible)continue;const tint=obstacleColor(o,time,o.cachedTint??=new THREE.Color());for(const m of o.trim)m.color.copy(tint).multiplyScalar(m.userData.smallRing?3.4:3);o.material.emissive.copy(tint);o.material.userData.hazardTime.value=time+o.seed;const distance=o.s-along;o.material.userData.hazardGlowStrength.value=1.15-THREE.MathUtils.smoothstep(distance,160,520)*.25;if(o.bodywork?.indicatorMaterial){const hz=[0,1.4,.95,1.1,1.85,.72,1.34][o.course]||1.2;const pulse=.86+.14*Math.sin(time*hz+o.seed*.73);o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar(2.4*pulse);}for(const h of o.ringHalos||[])h.material.opacity=.16+.08*Math.max(0,Math.min(1,(520-(o.s-along))/400));const st=obstacleState(o,time);o.motion.position.set(st.x,st.y,0);o.motion.rotation.set(0,0,st.a);o.motion.scale.setScalar(st.scale);if(st.pieces){for(let i=0;i<o.pieces.length;i++){const j=i*6,node=o.pieces[i];node.position.set(st.pieces[j],st.pieces[j+1],st.pieces[j+2]);node.rotation.z=st.pieces[j+3];}updateObstacleBodywork(o,st);}}}
 export function disposeObstacles(scene,specs){for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}

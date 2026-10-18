@@ -23,7 +23,7 @@ export function familySolids(course,family,variant=0){
  const slide=(x,y,phase=0)=>({x,y,phase});
  const spin=(turn,phase=0)=>({turn,phase});
  if(family==='dock-clamps'||family==='pressure-bulkhead'){
-  for(const side of[-1,1])poly(jaw,side*4.65,shift,side<0?0:Math.PI,course===2?1.15:.95,slide(side*.70,0,side>0?.35:0),'jaw');
+  for(const side of[-1,1])poly(jaw,side*4.65,shift,side<0?0:Math.PI,course===2?1.15:.95,slide(-side*.95,0,side>0?.35:0),'jaw');
   box(0,6.45,3.6,.35,.8,0,null,'mount');box(0,-6.45,3.6,.35,.8,0,null,'mount');for(const side of[-1,1])box(side*6.5,0,.28,4.7,.9,0,null,'rail');
  }else if(family==='reactor-vanes'||family==='pump-assembly'||family==='storm-turbine'){
   const n=family==='pump-assembly'?4:family==='storm-turbine'?3:4;hub(family==='storm-turbine'?.88:.7);
@@ -33,13 +33,13 @@ export function familySolids(course,family,variant=0){
   const n=family==='security-segments'?6:3,inner=family==='security-segments'?2.45:3.2;
   for(let k=0;k<n;k++){
    const a=k*TAU/n+.10,mid=a+(TAU/n-.20)/2;
-   poly(sector(inner,6.7,a,a+TAU/n-.20),0,0,variant*.18,.85,{x:Math.cos(mid)*.42,y:Math.sin(mid)*.42,phase:k*.4,rock:(k%2?1:-1)*.075},'segment');
+   poly(sector(inner,6.7,a,a+TAU/n-.20),0,0,variant*.18,.85,{x:Math.cos(mid)*.65,y:Math.sin(mid)*.65,phase:k*.4,rock:(k%2?1:-1)*.14},'segment');
   }
  }else if(family==='reef-machinery'){
   for(const side of[-1,1]){ring(side*3.2,side*(.9+shift),1.95,.48,null,'reef');poly(jaw.map(([x,y])=>[x*.5,y*.65]),side*6.1,0,side<0?0:Math.PI,1.05,slide(0,side*.55),'reef');}
   box(0,0,.65,5.7,1.0,0,null,'spine');
  }else if(family==='forge-press'){
-  for(const side of[-1,1])poly(head,shift,side*4.5,side<0?0:Math.PI,1.3,slide(0,side*.75),'press');
+  for(const side of[-1,1])poly(head,shift,side*4.5,side<0?0:Math.PI,1.3,slide(0,-side*1.75),'press');
   box(-6.4,0,.35,4.4,1.05,0,null,'mount');box(6.4,0,.35,4.4,1.05,0,null,'mount');
  }else if(family==='furnace-shutters'){
   for(let k=0;k<3;k++)poly(jaw.map(([x,y])=>[x*.64,y*.75]),(k-1)*(4.0+variant*.18),(k%2?-2.3:2.3)+(variant-1)*.25,k%2?Math.PI:0,1.05,slide(0,k%2?2.2:-2.2,k*1.4),'shutter');
@@ -69,7 +69,7 @@ export function familySolids(course,family,variant=0){
  }else if(family==='mining-claws'){
   for(let k=0;k<3;k++){
    const a=k*TAU/3+variant*.2;
-   poly([[-1.45,-.8],[-.7,-1.0],[1.4,-.7],[1.7,-.15],[1.2,.10],[1.65,.45],[.9,.85],[-.7,.85],[-1.45,.45]],Math.cos(a)*4.7,Math.sin(a)*4.7,a+Math.PI,.95,{rock:.55,phase:k*.65},'claw');
+   poly([[-1.45,-.8],[-.7,-1.0],[1.4,-.7],[1.7,-.15],[1.2,.10],[1.65,.45],[.9,.85],[-.7,.85],[-1.45,.45]],Math.cos(a)*4.7,Math.sin(a)*4.7,a+Math.PI,.95,{rock:.78,phase:k*.65},'claw');
   }
   ring(0,0,6.25,.25,null,'housing');
  }
@@ -78,25 +78,30 @@ export function familySolids(course,family,variant=0){
 export function familySpecifications(course,length){
  const families=HAZARD_FAMILIES[course];if(!families)throw Error('Unknown course '+course);
  const out=[],order=[0,1,2,0,2,1];
- for(let i=0,s=220;s<length-270;i++,s+=s/length<.25?155:s/length<.75?145:132){
+ // Short phrases alternate decisions, linked pairs and a longer reset. The
+ // final act tightens the spacing gently, never spawning overlapping gates.
+ const beats=[142,128,166,130,205,146,124,176,138,222];
+ for(let i=0,s=190;s<length-270;i++){
   const bounds=course>=4?[.25,.5,.75]:course===2?[.2,.5,.78]:course===3?[.2,.48,.76]:[.18,.47,.76];
   const theme=1+bounds.filter(b=>s/length>=b).length,family=families[order[(i+theme-1)%order.length]],variant=(Math.floor(i/3)+theme)%3;
-  out.push({id:i,s,kind:family,family,course,theme,variant,forceDodge:i%4===0,solids:familySolids(course,family,variant),seed:i*.731,spin:(i%2?1:-1)*.14,revision:156});
+  const forceDodge=i>1&&[0,3,6,8].includes(i%10),orientation=[0,.32,-.32,Math.PI/2,.22,-Math.PI/2][Math.floor(i/2)%6];
+  out.push({id:i,s,kind:family,family,course,theme,variant,orientation,forceDodge,solids:familySolids(course,family,variant),seed:i*.731,spin:(i%2?1:-1)*.14,revision:157});
+  s+=i<3?[188,168,156][i]:beats[(i-3)%beats.length]*(s/length>.72?.92:1);
  }
  return out;
 }
 export function familyState(o,time){
- const clock=time+o.seed,period=o.family==='forge-press'?6.8:o.family==='furnace-shutters'?7.8:9.2;
+ const clock=time+o.seed,period=o.family==='forge-press'?5.4:o.family==='furnace-shutters'?6.2:6.8;
  // A smooth dwell at each end of a cycle makes direction changes readable.
  const cycle=phase=>{const v=.5-.5*Math.cos(clock*TAU/period+phase);return v*v*(3-2*v);};
  let x=0,y=0,a=0;
- if(o.forceDodge){const axis=(Math.floor(o.id/4)%4)*Math.PI/2;x=Math.cos(axis)*2.15;y=Math.sin(axis)*2.15;}
+ if(o.forceDodge){const axis=(Math.floor(o.id/3)%4)*Math.PI/2,offset=o.family==='root-arch'?4.35:o.family==='discharge-gate'?3.7:/segments/.test(o.family)?3.05:/press/.test(o.family)?2.1:2.8;x=Math.cos(axis)*offset;y=Math.sin(axis)*offset;}
  else if(/segments|gate|arch|machinery/.test(o.family)){x=Math.sin(clock*.16)*.35;y=Math.cos(clock*.13)*.25;}
- if(/vanes|rotor|turbine|wheel|drill|assembly/.test(o.family))a=o.variant*.18;
- else a=Math.sin(clock*.12)*.075;
+ if(/vanes|rotor|turbine|wheel|drill|assembly/.test(o.family))a=o.variant*.18+(o.orientation||0);
+ else a=(o.orientation||0)+Math.sin(clock*.12)*.055;
  const pieces=new Float64Array(o.solids.length*6);
  for(let i=0;i<o.solids.length;i++){
-  const p=o.solids[i],d=p.drive,travel=d?cycle(d.phase||0):0,angle=(p.a||0)+(d?.turn||0)*clock+(d?.rock||0)*(2*travel-1),j=i*6;
+  const p=o.solids[i],d=p.drive,travel=d?cycle(d.phase||0):0,angularSpeed=(d?.turn||0)*(1.8+o.variant*.18),angle=(p.a||0)+angularSpeed*clock+(d?.rock||0)*(2*travel-1),j=i*6;
   pieces[j]=(p.x||0)+(d?.x||0)*travel;pieces[j+1]=(p.y||0)+(d?.y||0)*travel;pieces[j+2]=p.z||0;pieces[j+3]=angle;pieces[j+4]=Math.cos(angle);pieces[j+5]=Math.sin(angle);
  }
  return {x,y,a,scale:1,pieces,cycle:cycle(0)};

@@ -1,4 +1,4 @@
-import{obstacleState,localDistance}from'./course-colliders.js?v=156';
+import{obstacleState,localDistance}from'./course-colliders.js?v=157';
 const errorRates=[.015,.025,.035,.045,.055,.07,.085];
 function roll(id,gate,course){let n=Math.imul(id+11,374761393)^Math.imul(gate+17,668265263)^Math.imul(course+3,1274126177);n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296;}
 // A late, imperfect line creates a real collision opportunity. It never awards

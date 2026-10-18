@@ -1,4 +1,4 @@
-import {familySpecifications,familyState} from './hazard-families-v156.js?v=156';
+import {familySpecifications,familyState} from './hazard-families-v156.js?v=157';
 import{expansionSpecifications,expansionState}from'./expansion-courses.js?v=67';
 import{cinderSpecifications,cinderState,cinderShift}from'./cinder-colliders.js?v=67';
 const TAU=Math.PI*2,torus=(x,y,R,tube)=>({type:'torus',x,y,R,tube}),box=(x,y,hx,hy,a=0)=>({type:'box',x,y,hx,hy,hz:.35,a}),sphere=(x,y,r)=>({type:'sphere',x,y,r});

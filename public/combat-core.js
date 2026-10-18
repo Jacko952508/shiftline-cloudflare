@@ -1,4 +1,4 @@
-import{specifications,obstacleDistance}from'./course-colliders.js?v=156';
+import{specifications,obstacleDistance}from'./course-colliders.js?v=157';
 export const COMBAT_VERSION=7;
 export const PULSE_LIMIT=20,PULSE_COOLING=3;
 export const WEAPONS={pulse:{cooldown:.16,speed:245,damage:10,life:1.2},missile:{cooldown:.7,speed:155,damage:38,life:Infinity},mine:{cooldown:.5,speed:0,damage:32,life:30}};

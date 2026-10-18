@@ -1,21 +1,39 @@
 import {staghornCoral} from './coral-v154.js?v=154';
 import * as THREE from 'three';
 import {bevelBox} from './art-direction-v148.js?v=153';
-import {solidDistance} from './course-colliders.js?v=156';
+import {solidDistance} from './course-colliders.js?v=157';
 // Surface equipment is baked into the solid draw, not added as dozens of
 // separate meshes. The authored collider remains the primary silhouette.
 let livingCoral;
 function combine(parts){
- const pos=[],normal=[],uv=[],colour=[],index=[];
- for(const [g,tint=1] of parts){
+ const pos=[],normal=[],uv=[],colour=[],light=[],index=[];
+ for(const [g,tint=1,energy=0] of parts){
   const offset=pos.length/3,a=g.attributes;
   pos.push(...a.position.array);normal.push(...a.normal.array);
   const c=typeof tint==='number'?[tint,tint,tint]:tint||[1,1,1];
-  for(let i=0;i<a.position.count;i++){uv.push(a.uv?.getX(i)||0,a.uv?.getY(i)||0);if(tint===null&&a.color)colour.push(a.color.getX(i),a.color.getY(i),a.color.getZ(i));else colour.push(...c);}
+  for(let i=0;i<a.position.count;i++){light.push(energy);uv.push(a.uv?.getX(i)||0,a.uv?.getY(i)||0);if(tint===null&&a.color)colour.push(a.color.getX(i),a.color.getY(i),a.color.getZ(i));else colour.push(...c);}
   if(g.index)for(const i of g.index.array)index.push(offset+i);else for(let i=0;i<a.position.count;i++)index.push(offset+i);
   g.dispose();
  }
- const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));out.setAttribute('normal',new THREE.Float32BufferAttribute(normal,3));out.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));out.setAttribute('color',new THREE.Float32BufferAttribute(colour,3));out.setIndex(index);out.computeBoundingBox();out.computeBoundingSphere();return out;
+ const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));out.setAttribute('normal',new THREE.Float32BufferAttribute(normal,3));out.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));out.setAttribute('color',new THREE.Float32BufferAttribute(colour,3));out.setAttribute('hazardLight',new THREE.Float32BufferAttribute(light,1));out.setIndex(index);out.computeBoundingBox();out.computeBoundingSphere();return out;
+}
+// Complete luminous contours, baked into the same indexed solid draw. The
+// ribbons sit inside the polygon, including its concave steps and notches.
+function perimeterLight(parts,p){
+ const points=p.type==='box'?[[-p.hx,-p.hy],[p.hx,-p.hy],[p.hx,p.hy],[-p.hx,p.hy]]:p.points;
+ if(!points)return;
+ let area=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];area+=a[0]*b[1]-b[0]*a[1];}
+ const sign=area>0?1:-1,pos=[],normal=[],uv=[],ix=[];
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.08)continue;
+  const tx=dx/len,ty=dy/len,nx=-ty*sign,ny=tx*sign,cut=Math.min(.06,len*.16),width=Math.min(.15,len*.22);
+  for(const face of[-1,1]){
+   const offset=pos.length/3;
+   for(const [t,inset]of [[cut,.025],[len-cut,.025],[len-cut,width],[cut,width]]){pos.push(a[0]+tx*t+nx*inset,a[1]+ty*t+ny*inset,face*(p.hz+.014));normal.push(0,0,face);uv.push(t,inset);}
+   ix.push(...(face*sign>0?[0,1,2,0,2,3]:[2,1,0,3,2,0]).map(k=>offset+k));
+  }
+ }
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normal,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);parts.push([g,1,1]);
 }
 export function hazardGeometry(p,course,quality='auto'){
  let base;
@@ -35,6 +53,10 @@ export function hazardGeometry(p,course,quality='auto'){
   base.computeVertexNormals();
  }
  const parts=[[base,p.role==='root'?[.48,.21,.08]:1]],local={...p,x:0,y:0,z:0,a:0};
+ perimeterLight(parts,p);
+ if(p.type==='torus'||p.type==='arc')for(const face of[-1,1]){
+  const span=p.type==='arc'?p.end-p.start:Math.PI*2,g=new THREE.TorusGeometry(p.R,Math.min(.075,p.tube*.18),6,Math.max(24,Math.ceil(span*15)),span);if(p.type==='arc')g.rotateZ(p.start);g.translate(0,0,face*p.tube*.94);parts.push([g,1,1]);
+ }
  const addBox=(x,y,z,w,h,d,tint=.3)=>{const g=bevelBox(w,h,d,.035);g.translate(x,y,z);parts.push([g,tint]);};
  if(p.type==='arc'){
   // Rounded living root ends are also the spherical end caps in the shared SDF.
@@ -53,6 +75,7 @@ export function hazardGeometry(p,course,quality='auto'){
   for(const {x,y}of selected){
    // Dark inset, raised rails and steel fastening blocks give the face depth.
    addBox(x,y,z,w,h,.045,p.role==='root'?[.30,.34,.23]:.27);
+   const channel=new THREE.PlaneGeometry(w*.70,Math.min(.055,h*.12));channel.translate(x,y-h*.19,z+.03);parts.push([channel,1,.65]);
    for(const side of[-1,1]){
     addBox(x,y+side*h*.51,z+.035,w*1.03,.055,.07,.91);
     addBox(x+side*w*.42,y,z+.055,.09,h*.78,.09,1.10);
