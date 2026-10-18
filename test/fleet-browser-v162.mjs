@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {chromium,webkit} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 await mkdir('qa-v162',{recursive:true});
-const base=process.env.SHIFTLINE_TEST_ORIGIN||'http://127.0.0.1:8765';
+const base=process.env.SHIFTLINE_TEST_ORIGIN||process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
 const args=['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist','--disable-gpu-sandbox'];
-for(const kind of[chromium,webkit]){
+const browsers=process.env.FLEET_BROWSERS==='chromium'?[chromium]:process.env.FLEET_BROWSERS==='webkit'?[webkit]:[chromium,webkit];
+for(const kind of browsers){
  const browser=await kind.launch(kind===chromium?{headless:true,args}:{headless:true});
  const context=await browser.newContext({viewport:{width:430,height:932},deviceScaleFactor:1,isMobile:true,hasTouch:true});
  const page=await context.newPage(),errors=[];
