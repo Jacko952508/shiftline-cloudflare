@@ -1,4 +1,4 @@
-import{seaSpecifications as sharedSeaSpecifications,seaState as sharedSeaState}from'./course-colliders.js?v=158';
+import{seaSpecifications as sharedSeaSpecifications,seaState as sharedSeaState}from'./course-colliders.js?v=159';
 export function seaSpecifications(length){return sharedSeaSpecifications(length)}
 export function seaState(o,time){return sharedSeaState(o,time)}
 import{acquirePBR}from'./material-lab.js?v=38';

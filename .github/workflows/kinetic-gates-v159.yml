@@ -1,0 +1,68 @@
+name: SHIFTLINE V159 Kinetic Gates
+on:
+  push:
+    branches: [graphics-v159]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  families:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    strategy:
+      fail-fast: false
+      matrix:
+        course: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 15
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Shared physics, attached equipment and fair passage
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/kinetic-gates-v159.mjs
+          node --experimental-loader ./test/three-loader.mjs test/sightlines-v158.mjs
+          node --experimental-loader ./test/three-loader.mjs test/readability-v157.mjs
+          node --experimental-loader ./test/three-loader.mjs test/hazard-families-v156.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
+          node --experimental-loader ./test/three-loader.mjs test/racing-polish-v146.mjs
+      - name: Install both browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve previous build and candidate with CI-only controls
+        run: |
+          mkdir -p .family-baseline
+          git archive 7594dcc6d035a73ca6413a4c79e973e50ac13ced public | tar -x -C .family-baseline
+          cat test/runtime-bridge-v152.js >> .family-baseline/public/race-engine.js
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/hazard-families-bridge-v156.js >> public/race-engine.js
+          cat test/readability-bridge-v157.js >> public/race-engine.js
+          cat test/sightlines-bridge-v158.js >> public/race-engine.js
+          cat test/hazard-families-bridge-v156.js >> .family-baseline/public/race-engine.js
+          cat test/readability-bridge-v157.js >> .family-baseline/public/race-engine.js
+          cat test/sightlines-bridge-v158.js >> .family-baseline/public/race-engine.js
+          python3 -m http.server 8764 --bind 127.0.0.1 --directory .family-baseline/public >/tmp/family-base.log 2>&1 &
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/family-candidate.log 2>&1 &
+          sleep 2
+      - name: Chromium machinery, budget and real collision recovery
+        env:
+          RUNTIME_COURSE: ${{ matrix.course }}
+          RUNTIME_BROWSER: chromium
+          RUNTIME_FAMILY156: '1'
+        run: node test/kinetic-gates-browser-v159.mjs
+      - name: WebKit machinery, budget and real collision recovery
+        env:
+          RUNTIME_COURSE: ${{ matrix.course }}
+          RUNTIME_BROWSER: webkit
+          RUNTIME_FAMILY156: '1'
+        run: node test/kinetic-gates-browser-v159.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kinetic-v159-${{ matrix.course }}
+          path: kinetic-v159-artifacts
+          if-no-files-found: ignore

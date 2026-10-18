@@ -1,3 +1,4 @@
+import {isKineticGate,kineticGateSolids} from './kinetic-gates-v159.js?v=159';
 // Pure deterministic encounter data shared by rendering, AI and combat.
 // Geometry is in metres. Piece actuation is evaluated once per obstacle state.
 const TAU=Math.PI*2;
@@ -15,6 +16,7 @@ const head=[[-4.7,-.95],[-4.1,-1.3],[-1.3,-1.3],[-.8,-1.05],[.8,-1.05],[1.3,-1.3
 const cargo=[[-1.25,-1.4],[.9,-1.4],[1.4,-.85],[1.4,1.05],[.85,1.4],[-1.25,1.4],[-1.45,.95],[-1.45,-.95]];
 function sector(inner,outer,start,end){const points=[],n=Math.max(6,Math.ceil((end-start)/.10));for(let i=0;i<=n;i++){const a=start+(end-start)*i/n;points.push([Math.cos(a)*outer,Math.sin(a)*outer]);}for(let i=n;i>=0;i--){const a=start+(end-start)*i/n;points.push([Math.cos(a)*inner,Math.sin(a)*inner]);}return points;}
 export function familySolids(course,family,variant=0){
+ if(isKineticGate(family))return kineticGateSolids(family,variant);
  const out=[],shift=(variant-1)*.35;
  const poly=(points,x=0,y=0,a=0,hz=.85,drive=null,role='armour',z=0)=>out.push({type:'polygon',points:points.map(p=>[...p]),x,y,a,hz,z,drive,role});
  const box=(x,y,hx,hy,hz=.8,a=0,drive=null,role='armour')=>out.push({type:'box',x,y,hx,hy,hz,a,drive,role});
@@ -22,19 +24,10 @@ export function familySolids(course,family,variant=0){
  const hub=r=>out.push({type:'sphere',x:0,y:0,r,role:'motor'});
  const slide=(x,y,phase=0)=>({x,y,phase});
  const spin=(turn,phase=0)=>({turn,phase});
- if(family==='dock-clamps'||family==='pressure-bulkhead'){
-  for(const side of[-1,1])poly(jaw,side*4.65,shift,side<0?0:Math.PI,course===2?1.15:.95,slide(-side*.95,0,side>0?.35:0),'jaw');
-  box(0,6.45,3.6,.35,.8,0,null,'mount');box(0,-6.45,3.6,.35,.8,0,null,'mount');for(const side of[-1,1])box(side*6.5,0,.28,4.7,.9,0,null,'rail');
- }else if(family==='reactor-vanes'||family==='pump-assembly'||family==='storm-turbine'){
+ if(family==='reactor-vanes'||family==='pump-assembly'||family==='storm-turbine'){
   const n=family==='pump-assembly'?4:family==='storm-turbine'?3:4;hub(family==='storm-turbine'?.88:.7);
   for(let k=0;k<n;k++)poly(swept,0,0,k*TAU/n+variant*.22,family==='pump-assembly'?.62:.44,spin(family==='reactor-vanes'?(k%2?-.17:.17):family==='storm-turbine'?.18:.15),'blade',family==='reactor-vanes'?(k%2?.65:-.65):0);
   if(family!=='reactor-vanes')ring(0,0,6.55,.24);
- }else if(family==='security-segments'||family==='discharge-gate'){
-  const n=family==='security-segments'?6:3,inner=family==='security-segments'?2.45:3.2;
-  for(let k=0;k<n;k++){
-   const a=k*TAU/n+.10,mid=a+(TAU/n-.20)/2;
-   poly(sector(inner,6.7,a,a+TAU/n-.20),0,0,variant*.18,.85,{x:Math.cos(mid)*.65,y:Math.sin(mid)*.65,phase:k*.4,rock:(k%2?1:-1)*.14},'segment');
-  }
  }else if(family==='reef-machinery'){
   for(const side of[-1,1]){ring(side*3.2,side*(.9+shift),1.95,.48,null,'reef');poly(jaw.map(([x,y])=>[x*.5,y*.65]),side*6.1,0,side<0?0:Math.PI,1.05,slide(0,side*.55),'reef');}
   box(0,0,.65,5.7,1.0,0,null,'spine');
@@ -97,9 +90,9 @@ export function familyState(o,time){
  const cycle=phase=>{const v=.5-.5*Math.cos(clock*TAU/period+phase);return v*v*(3-2*v);};
  let x=0,y=0,a=0;
  if(o.forceDodge){const axis=(Math.floor(o.id/3)%4)*Math.PI/2,offset=o.family==='root-arch'?4.35:o.family==='discharge-gate'?3.7:/segments/.test(o.family)?3.05:/press/.test(o.family)?2.1:2.8;x=Math.cos(axis)*offset;y=Math.sin(axis)*offset;}
- else if(/segments|gate|arch|machinery/.test(o.family)){x=Math.sin(clock*.16)*.35;y=Math.cos(clock*.13)*.25;}
+ else if(!isKineticGate(o.family)&&/segments|gate|arch|machinery/.test(o.family)){x=Math.sin(clock*.16)*.35;y=Math.cos(clock*.13)*.25;}
  if(/vanes|rotor|turbine|wheel|drill|assembly/.test(o.family))a=o.variant*.18+(o.orientation||0);
- else a=(o.orientation||0)+Math.sin(clock*.12)*.055;
+ else a=(o.orientation||0)+(isKineticGate(o.family)?0:Math.sin(clock*.12)*.055);
  const pieces=new Float64Array(o.solids.length*6);
  for(let i=0;i<o.solids.length;i++){
   const p=o.solids[i],d=p.drive,travel=d?cycle(d.phase||0):0,angularSpeed=(d?.turn||0)*(1.8+o.variant*.18),angle=(p.a||0)+angularSpeed*clock+(d?.rock||0)*(2*travel-1),j=i*6;

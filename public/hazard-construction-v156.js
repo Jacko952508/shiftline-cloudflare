@@ -1,7 +1,7 @@
 import {staghornCoral} from './coral-v154.js?v=154';
 import * as THREE from 'three';
 import {bevelBox} from './art-direction-v148.js?v=153';
-import {solidDistance} from './course-colliders.js?v=158';
+import {solidDistance} from './course-colliders.js?v=159';
 // Surface equipment is baked into the solid draw, not added as dozens of
 // separate meshes. The authored collider remains the primary silhouette.
 let livingCoral;
@@ -52,7 +52,7 @@ export function hazardGeometry(p,course,quality='auto'){
   for(let i=0;i<a.count;i++){const x=a.getX(i),y=a.getY(i),z=a.getZ(i),u=Math.atan2(y,x),r=Math.hypot(x,y),cx=Math.cos(u)*p.R,cy=Math.sin(u)*p.R,k=.965+.025*Math.sin(u*17+z*7)+.01*Math.cos(u*31-z*11);a.setXYZ(i,cx+(x-cx)*k,cy+(y-cy)*k,z*k);}
   base.computeVertexNormals();
  }
- const parts=[[base,p.role==='root'?[.48,.21,.08]:1]],local={...p,x:0,y:0,z:0,a:0};
+ const parts=[[base,p.signalStyle?[.36,.46,.58]:p.role==='root'?[.48,.21,.08]:1]],local={...p,x:0,y:0,z:0,a:0};
  perimeterLight(parts,p);
  if(p.type==='torus'||p.type==='arc')for(const face of[-1,1]){
   const span=p.type==='arc'?p.end-p.start:Math.PI*2,g=new THREE.TorusGeometry(p.R,Math.min(.075,p.tube*.18),6,Math.max(24,Math.ceil(span*15)),span);if(p.type==='arc')g.rotateZ(p.start);g.translate(0,0,face*p.tube*.94);parts.push([g,1,1]);
@@ -61,6 +61,15 @@ export function hazardGeometry(p,course,quality='auto'){
  if(p.type==='arc'){
   // Rounded living root ends are also the spherical end caps in the shared SDF.
   for(const a of [p.start,p.end]){const cap=new THREE.SphereGeometry(p.tube,16,12);cap.translate(Math.cos(a)*p.R,Math.sin(a)*p.R,0);parts.push([cap,p.role==='root'?[.43,.19,.07]:1]);}
+ }else if(p.signalStyle&&(p.type==='box'||p.type==='polygon')){
+  // Flush segmented power cells replace the repeated equipment decals.
+  // Every cell is contained by the real solid, including the hooked tips.
+  base.computeBoundingBox();const b=base.boundingBox,z=p.hz+.024;let count=0;
+  for(let y=b.min.y+.28;y<b.max.y-.22;y+=.55)for(let x=b.min.x+.25;x<b.max.x-.18;x+=.58){
+   if(solidDistance(local,x,y,0)>-.23)continue;
+   const seam=new THREE.PlaneGeometry(.16,.32);seam.translate(x,y,z);parts.push([seam,[.09,.12,.18],0]);
+   const cell=new THREE.PlaneGeometry(.055,.24);cell.translate(x,y,z+.005);parts.push([cell,1,count++%3===0?1:.65]);
+  }
  }else if(p.type==='box'||p.type==='polygon'){
   base.computeBoundingBox();const b=base.boundingBox,wide=b.max.x-b.min.x,tall=b.max.y-b.min.y,thin=Math.min(wide,tall)<1.3;
   const w=thin?Math.min(wide*.45,1.2):Math.min(wide*.45,1.8),h=thin?Math.min(tall*.40,.22):Math.min(tall*.40,.80),z=p.hz+.025;
