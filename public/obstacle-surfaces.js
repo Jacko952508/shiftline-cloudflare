@@ -1,4 +1,4 @@
-import {illuminateHazard} from './obstacle-glow-v155.js?v=159';
+import {illuminateHazard} from './obstacle-glow-v155.js?v=161';
 import {actuationPeriod} from './hazard-families-v156.js?v=159';
 import * as THREE from 'three';
 import {finishSurface,bevelBox} from './art-direction-v148.js?v=153';
@@ -7,14 +7,14 @@ import {finishSurface,bevelBox} from './art-direction-v148.js?v=153';
 // course, plus a separate organic finish for Leviathan's reef structure.
 // Materials stay unique per obstacle because their tunnel-clipping uniforms
 // are frame-specific, but the four textures are shared between all obstacles.
-const SIZE=256,TAU=Math.PI*2,cache=new Map(),MAX_IDLE=2;
+const SIZE=512,TAU=Math.PI*2,cache=new Map(),MAX_IDLE=2;
 const THEMES={
-  1:{base:0x6e899b,metalness:.83,roughness:.47,accent:0x70deff}, // orbital machined alloy
-  2:{base:0x709e9b,metalness:.7,roughness:.57,accent:0x68ebd4},  // pressure-aged copper alloy
-  3:{base:0x746d65,metalness:.73,roughness:.78,accent:0xffa55d}, // volcanic refractory steel
-  4:{base:0x8399ad,metalness:.82,roughness:.45,accent:0x8acbff}, // storm-hardened titanium
-  5:{base:0x8b987e,metalness:.38,roughness:.88,accent:0xa9ed88}, // reclaimed bio-alloy
-  6:{base:0x737589,metalness:.76,roughness:.4,accent:0xc5a0ff}   // obsidian fractured plate
+  1:{base:0x435365,metalness:.83,roughness:.47,accent:0x70deff}, // orbital machined alloy
+  2:{base:0x395457,metalness:.7,roughness:.57,accent:0x68ebd4},  // pressure-aged copper alloy
+  3:{base:0x4a3430,metalness:.73,roughness:.78,accent:0xffa55d}, // volcanic refractory steel
+  4:{base:0x4b596b,metalness:.82,roughness:.45,accent:0x8acbff}, // storm-hardened titanium
+  5:{base:0x4b5842,metalness:.38,roughness:.88,accent:0xa9ed88}, // reclaimed bio-alloy
+  6:{base:0x46445c,metalness:.76,roughness:.4,accent:0xc5a0ff}   // obsidian fractured plate
 };
 const clamp=(v,min=0,max=255)=>Math.min(max,Math.max(min,v));
 function random(x,y,seed){let h=Math.imul(x+seed*71,374761393)^Math.imul(y+seed*29,668265263);h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;}
@@ -63,7 +63,9 @@ function atlas(course,organic=false){
    glow=vein?.20:0;matte=.94;
   }
   height[i]=clamp(relief+etched+n*.035,0,1);
-  const shade=clamp(value*255),rf=clamp(matte*255),gl=clamp(glow*255);
+  // High contrast charcoal recesses against textured machined faces,
+  // rather than the former flat mid-grey that disappeared against the tunnel.
+  const shade=clamp((value*.79-.065)*255),rf=clamp(matte*255),gl=clamp(glow*255);
   // Keep the base map neutral so per-course metal paint can tint accurately.
   base[k]=clamp(shade*1.03);base[k+1]=shade;base[k+2]=clamp(shade*.98);base[k+3]=255;
   rough[k]=rough[k+1]=rough[k+2]=rf;rough[k+3]=255;
@@ -87,7 +89,7 @@ function atlas(course,organic=false){
 export function makeObstacleMaterial(obstacle){
  const course=obstacle.course,organic=(course===2&&/reef/.test(obstacle.kind))||(course===5&&/root/.test(obstacle.kind)),t=THEMES[course]||THEMES[1],maps=atlas(course,organic);
  obstacle.surfaceAtlasKey=course+(organic?':reef':'');
- const mat=new THREE.MeshStandardMaterial({...maps,vertexColors:!!obstacle.family,color:organic?0xb69d87:t.base,metalness:organic?.13:t.metalness,roughness:organic?.94:t.roughness,normalScale:new THREE.Vector2(organic?.32:.48,organic?.32:.48),emissive:t.accent,emissiveIntensity:course===6?.55:course===3?.52:.46,side:THREE.FrontSide});
+ const mat=new THREE.MeshStandardMaterial({...maps,vertexColors:!!obstacle.family,color:organic?0xb69d87:t.base,metalness:organic?.13:t.metalness,roughness:organic?.94:t.roughness,normalScale:new THREE.Vector2(organic?.32:.48,organic?.32:.48),emissive:t.accent,emissiveIntensity:course===6?.44:course===3?.41:.36,side:THREE.FrontSide});
  finishSurface(mat,organic?'organic':'obstacle',course);illuminateHazard(mat,{period:actuationPeriod(obstacle.family),driveScale:1.8+(obstacle.variant||0)*.18});if(obstacle.family){mat.userData.hazardGlowStrength.value=1.15;mat.emissiveIntensity*=.78;mat.fog=false;}return mat;
 }
 export function releaseObstacleSurface(obstacle){
