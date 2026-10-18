@@ -1,0 +1,60 @@
+name: SHIFTLINE V160 Sequential Lighting QA
+on:
+  push:
+    branches: [lighting-v160, main]
+    paths:
+      - 'public/obstacle-lighting-v160.js'
+      - 'public/race-obstacles.js'
+      - 'public/race-sightlines-v158.js'
+      - 'public/race-world.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/obstacle-lighting-v160.mjs'
+      - 'test/lighting-browser-v160.mjs'
+      - '.github/workflows/lighting-v160.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lighting-v160-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  physics-and-cues:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: JavaScript validity and non-invasive lighting invariants
+        run: |
+          node --check public/obstacle-lighting-v160.js
+          node --check public/race-obstacles.js
+          node --check public/race-world.js
+          node --check public/race-engine.js
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-lighting-v160.mjs
+  mobile-lighting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install mobile WebGL browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve candidate game
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v160.log 2>&1 &
+          sleep 2
+      - name: Verify live upcoming-only cues on iPhone-size Chromium and WebKit
+        run: node test/lighting-browser-v160.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighting-v160-frames
+          path: lighting-v160-frames
+          if-no-files-found: ignore
