@@ -1,6 +1,6 @@
 import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=153';
 import * as THREE from 'three';
-import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=153';
+import{craft,animateCraft,disposeCraft}from'./race-craft.js?v=161';
 import{hdrEnvironment,tuneTextureFiltering}from'./material-lab.js?v=147';
 import{PAINT}from'./progress.js?v=112';
 // Real scene architecture rather than a flat colour behind the ship.
