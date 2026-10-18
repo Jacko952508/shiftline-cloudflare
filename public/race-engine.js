@@ -1,12 +1,12 @@
 import {prepareRaceGraphics} from './race-preparation-v152.js?v=152';
-import{recoveryPose,racerInView}from'./race-recovery.js?v=153';
+import{recoveryPose,racerInView}from'./race-recovery.js?v=155';
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
 import{menuCamera,PREVIEW_CAMERA,prepareMenuCamera}from'./menu-camera.js?v=105';
 import{menuFrameProfile,createMenuFrameGovernor}from'./menu-pacing.js?v=105';
 import{createCockpit,updateCockpit,renderCockpit,disposeCockpit}from'./cockpit.js?v=153';
 import{installCareerUI,difficulty,savedCup,advanceCup,awardCareer,standings}from'./career.js?v=72';
 import{EXPANSIONS}from'./expansion-courses.js?v=66';
-import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=154';
+import{createTrackExplorer,renderTrackExplorer,disposeTrackExplorer,bindExplorer,zoomExplorer,resetExplorer,setExplorerMode,seekExplorer,advanceExplorer}from'./live-track-explorer.js?v=155';
 import{cinematicArrival,cinematicScenic}from'./cinematic-flight.js?v=56';
 import{graphicsRatio,adaptiveRatio,setWorldDetail,releaseWorldDetail}from'./graphics-policy.js?v=154';
 import{shipAppearance}from'./ship-wire.js?v=72';
@@ -20,7 +20,7 @@ import{createImpacts,burstImpact,updateImpacts,impactPose,disposeImpacts}from'./
 import{tuneTextureFiltering}from'./material-lab.js?v=147';
 import * as THREE from 'three';
 import{createTrack,RADIUS,poseObject,actAt}from'./race-track.js?v=58';
-import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=153';
+import{buildObstacles,updateObstacles,disposeObstacles,collisionAt,safeTarget,planTarget,obstacleState,localDistance}from'./race-obstacles.js?v=155';
 import{createWorld,updateWorld,disposeWorld}from'./race-world.js?v=154';
 import{craft,animateCraft,disposeCraft,flightAttitude,steeringBank}from'./race-craft.js?v=153';
 import{shiftState}from'./race-theme.js';

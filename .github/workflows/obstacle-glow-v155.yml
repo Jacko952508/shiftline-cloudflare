@@ -1,0 +1,44 @@
+name: SHIFTLINE V155 Illuminated Hazards
+on:
+  push:
+    branches: [graphics-v155]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  glow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        course: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Geometry, physics and race invariants
+        run: |
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-glow-v155.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Prepare CI-only view controls and serve candidate
+        run: |
+          cat test/obstacle-glow-bridge-v155.js >> public/race-engine.js
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-glow.log 2>&1 &
+          sleep 2
+      - name: Verify visible lighting without extra draws, triangles or resolution changes
+        env:
+          GLOW_COURSE: ${{ matrix.course }}
+        run: node test/obstacle-glow-browser-v155.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obstacle-glow-v155-${{ matrix.course }}
+          path: obstacle-glow-v155-frames
+          if-no-files-found: ignore
