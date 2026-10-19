@@ -1,7 +1,7 @@
 name: SHIFTLINE V167 All 18 Cockpit Edition Audit
 on:
   push:
-    branches: [pilot-audit-v167,cockpit-continuity-v168,cockpit-nose-fairing-v169,main]
+    branches: [pilot-audit-v167,cockpit-continuity-v168,cockpit-nose-fairing-v169,real-fuselage-continuity-v170,main]
     paths:
       - 'test/pilot-audit-bridge-v167.js'
       - 'test/pilot-all-editions-v167.mjs'
