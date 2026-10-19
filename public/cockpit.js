@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
+import{sealedLoft}from'./fleet-sculpture-v162.js?v=168';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
@@ -178,7 +179,7 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
  const sightPoints=[-.24,-.035,-.12,-.035,.12,-.035,.24,-.035,0,.085,0,.145,0,-.11,0,-.17];
  const sightGeo=new THREE.BufferGeometry();const positions=[];for(let i=0;i<sightPoints.length;i+=2)positions.push(sightPoints[i],sightPoints[i+1],-1.72);sightGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  const sight=new THREE.LineSegments(sightGeo,new THREE.LineBasicMaterial({color:tone,transparent:true,opacity:.53,depthTest:false}));sight.renderOrder=7;hud.add(sight);
- const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,tub,noseCameraRoot,noseMeshes:[],button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
+ const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,tub,noseCameraRoot,noseMeshes:[],noseFairing:null,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
  if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')){
   window.__shiftlineCockpitQA={version:165,model,hasExteriorClone:false,interiorParts:root.children.length,
    windshieldClear:true,view:'pilot-eye',forwardDetail:forwardView.children.length,cabinClosed:true,
@@ -193,6 +194,10 @@ export function attachPilotAirframe(c,ship){
  for(const m of c.noseMeshes){m.removeFromParent();m.geometry.dispose();
   for(const mat of Array.isArray(m.material)?m.material:[m.material])mat.dispose();}
  c.noseMeshes=[];
+ if(c.noseFairing){
+  c.noseFairing.removeFromParent();c.noseFairing.geometry.dispose();
+  c.noseFairing.material.dispose();c.noseFairing=null;
+ }
  const rig=pilotRig(ship);
  if(!rig)return null;
  const original=rig.seat.parent;
@@ -208,11 +213,37 @@ export function attachPilotAirframe(c,ship){
   copy.frustumCulled=false;copy.userData.realForwardSection=true;
   c.noseCameraRoot.add(copy);c.noseMeshes.push(copy);
  }
+ // Interior-only transition using the actual nose station dimensions.
+ // The retained tip remains the original external loft; its root edge now
+ // continues into an enclosed, down-turned structural shroud instead of
+ // terminating as a floating triangular sheet in front of the instruments.
+ // Nothing here appears in chase view or affects collisions.
+ const actual=rig.parts[0];
+ actual.geometry.computeBoundingBox();
+ const box=actual.geometry.boundingBox;
+ const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
+ const innerStations=[
+  [end-.065,radius*.94,.075,.066],
+  [end+.002,radius,.075,.058],
+  [end+.125,radius*1.15,.082,-.11],
+  [end+.305,radius*1.28,.088,-.30],
+  [end+.46,radius*1.32,.085,-.46]
+ ];
+ const fairingPaint=(Array.isArray(actual.material)?actual.material[0]:actual.material).clone();
+ fairingPaint.color.multiplyScalar(.46);
+ fairingPaint.metalness=Math.min(.78,fairingPaint.metalness??.7);
+ fairingPaint.roughness=Math.max(.38,fairingPaint.roughness??.38);
+ const fairing=new THREE.Mesh(sealedLoft(innerStations,24,false),fairingPaint);
+ fairing.name='sealed pilot-side fuselage into seating compartment';
+ fairing.castShadow=false;fairing.receiveShadow=false;
+ fairing.frustumCulled=false;fairing.renderOrder=0;
+ c.noseCameraRoot.add(fairing);c.noseFairing=fairing;
  c.noseCameraRoot.visible=true;
  if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')&&window.__shiftlineCockpitQA){
   window.__shiftlineCockpitQA.renderNoseInOverlay=true;
   window.__shiftlineCockpitQA.cameraLocked=true;
   window.__shiftlineCockpitQA.noseCount=c.noseMeshes.length;
+  window.__shiftlineCockpitQA.cabinFairing=true;
  }
  return {model:rig.model,edition:rig.edition,count:c.noseMeshes.length};
 }
