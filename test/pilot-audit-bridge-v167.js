@@ -36,10 +36,46 @@ window.__shiftlinePilotAudit167={
   };
  },
  draw(showNose){
-  const rig=player.children.find(o=>o.userData.pilotRig)?.userData.pilotRig;
   for(const mesh of cockpit.noseMeshes)mesh.visible=!!showNose;
   effects.render(scene,camera,time,boost,$('#quality').value,$('#reducedMotion').checked);
   renderCockpit(cockpit,renderer);
+ },
+ noseCoverage(){
+  // Compare two screenshots of the ISOLATED cockpit scene, never two frames
+  // from the temporal world postprocessor. This prevents false 70% 'nose'
+  // occlusion reports from exposure/blurring changes between race renders.
+  const w=innerWidth>innerHeight?320:180,h=innerWidth>innerHeight?148:390;
+  const rt=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true,stencilBuffer:false});
+  const prev=renderer.getRenderTarget(),tone=renderer.toneMapping,auto=renderer.autoClear,
+   clr=renderer.getClearColor(new THREE.Color()).clone(),alpha=renderer.getClearAlpha();
+  const on=new Uint8Array(w*h*4),off=new Uint8Array(w*h*4);
+  const old=cockpit.noseMeshes.map(m=>m.visible);
+  const sample=(visible,dest)=>{
+   for(const m of cockpit.noseMeshes)m.visible=visible;
+   renderer.setRenderTarget(rt);renderer.setClearColor(0x08111b,1);
+   renderer.autoClear=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+   renderer.clear(true,true,true);renderer.render(cockpit.scene,cockpit.camera);
+   renderer.readRenderTargetPixels(rt,0,0,w,h,dest);
+  };
+  try{sample(false,off);sample(true,on);}finally{
+   cockpit.noseMeshes.forEach((m,i)=>m.visible=old[i]);
+   renderer.setRenderTarget(prev);renderer.setClearColor(clr,alpha);
+   renderer.autoClear=auto;renderer.toneMapping=tone;rt.dispose();
+  }
+  let total=0,top=0,bottom=0,minY=h,maxY=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const i=(y*w+x)*4;
+   const d=Math.abs(on[i]-off[i])+Math.abs(on[i+1]-off[i+1])+Math.abs(on[i+2]-off[i+2]);
+   if(d>35){total++;
+    // WebGL reads render targets bottom-to-top.
+    const fromTop=h-1-y;
+    if(fromTop<h*.3)top++;
+    if(fromTop>h*.55)bottom++;
+    minY=Math.min(minY,fromTop);maxY=Math.max(maxY,fromTop);
+   }
+  }
+  return{total,top,bottom,areaPct:100*total/(w*h),topPct:100*top/(w*h),
+   firstVisibleY:total?minY/h:1,lastVisibleY:total?maxY/h:0};
  },
  frame(){
   render(1/60);return this.read();
