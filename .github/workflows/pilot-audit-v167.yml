@@ -1,7 +1,7 @@
 name: SHIFTLINE V167 All 18 Cockpit Edition Audit
 on:
   push:
-    branches: [pilot-audit-v167,main]
+    branches: [pilot-audit-v167,cockpit-continuity-v168,main]
     paths:
       - 'test/pilot-audit-bridge-v167.js'
       - 'test/pilot-all-editions-v167.mjs'
@@ -14,8 +14,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: fleet-pilot-audit-v167-${{ github.ref }}
-  cancel-in-progress: true
+  group: fleet-pilot-audit-v167-${{ github.sha }}
+  cancel-in-progress: false
 jobs:
   all-editions:
     strategy:

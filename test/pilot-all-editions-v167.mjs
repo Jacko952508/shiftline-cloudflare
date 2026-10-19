@@ -33,7 +33,7 @@ try{
   assert.equal(state.edition,edition,'Wrong authored edition');
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
   assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
-  assert.equal(state.noseAttachmentCount,state.pieces,'Original mesh geometry not mounted to cockpit camera');
+  assert.equal(state.noseAttachmentCount,state.pieces+1,'Authentic nose and one structural cabin transition must share the cockpit camera');
   assert.ok(state.cabinClosed,'Cockpit interior is transparent / seating shell missing');
   assert.ok(state.rigidLock>.99999,'Pilot camera orientation drifts from ship rotation');
   assert.ok(state.independentCockpitSway<1e-5,'Cockpit overlay animates independently of nose');
@@ -55,8 +55,23 @@ try{
    // Use isolated stable cockpit 3D render, avoiding temporal racing
    // post-effects creating false giant nose silhouettes.
    const delta=await page.evaluate(()=>window.__shiftlinePilotAudit167.noseCoverage());
+   // readRenderTargetPixels binds an offscreen framebuffer. A new FULL
+   // render is mandatory before taking a screenshot, particularly on WebKit:
+   // otherwise only HTML HUD overlays are captured against an empty canvas.
+   await page.evaluate(()=>window.__shiftlinePilotAudit167.frame());
    const img=await page.screenshot({path:output+'/'+model+'-'+edition+'-'+label+'.png',timeout:60000});
-   assert.equal(PNG.sync.read(img).width,w);assert.equal(PNG.sync.read(img).height,h);
+   const screenshot=PNG.sync.read(img);
+   assert.equal(screenshot.width,w);assert.equal(screenshot.height,h);
+   // Real Level 1 has illuminated tunnel panels and gates in the forward
+   // window. A black WebGL canvas with visible HTML controls is NOT a pass.
+   let litPixels=0;
+   for(let yy=Math.floor(h*.13);yy<Math.floor(h*.72);yy+=2){
+    for(let xx=Math.floor(w*.09);xx<Math.floor(w*.91);xx+=2){
+     const i=(yy*w+xx)*4;
+     if(Math.max(screenshot.data[i],screenshot.data[i+1],screenshot.data[i+2])>100)litPixels++;
+    }
+   }
+   assert.ok(litPixels>350,'ECLIPSE 3D racing tunnel absent in '+browserName+'/'+model+'/'+edition+'/'+label+' (HTML HUD alone cannot pass)');
    assert.ok(delta.total>22,'Nose missing/hidden in '+model+'/'+edition+'/'+label+' '+JSON.stringify(delta));
    assert.ok(delta.areaPct<15,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
    assert.ok(delta.topPct<5.5,'Fuselage blocks forward racing horizon: '+JSON.stringify({model,edition,delta}));
