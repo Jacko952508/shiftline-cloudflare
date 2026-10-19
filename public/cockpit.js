@@ -40,23 +40,6 @@ function realNoseUnderside(stations,steps=20){
  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();return g;
 }
 // Factory-specific accent pinstripes follow the original loft station rings.
-// Dark upper-facing inner deck closes the gap that a bottom-only shroud
-// cannot cover from an elevated pilot eyepoint. The deck drops rapidly
-// beneath the nose, then disappears into the seated dashboard enclosure.
-function noseInteriorDeck(stations){
- const p=[],uv=[],ix=[];
- for(let j=0;j<stations.length;j++){
-  const [z,halfWidth,y]=stations[j];
-  p.push(-halfWidth,y,z,halfWidth,y,z);uv.push(0,j/(stations.length-1),1,j/(stations.length-1));
- }
- for(let j=0;j<stations.length-1;j++){
-  const a=j*2,b=a+2;ix.push(a,a+1,b,b,a+1,b+1);
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- g.setIndex(ix);g.computeVertexNormals();return g;
-}
 function noseLiveryLines(geometry,color){
  const positions=geometry.attributes.position,rows=new Map();
  for(let i=0;i<positions.count;i++){const z=positions.getZ(i),key=Math.round(z*10000),x=positions.getX(i),y=positions.getY(i);
@@ -326,22 +309,6 @@ export function attachPilotAirframe(c,ship){
   [end+.133,rx*.95,ry*.77,cy-.079],[end+.236,rx*.87,ry*.48,cy-.137]
  ]),bellyPaint);
  belly.name='fitted sealed lower-nose / genuine factory profile';belly.castShadow=false;belly.receiveShadow=false;belly.frustumCulled=false;
- // This actual internal connecting panel is narrow and sits BELOW the
- // existing forward nose, rather than covering the tunnel like a fake hood.
- const innerDeck=new THREE.Mesh(noseInteriorDeck([
-  // Small dark transition stays with the real nose edge. Do not reach
-  // towards the pilot seat: perspective makes near-field flats enormous.
-  [end-.008,rx*.63,cy+ry*.34],
-  [end+.022,rx*.55,cy-.010],
-  [end+.053,rx*.35,cy-.044],
-  [end+.088,rx*.14,cy-.078]
- ]),new THREE.MeshStandardMaterial({
-  color:dark.clone().lerp(new THREE.Color(0x101922),.28),
-  metalness:.31,roughness:.79,envMapIntensity:.09,side:THREE.DoubleSide
- }));
- innerDeck.name='solid cockpit-to-nose interior bridge';
- innerDeck.castShadow=false;innerDeck.receiveShadow=false;innerDeck.frustumCulled=false;
- belly.add(innerDeck);
  c.noseCameraRoot.add(belly);c.noseBelly=belly;
  const innerStations=[[end-.004,radius,.122,cy],[end+.003,radius,.122,cy]];
  const fairingPaint=new THREE.MeshStandardMaterial({color:dark.clone().multiplyScalar(.85),metalness:.28,roughness:.78,envMapIntensity:.12,side:THREE.DoubleSide});
