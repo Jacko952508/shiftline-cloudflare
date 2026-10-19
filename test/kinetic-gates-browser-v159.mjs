@@ -121,8 +121,15 @@ const baseline=await run('baseline',8764),candidate=await run('candidate',8765);
 const oldCalls=baseline.grid.at(-1).calls,newCalls=candidate.grid.at(-1).calls;
 if(true)assert.ok(newCalls<=oldCalls+80,'New machinery exceeds the draw-call budget: '+oldCalls+' -> '+newCalls);else assert.ok(newCalls<oldCalls-60,'Starting grid draw calls did not fall');
 assert.equal(candidate.grid[0].ratio,baseline.grid[0].ratio,'Resolution was reduced');assert.equal(candidate.grid[0].quality,baseline.grid[0].quality);
-assert.ok(Math.abs(candidate.sightlines.airframe.width-baseline.sightlines.airframe.width)<1e-7,'Portrait airframe still obscures the racing line: '+JSON.stringify({before:baseline.sightlines.airframe,after:candidate.sightlines.airframe}));
-assert.ok(Math.abs(candidate.sightlines.airframe.top-baseline.sightlines.airframe.top)<1e-7,'Airframe did not move below the central sight line');
+// Baseline V159 and candidate V163/V164 use intentionally DIFFERENT airframes.
+ // Exact pixel equality is no longer meaningful. Test actual usable portrait
+ // corridor instead: the ship must occupy less than half the screen width.
+ assert.ok(candidate.sightlines.airframe.width<.50,
+  'Portrait airframe still obscures the racing line: '+JSON.stringify({before:baseline.sightlines.airframe,after:candidate.sightlines.airframe}));
+ assert.ok(candidate.sightlines.airframe.top>=.50,
+  'Airframe rises into the central sight line: '+JSON.stringify(candidate.sightlines.airframe));
+ assert.ok(candidate.sightlines.airframe.height<.16,'Ship fills too much of the portrait viewport');
+
 assert.deepEqual(candidate.grid[0].rivals.map(r=>r.triangles),baseline.grid[0].rivals.map(r=>r.triangles),'Rival geometry quality changed');
 console.log('SIGHTLINES '+JSON.stringify({before:baseline.sightlines,after:candidate.sightlines}));
 await writeFile(out+'/'+course+'-'+kind.name()+'.json',JSON.stringify({baseline,candidate,gridDrawReduction:1-newCalls/oldCalls},null,2));
