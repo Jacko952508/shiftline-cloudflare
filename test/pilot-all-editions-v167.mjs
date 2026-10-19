@@ -33,7 +33,7 @@ try{
   assert.equal(state.edition,edition,'Wrong authored edition');
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
   assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
-  assert.equal(state.noseAttachmentCount,state.pieces,'Original mesh geometry not mounted to cockpit camera');
+  assert.equal(state.noseAttachmentCount,state.pieces+1,'Authentic nose and one structural cabin transition must share the cockpit camera');
   assert.ok(state.cabinClosed,'Cockpit interior is transparent / seating shell missing');
   assert.ok(state.rigidLock>.99999,'Pilot camera orientation drifts from ship rotation');
   assert.ok(state.independentCockpitSway<1e-5,'Cockpit overlay animates independently of nose');
