@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium,webkit} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
@@ -11,10 +12,10 @@ for(const engine of [chromium,webkit]){
  page.on('console',e=>{if(e.type()==='error'&&/WebGLProgram|Shader Error|VALIDATE_STATUS/.test(e.text()))errors.push(e.text());});
  try{
   await page.goto('http://127.0.0.1:8765/?lightqa=1&obstacleqa=1',{waitUntil:'domcontentloaded',timeout:65000});
-  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
+  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
   for(const course of [1,5]){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
-   await page.locator('#obsOpen').click({timeout:30000});
+   await openTrackInspection(page);
    await page.waitForFunction(c=>window.__shiftlineObstacleQA?.course===c,course,{timeout:80000});
    await page.waitForTimeout(600);
    let signal=await page.evaluate(()=>window.__shiftlineLightingQA);

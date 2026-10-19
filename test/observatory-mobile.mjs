@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir,readFile} from 'node:fs/promises';
@@ -52,11 +53,8 @@ try {
  console.log('PASS bank capped at 25 degrees, proportional and symmetric');
  let passed=0;
  for(const [course,label] of [[1,'ECLIPSE'],[2,'LEVIATHAN'],[3,'CINDER'],[4,'TEMPEST'],[5,'VERDANT'],[6,'FRACTURE']]){
-  if(course!==1){
-   await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
-   await wait(700);
-  }
-  await page.evaluate(()=>document.getElementById('obsOpen').click());
+  await openSoloDemo(page,course);
+  await openTrackInspection(page);
   await page.waitForFunction(()=>!document.getElementById('observatory').classList.contains('off'),null,{timeout:20000});
   const initial=await page.evaluate(()=>({
    title:document.getElementById('obsTitle').textContent,

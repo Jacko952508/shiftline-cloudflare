@@ -1,3 +1,4 @@
+import {openSoloDemo} from './menu-navigation.mjs';
 import {chromium,webkit} from 'playwright';
 import assert from 'node:assert/strict';
 import {PNG} from 'pngjs';
@@ -18,7 +19,7 @@ async function run(name,port){
   await page.goto('http://127.0.0.1:'+port+'/?shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady&&window.__shiftlineRuntimeTest,null,{timeout:150000});
   await page.evaluate(n=>{const q=document.querySelector('#quality');q.value='high';window.dispatchEvent(new Event('shiftline-quality'));document.querySelector('[data-course="'+n+'"]').click();},course);
-  const start=Date.now();await page.locator('#launch').click({timeout:120000});
+  await openSoloDemo(page,course);const start=Date.now();await page.locator('#launch').click({timeout:120000});
   await page.waitForFunction(()=>window.__shiftlineRuntimeTest.read().state==='countdown',null,{timeout:220000});
   const launchMS=Date.now()-start;await page.evaluate(()=>window.__shiftlineRuntimeTest.freeze());
   const grid=[];for(let i=0;i<4;i++)grid.push(await page.evaluate(()=>window.__shiftlineRuntimeTest.frame(true)));

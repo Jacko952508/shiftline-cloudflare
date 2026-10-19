@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium,webkit} from 'playwright';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -10,9 +11,9 @@ for(const kind of[chromium,webkit]){
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:0,engine:0,fin:0},records:{},ghosts:{},medals:{},races:4})));
   await page.goto((process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765')+'/?graphicsqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
-  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
+  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
   await page.evaluate(()=>document.querySelector('[data-course="4"]').click());
-  await page.locator('#obsOpen').click({timeout:35000});
+  await openTrackInspection(page);
   await page.waitForFunction(()=>window.__shiftlineHorizonQA?.version===151,null,{timeout:100000});
   const horizon=await page.evaluate(()=>window.__shiftlineHorizonQA);assert.equal(horizon.padding,26000);assert.equal(horizon.extraDrawCalls,1);assert.ok(horizon.triangles<11000);
   for(const [progress,mode,yaw,lowAngle]of [[80,'orbit',0,false],[300,'orbit',160,true],[520,'orbit',-160,true],[820,'overhead',0,false]]){

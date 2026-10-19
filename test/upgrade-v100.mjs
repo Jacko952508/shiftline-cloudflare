@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 // Production-safe v100 regression: serves exactly the candidate branch from a local HTTP server.
 // All six game worlds, active Observatory, cockpit rendering, graphics profile, save continuity.
 import {chromium} from 'playwright';
@@ -32,11 +33,11 @@ try{
  console.log('PASS launch, 6 course selector and progress-store compatibility '+JSON.stringify(start));
  checkImage(await page.screenshot({path:'upgrade-screenshots/01-menu.png'}),'menu');
  for(let course=1;course<=6;course++){
-  await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
+  await openSoloDemo(page,course);
   await page.waitForFunction(n=>document.querySelector('[data-course="'+n+'"]').classList.contains('selected'),course,null,{timeout:20000});
   const display=await page.evaluate(()=>({name:document.querySelector('#trackTitle').textContent,ready:window.shiftlineReady}));
   assert.ok(display.name.length>3&&display.ready);
-  await page.evaluate(()=>document.querySelector('#obsOpen').click());
+  await openTrackInspection(page);
   await page.waitForFunction(()=>!document.querySelector('#observatory').classList.contains('off'),null,{timeout:45000});
   assert.ok(await page.evaluate(()=>document.querySelector('#observatoryViewport').getBoundingClientRect().height>100));
   for(const mode of ['overhead','chase','fly','orbit']){await page.evaluate(m=>document.querySelector('[data-obs-mode="'+m+'"]').click(),mode);await sleep(140)}
@@ -57,7 +58,7 @@ try{
  const config=await page.evaluate(()=>({quality:localStorage.getItem('eclipseQualityV1'),hud:localStorage.getItem('shiftlinePerfHUD')}));
  assert.equal(config.quality,'low');assert.equal(config.hud,'1');
  await page.evaluate(()=>document.querySelector('#settingsBack').click());
- await page.evaluate(()=>document.querySelector('[data-course="1"]').click());
+ await openSoloDemo(page,1);
  await page.evaluate(()=>document.querySelector('#launch').click());
  await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),null,{timeout:40000});
  // Software WebGL can stretch the 3-second simulated countdown considerably;

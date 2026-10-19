@@ -1,3 +1,4 @@
+import {openSoloDemo} from './menu-navigation.mjs';
 import assert from 'node:assert/strict';
 import {chromium,webkit} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -66,7 +67,7 @@ for(const kind of browsers){
   await page.locator('[data-garage-light="studio"]').click();await page.waitForFunction(()=>window.__shiftlineFlightQA?.active===false);
   assert.ok(await page.locator('#garageCockpitView').isEnabled());await page.locator('#garageCockpitView').click();await page.locator('#garageCockpitView').click();
   await page.locator('.garage3DCanvas').screenshot({path:'qa-v162/'+kind.name()+'-studio-return.png',timeout:60000});
-  await page.locator('[data-tab="race"]').click();await page.locator('#launch').click();await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),null,{timeout:90000});
+  await page.locator('#menuBack').click();await openSoloDemo(page,1);await page.locator('#launch').click();await page.waitForFunction(()=>!document.querySelector('#hud').classList.contains('off'),null,{timeout:90000});
   await page.screenshot({path:'qa-v162/'+kind.name()+'-race.png',timeout:60000});
   assert.deepEqual(errors,[]);console.log('PASS V163 '+kind.name()+': all 18 reflective finishes, legacy save, persistent selection, live six-ship tunnel preview, chase motion, repeated switches, mobile layouts and race launch.');
  }finally{await writeFile('qa-v162/'+kind.name()+'-errors.json',JSON.stringify(errors,null,2));await browser.close();}

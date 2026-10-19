@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium,webkit} from 'playwright';
 import {PNG} from 'pngjs';
 import assert from 'node:assert/strict';
@@ -31,11 +32,11 @@ async function run(kind,courses){
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?shipqa=1&sceneryqa=1&groundqa=1&atmosqa=1&landmarkqa=1',{waitUntil:'domcontentloaded',timeout:65000});
-  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
+  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
   assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),expectedEngine);
   for(const course of courses){
    if(course!==1)await page.evaluate(c=>document.querySelector('[data-course="'+c+'"]').click(),course);
-   await page.locator('#obsOpen').click();
+   await openTrackInspection(page);
    await page.waitForFunction(c=>window.__shiftlineSceneryQA?.course===c&&window.__shiftlineSceneryQA.version===136,course,{timeout:70000});
    const info=await page.evaluate(()=>window.__shiftlineSceneryQA);
    const atmosphere=await page.evaluate(()=>window.__shiftlineAtmosphereQA);
