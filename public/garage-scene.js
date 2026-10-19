@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createCockpit,updateCockpit,renderCockpit,disposeCockpit} from './cockpit.js?v=172';
-import {craft,animateCraft,disposeCraft} from './race-craft.js?v=172';
+import {createCockpit,updateCockpit,renderCockpit,disposeCockpit} from './cockpit.js?v=173';
+import {craft,animateCraft,disposeCraft} from './race-craft.js?v=173';
 import {tuneTextureFiltering} from './material-lab.js?v=147';
 import {fleetEnvironment} from './fleet-paint-v163.js?v=163';
 import {createGarageFlight,updateGarageFlight,disposeGarageFlight} from './garage-flight-v163.js?v=163';

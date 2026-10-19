@@ -37,6 +37,13 @@ try{
   assert.equal(state.hoodCount,4,'Each ship must load two physical body cowls and two illuminated shoulder rails');
   assert.equal(state.hoodSource.length,4,'Pilot hood must come from four real exterior ship components');
   assert.ok(state.hoodSource.every(p=>p.model===model&&p.edition===edition),'Cockpit hood belongs to the wrong ship');
+  assert.ok(state.hoodSource.filter(p=>p.role==='paint').every(p=>p.maxZ>.30&&p.minY<-.40),
+    'Rear cowls must sweep behind the dash and under the pilot station');
+  assert.ok(state.hoodSource.filter(p=>p.role==='accent').every(p=>p.maxZ>.28&&p.minY<-.32),
+    'Canopy trim accents must run back under the dashboard');
+  assert.equal(state.reflectionPaint.length,2,'Two factory-painted ship cowls required');
+  assert.ok(state.reflectionPaint.every(p=>p.reflective&&p.clearcoat>.9&&p.roughness<.33),
+    'Cockpit paint must retain genuine metallic clearcoat and HDR reflections');
   assert.ok(state.hoodGeometry.every(p=>p.triangles>=10&&p.paint&&p.body===entry.body&&p.finish===fleetFinish(model,{edition})),'Pilot hood silhouette or factory colour incorrect');
   assert.ok(state.noseBelly,'Cockpit missing filled fuselage');
   assert.ok(state.realHullContinuity,'No original three-station airframe bridge: mere end caps cannot close the gap');

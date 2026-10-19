@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
 import{fleetEdition,fleetFinish}from'./fleet-designs-v162.js?v=163';
-import{fleetPaint}from'./fleet-paint-v163.js?v=163';
-import{sealedLoft}from'./fleet-sculpture-v162.js?v=172';
+import{fleetPaint,fleetEnvironment}from'./fleet-paint-v163.js?v=163';
+let sharedCockpitHDR=null;
+const cockpitHDR=()=>sharedCockpitHDR??=fleetEnvironment();
+import{sealedLoft}from'./fleet-sculpture-v162.js?v=173';
 // Top-only curved interior coaming; never render the hidden lower half of
 // a sealed exterior loft at arm's length from the pilot eye.
 function fairingCanopySurface(stations,steps=20){
@@ -51,12 +53,14 @@ function noseLiveryLines(geometry,color){
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
- scene.environment=environment;scene.environmentIntensity=1.32;
+ scene.environment=environment||cockpitHDR();scene.environmentIntensity=1.12;
  const tone=(gold||chrome)?0xf0ffff:[0x72efff,0xffbd78,0xa6ffcb][a.instrument],shell=new THREE.MeshStandardMaterial({color:[0x20313f,0x444b53,0x342b24][a.cabin],roughness:a.cabin===2?.88:.52,metalness:a.cabin===2?0:.5}),rubber=new THREE.MeshStandardMaterial({color:0x090e14,roughness:.9}),trim=new THREE.MeshStandardMaterial({color:tone,emissive:tone,emissiveIntensity:.18,roughness:.6,metalness:.25});
  if(gold||chrome){trim.color.setHex(0xf3ffff);trim.emissive.setHex(0xffffff);trim.emissiveIntensity=.45;}
  const metalInset=new THREE.MeshStandardMaterial({color:gold?0xb88b31:chrome?0xc6e4f5:0x526f80,metalness:.94,roughness:gold?.22:.32}),fineLight=new THREE.MeshBasicMaterial({color:gold||chrome?0xf4ffff:tone,toneMapped:false});
  const mesh=(geo,mat,x,y,z,parent=root)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);return m};
- scene.add(new THREE.HemisphereLight(0xb9d9ec,0x14202a,2));const key=new THREE.DirectionalLight(0xc5e4ff,3);key.position.set(-2,3,2);scene.add(key);
+ scene.add(new THREE.HemisphereLight(0xb9d9ec,0x14202a,1.65));
+ const key=new THREE.DirectionalLight(0xd8edff,2.65);key.position.set(-2,3,2);scene.add(key);
+ const paintRimLight=new THREE.DirectionalLight(0xffd3ae,.73);paintRimLight.position.set(3,1.5,-2);scene.add(paintRimLight);
 
  // Bevelled cowling and curved canopy ribs keep the forward view open.
  const outline=new THREE.Shape();outline.moveTo(-1.16,-1.18);outline.lineTo(1.16,-1.18);outline.lineTo(1.1,-.97);outline.quadraticCurveTo(.72,-.91,.42,-1.05);outline.quadraticCurveTo(0,-1.13,-.42,-1.05);outline.quadraticCurveTo(-.72,-.91,-1.1,-.97);outline.closePath();
@@ -266,10 +270,10 @@ export function attachPilotAirframe(c,ship){
   // V168's full-bright material clones appeared almost pure white.
   const mat=fleetPaint(design.body,rig.model,{edition:rig.edition});
   mat.name='pilot / '+design.name+' / '+finish;
-  mat.color.setHex(design.body).multiplyScalar(.53);
-  mat.metalness=finish==='chrome'?.70:finish==='metallic'?.52:.25;
-  mat.roughness=finish==='chrome'?.32:finish==='metallic'?.39:.46;
-  mat.clearcoat=finish==='chrome'?.65:.55;mat.envMapIntensity=.20;
+  mat.color.setHex(design.body).multiplyScalar(.82);
+  mat.metalness=finish==='chrome'?.91:finish==='metallic'?.72:.33;
+  mat.roughness=finish==='chrome'?.20:finish==='metallic'?.27:.29;
+  mat.clearcoat=1;mat.clearcoatRoughness=.105;mat.envMap=cockpitHDR();mat.envMapIntensity=finish==='chrome'?.88:.75;
   mat.userData.factoryBody=design.body;mat.userData.factoryFinish=finish;
   const copy=new THREE.Mesh(source.geometry.clone(),mat);
   copy.name='authentic pilot view / '+source.name;copy.position.copy(source.position);
@@ -286,10 +290,10 @@ for(const source of rig.hoodParts||[]){
  const paint=source.userData.pilotHood==='paint';
  const mat=paint?fleetPaint(design.body,rig.model,{edition:rig.edition}):source.material.clone();
  if(paint){
-  mat.color.setHex(design.body).multiplyScalar(.78);
-  mat.metalness=finish==='chrome'?.78:finish==='metallic'?.60:.32;
-  mat.roughness=finish==='chrome'?.27:finish==='metallic'?.34:.44;
-  mat.envMapIntensity=.50;
+  mat.color.setHex(design.body).multiplyScalar(.87);
+  mat.metalness=finish==='chrome'?.91:finish==='metallic'?.73:.34;
+  mat.roughness=finish==='chrome'?.19:finish==='metallic'?.26:.30;
+  mat.clearcoat=1;mat.clearcoatRoughness=.10;mat.envMap=cockpitHDR();mat.envMapIntensity=finish==='chrome'?.95:.83;
  }else{
   mat.emissiveIntensity=Math.min(.95,mat.emissiveIntensity||.8);
   mat.toneMapped=true;
@@ -349,6 +353,8 @@ for(const source of rig.hoodParts||[]){
   window.__shiftlineCockpitQA.hoodCount=c.hoodMeshes.length;
   window.__shiftlineCockpitQA.hoodModel=rig.model;
   window.__shiftlineCockpitQA.hoodEdition=rig.edition;
+  window.__shiftlineCockpitQA.recessedTrim=true;
+  window.__shiftlineCockpitQA.paintReflections=true;
   window.__shiftlineCockpitQA.cabinFairing=true;
   window.__shiftlineCockpitQA.undersideFilled=true;
   window.__shiftlineCockpitQA.continuityStations=rig.continuationStations.length;
@@ -388,5 +394,26 @@ export function updateCockpit(c,dt,data,rect,width,height){
  if(data.lock){x.textAlign='center';x.font='500 34px Arial, sans-serif';x.textAlign='left';x.font='500 28px Arial, sans-serif';x.fillText(data.lock.length>23?data.lock.slice(0,22)+'…':data.lock,30,715);}if(data.cooling){x.textAlign='center';x.fillStyle='#ffb079';x.font='34px Arial, sans-serif';x.textAlign='right';x.font='28px Arial, sans-serif';x.fillText(data.cooling,988,715);}x.shadowBlur=0;c.texture.needsUpdate=true;
 
 }
-export function renderCockpit(c,renderer){const auto=renderer.autoClear,tone=renderer.toneMapping,shadow=renderer.shadowMap?.enabled,clipping=renderer.localClippingEnabled;try{renderer.setRenderTarget(null);renderer.autoClear=false;renderer.localClippingEnabled=false;renderer.toneMapping=THREE.ACESFilmicToneMapping;if(renderer.shadowMap)renderer.shadowMap.enabled=false;renderer.clearDepth();renderer.render(c.scene,c.camera);}finally{renderer.autoClear=auto;renderer.localClippingEnabled=clipping;renderer.toneMapping=tone;if(renderer.shadowMap)renderer.shadowMap.enabled=shadow;}}
+export function renderCockpit(c,renderer){
+ const auto=renderer.autoClear,tone=renderer.toneMapping,shadow=renderer.shadowMap?.enabled,clipping=renderer.localClippingEnabled;
+ const noseVisible=c.noseCameraRoot?.visible,rootVisible=c.root.visible,hudVisible=c.hud.visible;
+ try{
+  renderer.setRenderTarget(null);renderer.autoClear=false;renderer.localClippingEnabled=false;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;if(renderer.shadowMap)renderer.shadowMap.enabled=false;
+  renderer.clearDepth();
+  if(noseVisible&&c.hoodMeshes.length){
+   // An exterior pass, then depth-only reset, then the cockpit interior.
+   // Physical windshield and dashboard always mask the recessed hood rails.
+   c.root.visible=false;c.hud.visible=false;
+   renderer.render(c.scene,c.camera);
+   c.noseCameraRoot.visible=false;c.root.visible=rootVisible;c.hud.visible=hudVisible;
+   renderer.clearDepth();renderer.render(c.scene,c.camera);
+  }else renderer.render(c.scene,c.camera);
+ }finally{
+  if(c.noseCameraRoot)c.noseCameraRoot.visible=noseVisible;
+  c.root.visible=rootVisible;c.hud.visible=hudVisible;
+  renderer.autoClear=auto;renderer.localClippingEnabled=clipping;renderer.toneMapping=tone;
+  if(renderer.shadowMap)renderer.shadowMap.enabled=shadow;
+ }
+}
 export function disposeCockpit(c){if(!c)return;const geometry=new Set(),materials=new Set();c.scene.traverse(o=>{if(o.geometry)geometry.add(o.geometry);if(o.material)materials.add(o.material)});geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());c.texture.dispose();c.scene.clear();}

@@ -145,7 +145,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
   // portrait viewport and hides controls; stay on the original taper.
   const stationAt=t=>foreJoin.map((v,k)=>v+(stations[3][k]-v)*t);
   const continuationStations=[foreJoin,stationAt(.27),stationAt(.55)];
-  root.userData.pilotRig={version:166,continuityVersion:172,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
+  root.userData.pilotRig={version:166,continuityVersion:173,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
  }
 
  const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
@@ -192,17 +192,43 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
 // adding an overlaid fake hood to the cockpit.
 const hoodProfile=PILOT_HOOD_PROFILES[index],hoodParts=[];
 for(const side of[-1,1]){
- const profile=hoodProfile.outline.map(([px,z])=>[
-  side*px*(e===1?1.09:e===2?.93:1),
-  z+(e===1?-.045*(px/.5):e===2?.038*(px/.5):0)
- ]);
- const cowling=add(aerofoil(profile,hoodProfile.depth,hoodProfile.round,hoodProfile.y),body,[0,0,0],
-  hoodProfile.name+' / '+(side<0?'port':'starboard'),true);
+ // Continue each authentic upper shoulder all the way behind the pilot,
+ // tapering down into the closed fuselage instead of ending as a floating fin.
+ const front=hoodProfile.outline[0],outer=hoodProfile.outline[1];
+ const extended=[
+  [front[0]*.87,.43],
+  [front[0]+Math.min(.13,(outer[0]-front[0])*.81),.40],
+  [outer[0]*1.075,-.105],
+  ...hoodProfile.outline.slice(1),
+  [front[0]*.78,-.08]
+ ];
+ const editionScale=e===1?1.09:e===2?.93:1;
+ const editionShift=(px,z)=>z+(e===1?-.045*(px/.5):e===2?.038*(px/.5):0);
+ const profile=extended.map(([px,z])=>[side*px*editionScale,editionShift(px,z)]);
+ const hoodGeo=aerofoil(profile,hoodProfile.depth,hoodProfile.round,hoodProfile.y);
+ const p=hoodGeo.attributes.position;
+ for(let i=0;i<p.count;i++){
+  const t=THREE.MathUtils.smoothstep(p.getZ(i),-1.06,.25);
+  p.setY(i,p.getY(i)-.68*t*t);
+ }
+ p.needsUpdate=true;hoodGeo.computeVertexNormals();hoodGeo.computeBoundingBox();hoodGeo.computeBoundingSphere();
+ const cowling=add(hoodGeo,body,[0,0,0],hoodProfile.name+' / '+(side<0?'port':'starboard'),true);
  cowling.castShadow=false;cowling.receiveShadow=false;
  cowling.userData.pilotHood='paint';cowling.userData.hoodModel=index;cowling.userData.hoodEdition=e;
- const rail=stroke(hoodProfile.light.map(([px,py,z])=>[
-  side*px*(e===1?1.09:e===2?.93:1),py,z+(e===1?-.045*(px/.5):e===2?.038*(px/.5):0)
- ]),light,.0062);
+ // Inset canopy accents follow the swept panels beneath the dash, not
+ // abruptly ending at the glass. All coordinates are factory ship-local.
+ const start=hoodProfile.light[0];
+ const railCurve=[
+  [start[0]*.72,start[1]-.68,.37],
+  [start[0]*1.03,start[1]-.41,-.095],
+  ...hoodProfile.light.map(([px,py,z])=>{
+   const t=THREE.MathUtils.smoothstep(z,-1.06,.25);
+   return[px,py-.68*t*t,z];
+  })
+ ];
+ const rail=stroke(railCurve.map(([px,py,z])=>[
+  side*px*editionScale,py,editionShift(px,z)
+ ]),light,.0056);
  rail.name=hoodProfile.name+' / factory illuminated shoulder '+(side<0?'port':'starboard');
  rail.castShadow=false;rail.receiveShadow=false;
  rail.userData.pilotHood='accent';rail.userData.hoodModel=index;rail.userData.hoodEdition=e;
