@@ -242,18 +242,20 @@ export function attachPilotAirframe(c,ship){
  actual.geometry.computeBoundingBox();
  const box=actual.geometry.boundingBox;
  const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
+ // Only the moulded junction lip is exposed. A long inner skirt is
+ // forbidden: it fills the viewport, hiding seats and flight controls.
  const innerStations=[
-  [end-.065,radius*.93,.048,.065],
-  [end+.002,radius,.046,.052],
-  [end+.09,radius*1.08,.035,-.12]
+  [end-.018,radius*.96,.038,.068],
+  [end+.018,radius*1.01,.036,.061]
  ];
  const sourcePaint=Array.isArray(actual.material)?actual.material[0]:actual.material;
  const fairingPaint=new THREE.MeshStandardMaterial({
   color:new THREE.Color(0x101b27).lerp(sourcePaint.color,.10),
   metalness:.28,roughness:.78,side:THREE.DoubleSide
  });
- // An open top sheet connects bodywork to the instrument coaming, without
- // the old full-volume hull's huge white underside blocking the controls.
+ // A narrow shaded crown finishes the end of the authentic fuselage.
+ // The physical seating, cowling, consoles and stick mounts stay visible;
+ // no full-width nose panel or artificial inner hull is drawn.
  const fairing=new THREE.Mesh(fairingCanopySurface(innerStations),fairingPaint);
  fairing.name='sealed pilot-side fuselage into seating compartment';
  fairing.castShadow=false;fairing.receiveShadow=false;
