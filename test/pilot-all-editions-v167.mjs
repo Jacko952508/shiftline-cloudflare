@@ -3,7 +3,7 @@ import {chromium,webkit} from 'playwright';
 import {PNG} from 'pngjs';
 import {mkdir} from 'node:fs/promises';
 import {openSoloDemo} from './menu-navigation.mjs';
-import {FLEET_EDITIONS} from '../public/fleet-designs-v162.js';
+import {FLEET_EDITIONS,fleetFinish} from '../public/fleet-designs-v162.js';
 
 const browserName=process.env.FLEET_BROWSER||'chromium',range=process.env.FLEET_GROUP||'0-2';
 const [low,high]=range.split('-').map(Number);
