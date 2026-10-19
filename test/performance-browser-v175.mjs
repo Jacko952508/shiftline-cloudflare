@@ -36,11 +36,12 @@ async function run(course,candidate){
   for(let i=0;i<14;i++)await page.evaluate(()=>window.__shiftlineRuntimeTest.frame());
   const image=await page.screenshot({path:output+'/'+course+'-'+(candidate?'candidate':'baseline')+'.png',timeout:90000});
   const info=await page.evaluate(()=>window.__shiftlineRuntimeTest.read());
+  await writeFile(output+'/'+course+'-'+(candidate?'candidate':'baseline')+'-work.json',JSON.stringify({work,info},null,2));
   assert.equal(info.quality,'high');assert.ok(info.ratio>1,'High quality was reduced');
   if(candidate){
    for(const fraction of [.12,.5,.85]){
     await page.evaluate(p=>window.__shiftlineRuntimeTest.position(p),fraction);
-    const hit=await page.evaluate(()=>window.__shiftlineRuntimeTest.collide());assert.ok(hit.dead>0);
+    const hit=await page.evaluate(()=>window.__shiftlineRuntimeTest.collide());assert.ok(hit.dead>0,'Sustained collision missing '+JSON.stringify({course,fraction,hit}));
     const recovered=await page.evaluate(()=>window.__shiftlineRuntimeTest.recover());assert.equal(recovered.dead,0);assert.equal(recovered.blocked,false);assert.equal(recovered.x,0);assert.equal(recovered.y,0);
    }
    assert.equal((await page.evaluate(()=>window.__shiftlineRuntimeTest.cockpit())).active,true);
