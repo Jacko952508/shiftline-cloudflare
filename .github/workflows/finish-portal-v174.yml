@@ -1,0 +1,25 @@
+name: SHIFT LINE V174 Wormhole Finish Check
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/finish-portal-v174.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/finish-portal-v174.mjs'
+      - '.github/workflows/finish-portal-v174.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  six-worlds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Syntax and finish regression
+        run: |
+          node --check public/finish-portal-v174.js
+          node --check public/race-engine.js
+          node --experimental-loader ./test/three-loader.mjs test/finish-portal-v174.mjs
