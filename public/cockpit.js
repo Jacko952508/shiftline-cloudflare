@@ -1,7 +1,27 @@
 import * as THREE from 'three';
 import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
-import{sealedLoft}from'./fleet-sculpture-v162.js?v=166';
+// Top-only curved interior coaming; never render the hidden lower half of
+// a sealed exterior loft at arm's length from the pilot eye.
+function fairingCanopySurface(stations,steps=20){
+ const p=[],uv=[],ix=[];
+ for(let r=0;r<stations.length;r++){
+  const [z,rx,ry,cy]=stations[r];
+  for(let k=0;k<=steps;k++){
+   const a=Math.PI*k/steps;
+   p.push(rx*Math.cos(a),cy+ry*Math.sin(a),z);
+   uv.push(k/steps,r/(stations.length-1));
+  }
+ }
+ for(let r=0;r<stations.length-1;r++)for(let k=0;k<steps;k++){
+  const a=r*(steps+1)+k,b=a+steps+1;
+  ix.push(a,a+1,b,a+1,b+1,b);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(ix);geo.computeVertexNormals();return geo;
+}
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
@@ -229,11 +249,14 @@ export function attachPilotAirframe(c,ship){
   [end+.305,radius*1.28,.088,-.30],
   [end+.46,radius*1.32,.085,-.46]
  ];
- const fairingPaint=(Array.isArray(actual.material)?actual.material[0]:actual.material).clone();
- fairingPaint.color.multiplyScalar(.46);
- fairingPaint.metalness=Math.min(.78,fairingPaint.metalness??.7);
- fairingPaint.roughness=Math.max(.38,fairingPaint.roughness??.38);
- const fairing=new THREE.Mesh(sealedLoft(innerStations,24,false),fairingPaint);
+ const sourcePaint=Array.isArray(actual.material)?actual.material[0]:actual.material;
+ const fairingPaint=new THREE.MeshStandardMaterial({
+  color:sourcePaint.color.clone().multiplyScalar(.32),
+  metalness:.72,roughness:.46,side:THREE.DoubleSide
+ });
+ // An open top sheet connects bodywork to the instrument coaming, without
+ // the old full-volume hull's huge white underside blocking the controls.
+ const fairing=new THREE.Mesh(fairingCanopySurface(innerStations),fairingPaint);
  fairing.name='sealed pilot-side fuselage into seating compartment';
  fairing.castShadow=false;fairing.receiveShadow=false;
  fairing.frustumCulled=false;fairing.renderOrder=0;
