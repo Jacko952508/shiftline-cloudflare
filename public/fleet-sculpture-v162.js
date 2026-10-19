@@ -112,7 +112,14 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
     tip.visible=false;tip.castShadow=false;tip.receiveShadow=false;tip.userData.pilotVisible=true;tip.userData.noBatch=true;parts.push(tip);
    }
   }
-  root.userData.pilotRig={version:166,seat,nose,parts,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
+  // Match the original fuselage beyond the intentionally shortened V166
+  // nose. The cockpit camera sees through the black interval left by V169.
+  // A continuation of REAL authored stations bridges this interval at a
+  // distance, rather than attaching a large sheet near the camera.
+  const joinFraction=.22;
+  const nearStation=stations[3].map((v,k)=>v+(stations[4][k]-v)*joinFraction);
+  const continuationStations=[foreJoin,stations[3],nearStation];
+  root.userData.pilotRig={version:170,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
  }
 
  const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
