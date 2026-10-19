@@ -1,0 +1,32 @@
+name: SHIFT LINE V176 Layout Review
+on:
+  push:
+    branches: [flight-flow-v176-review]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Continuous flights, preview safety and record migration
+        run: node --experimental-loader ./test/three-loader.mjs test/flight-flow-v176.mjs
+      - name: Prepare WebKit
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps webkit
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/flight-flow-bridge-v176.js >> public/race-engine.js
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-layout176.log 2>&1 &
+      - name: Portrait and landscape cockpit and practice controls
+        run: node test/flight-layout-browser-v176.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flight-layout-v176
+          path: qa-v176-layout
+          if-no-files-found: ignore
