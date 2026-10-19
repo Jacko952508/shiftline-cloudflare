@@ -52,6 +52,20 @@ for(const engine of [chromium,webkit]){
    await page.screenshot({path:screens+'/'+engine.name()+'-'+name+'-chase.png',timeout:65000});
    console.log('PASS ECLIPSE '+engine.name()+' '+name+' cockpit clear, race world rendered, chase restore '+JSON.stringify(metrics));
   }
+  // Do not stop at the READY countdown. Confirm a running ECLIPSE race with
+  // moving obstacles and an unobstructed forward pilot view.
+  await page.waitForFunction(()=>document.querySelector('#count').classList.contains('off')&&window.__shiftlineCockpitQA?.raceState==='race',null,{timeout:120000});
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('#cameraBtn').click();
+  await page.waitForFunction(()=>window.__shiftlineCockpitQA?.active===true&&window.__shiftlineCockpitQA.worldExteriorVisible===false,null,{timeout:30000});
+  await page.waitForTimeout(1250);
+  const inFlight=await page.screenshot({path:screens+'/'+engine.name()+'-level1-live-flight.png',timeout:65000});
+  const inFlightMetrics=hasRenderedScene(inFlight);
+  const hazard=await page.evaluate(()=>window.__shiftlineLightingQA);
+  assert.ok(hazard?.version>=160,'ECLIPSE obstacle lighting did not update during active race');
+  assert.ok(hazard.activeCount<=1,'More than one hazard alarm activated simultaneously');
+  assert.ok(!errors.length,'WebGL/JS errors while flying cockpit on Level 1');
+  console.log('PASS LIVE ECLIPSE '+engine.name()+' forward visibility, sequenced hazards '+JSON.stringify({hazard,inFlightMetrics}));
   assert.deepEqual(errors,[],'Browser/WebGL errors in Level 1');
  }finally{await browser.close();}
 }
