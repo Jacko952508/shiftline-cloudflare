@@ -94,7 +94,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  // racing SHIP_SCALE automatically via getWorldPosition().
  if(options.pilotModel){
   const seat=new THREE.Object3D();
-  const eyeY=[.325,.332,.323,.335,.334,.346][index],eyeZ=[-.16,-.22,-.12,-.16,-.10,-.25][index];
+  const eyeY=[.325,.332,.323,.335,.334,.346][index],eyeZ=[.09,-.22,-.12,-.16,-.10,-.25][index];
   seat.name='pilotSeat / '+NAMES[index];seat.position.set(0,eyeY,eyeZ);root.add(seat);
   const nose=add(sealedLoft(stations.slice(0,3),high?32:20,false),body,[0,0,0],'pilot forward fuselage / exact loft');
   nose.visible=false;nose.castShadow=false;nose.receiveShadow=false;nose.userData.pilotVisible=true;nose.userData.noBatch=true;
