@@ -10,8 +10,19 @@ import {GarageFlightPath,flightFrame,createGarageFlight,updateGarageFlight,dispo
 const baseline=JSON.parse(readFileSync(new URL('./fleet-shapes-v162.json',import.meta.url))),finishes=new Set();
 for(let model=0;model<6;model++)for(let edition=0;edition<3;edition++){
  const scene=new THREE.Scene(),ship=craft(scene,0xffffff,model,true,{edition},{batchStatic:false}),hash=createHash('sha256');
- ship.traverse(o=>{if(!o.geometry)return;hash.update(o.name);for(const k of['position','normal','uv']){const a=o.geometry.attributes[k]?.array;if(a)hash.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));}if(o.geometry.index)hash.update(Buffer.from(o.geometry.index.array.buffer));});
+ // Keep the approved V162 external airframe fingerprint unchanged while
+ // testing the intentionally new V172/V173 continuous hood assembly separately.
+ ship.traverse(o=>{if(!o.geometry||o.userData.pilotHood)return;hash.update(o.name);for(const k of['position','normal','uv']){const a=o.geometry.attributes[k]?.array;if(a)hash.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));}if(o.geometry.index)hash.update(Buffer.from(o.geometry.index.array.buffer));});
  assert.equal(hash.digest('hex'),baseline[model*3+edition],'Approved geometry, normals and UVs stay identical');
+ const factoryHoods=[];ship.traverse(o=>{if(o.userData.pilotHood)factoryHoods.push(o);});
+ assert.equal(factoryHoods.length,4,'Two connected body panels and two long light rails');
+ for(const hood of factoryHoods){
+  hood.geometry.computeBoundingBox();
+  const bounds=hood.geometry.boundingBox;
+  assert.ok(bounds.max.z>.28,'Hood trim must continue behind the cockpit');
+  assert.ok(bounds.min.y<-.32,'Rear canopy trim must be recessed beneath the dashboard');
+ }
+
  const [body,,,,light,,wing]=ship.userData.sculptMaterials,finish=fleetFinish(model,{edition});finishes.add(finish);
  assert.equal(body.userData.fleetFinish,finish);assert.equal(wing.userData.fleetFinish,finish);assert.equal(body.color.getHex(),wing.color.getHex());assert.equal(body.transparent,false);assert.equal(wing.transparent,false);
  assert.ok(body.clearcoat>=.8&&body.clearcoatRoughness<=.1);assert.ok(light.emissiveIntensity>2,'Illuminated ship inlays');
@@ -38,4 +49,4 @@ for(let i=0;i<=2200;i++){
 assert.ok(maxBank>.2&&maxBank<=.38);assert.ok(maxStep<.04,'No orientation flips or loop seam');
 let triangles=0,draws=0;flight.tunnel.traverse(o=>{if(o.geometry){draws++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.count||1);}});assert.ok(draws<=6&&triangles<50000,'Bounded tunnel geometry and instanced fixtures');
 let disposal=0;flight.tunnel.traverse(o=>{o.geometry?.addEventListener('dispose',()=>disposal++);});disposeCraft(flight.scene,ship);disposeGarageFlight(flight);assert.ok(disposal>=6);assert.equal(flight.scene.children.length,0);environment.dispose();
-console.log('PASS V163: unchanged approved geometry for all 18 editions, three reflective paint families, luminous inlays, seamless figure eight, continuous banking and rear chase camera, bounded tunnel and disposal.');
+console.log('PASS V173: legacy approved airframe geometry preserved, four new swept cockpit trims per ship, three reflective paint families, seamless figure eight and safe disposal.');
