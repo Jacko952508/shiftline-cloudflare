@@ -3,6 +3,7 @@ import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
 import{fleetEdition,fleetFinish}from'./fleet-designs-v162.js?v=163';
 import{fleetPaint}from'./fleet-paint-v163.js?v=163';
+import{sealedLoft}from'./fleet-sculpture-v162.js?v=166';
 // Top-only curved interior coaming; never render the hidden lower half of
 // a sealed exterior loft at arm's length from the pilot eye.
 function fairingCanopySurface(stations,steps=20){
@@ -24,26 +25,12 @@ function fairingCanopySurface(stations,steps=20){
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geo.setIndex(ix);geo.computeVertexNormals();return geo;
 }
-// Lower semicircular underside running from the actual aft nose ring into
-// the cockpit tub. It does not occupy the pilot's forward sightline.
-function realNoseUnderside(stations,steps=20){
- const pts=[],uv=[],ix=[];
- for(let j=0;j<stations.length;j++){const [z,rx,ry,cy]=stations[j];
-  for(let k=0;k<=steps;k++){const a=Math.PI+k/steps*Math.PI;
-   pts.push(rx*Math.cos(a),cy+ry*Math.sin(a),z);uv.push(k/steps,j/(stations.length-1));}}
- for(let j=0;j<stations.length-1;j++)for(let k=0;k<steps;k++){
-  const a=j*(steps+1)+k,b=a+steps+1;ix.push(a,b,a+1,a+1,b,b+1);}
- // Close both ends of the lowered shell. Most importantly, the front
- // cap seals the cut rear ring of the authentic nose itself, preventing
- // the visible black opening below the painted upper fuselage.
- const [frontZ,,,frontCY]=stations[0],frontCentre=pts.length/3;
- pts.push(0,frontCY,frontZ);uv.push(.5,0);
- for(let k=0;k<steps;k++)ix.push(frontCentre,k,k+1);
- const [z,,,cy]=stations.at(-1),center=pts.length/3;
- pts.push(0,cy,z);uv.push(.5,1);const start=(stations.length-1)*(steps+1);
- for(let k=0;k<steps;k++)ix.push(center,start+k+1,start+k);
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();return g;
+// The original hull's full circumference closes the black gap from the
+// V166 cut nose into the interior; this is NOT a camera-facing filler panel.
+// Exact interpolated stations come from the chosen sculpted airframe.
+// A real closed aft cap makes it watertight from the pilot's seat.
+function continuousFuselage(stations){
+ return sealedLoft(stations,32,true);
 }
 // Factory-specific accent pinstripes follow the original loft station rings.
 function noseLiveryLines(geometry,color){
@@ -301,31 +288,32 @@ export function attachPilotAirframe(c,ship){
  actual.geometry.computeBoundingBox();
  const box=actual.geometry.boundingBox;
  const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
- // Fit the underside to the REAL last fuselage ring; keep the upper
- // factory-painted nose unchanged and close only the hollow lower half.
- const p=actual.geometry.attributes.position;let low=Infinity,high=-Infinity,rx=0;
- for(let i=0;i<p.count;i++)if(Math.abs(p.getZ(i)-end)<.0005){
-  rx=Math.max(rx,Math.abs(p.getX(i)));low=Math.min(low,p.getY(i));high=Math.max(high,p.getY(i));
- }
- rx=Math.max(.05,rx);const cy=(low+high)/2,ry=(high-low)/2;
- const dark=new THREE.Color(design.secondary).lerp(new THREE.Color(design.body),.20);
- const bellyPaint=new THREE.MeshStandardMaterial({color:dark,metalness:.35,roughness:.71,envMapIntensity:.14,side:THREE.DoubleSide});
- const belly=new THREE.Mesh(realNoseUnderside([
-  [end-.006,rx,ry,cy],[end+.05,rx*.99,ry*.93,cy-.030],
-  [end+.133,rx*.95,ry*.77,cy-.079],[end+.236,rx*.87,ry*.48,cy-.137]
- ]),bellyPaint);
- belly.name='fitted sealed lower-nose / genuine factory profile';belly.castShadow=false;belly.receiveShadow=false;belly.frustumCulled=false;
- c.noseCameraRoot.add(belly);c.noseBelly=belly;
- const innerStations=[[end-.004,radius,.122,cy],[end+.003,radius,.122,cy]];
- const fairingPaint=new THREE.MeshStandardMaterial({color:dark.clone().multiplyScalar(.85),metalness:.28,roughness:.78,envMapIntensity:.12,side:THREE.DoubleSide});
- // A narrow shaded crown finishes the end of the authentic fuselage.
- // The physical seating, cowling, consoles and stick mounts stay visible;
- // no full-width nose panel or artificial inner hull is drawn.
- const fairing=new THREE.Mesh(fairingCanopySurface(innerStations),fairingPaint);
- fairing.name='sealed pilot-side fuselage into seating compartment';
- fairing.castShadow=false;fairing.receiveShadow=false;
- fairing.frustumCulled=false;fairing.renderOrder=0;
- c.noseCameraRoot.add(fairing);c.noseFairing=fairing;
+ // V170: the old V169 half-shell was below the pilot's camera rays,
+ // so its closed caps passed mesh tests but left the actual black gap.
+ // Extend the real upper AND lower hull along the ship's original loft.
+ // The final true station is deliberately BEFORE the pilot seat; it joins
+ // the dashboard below sightline without becoming a close-up rectangle.
+ const continuation=rig.continuationStations;
+ if(!Array.isArray(continuation)||continuation.length!==3)throw Error('Missing factory fuselage continuity stations');
+ const sourcePaint=c.noseMeshes[0].material;
+ const hull=new THREE.Mesh(continuousFuselage(continuation),sourcePaint.clone());
+ hull.name='V170 authentic continuous painted forward fuselage';
+ hull.castShadow=false;hull.receiveShadow=false;hull.frustumCulled=false;
+ hull.userData.factoryBody=design.body;hull.userData.factoryFinish=finish;
+ c.noseCameraRoot.add(hull);c.noseBelly=hull;
+ // Slightly recessed shadow-colored former ring: gives the true transition
+ // between exterior nose and moulded cockpit a small, shaded join.
+ const station=continuation[0];
+ const seamPaint=new THREE.MeshStandardMaterial({
+  color:new THREE.Color(design.secondary).lerp(new THREE.Color(design.body),.22),
+  metalness:.25,roughness:.78,envMapIntensity:.08,side:THREE.DoubleSide
+ });
+ const seam=new THREE.Mesh(fairingCanopySurface([
+  [station[0]-.004,station[1]*1.005,station[2]*1.005,station[3]],
+  [station[0]+.002,station[1]*1.005,station[2]*1.005,station[3]]
+ ]),seamPaint);
+ seam.name='original ring shadow seam';seam.frustumCulled=false;seam.castShadow=false;seam.receiveShadow=false;
+ c.noseCameraRoot.add(seam);c.noseFairing=seam;
  c.noseCameraRoot.visible=true;
  if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')&&window.__shiftlineCockpitQA){
   window.__shiftlineCockpitQA.renderNoseInOverlay=true;
@@ -333,6 +321,8 @@ export function attachPilotAirframe(c,ship){
   window.__shiftlineCockpitQA.noseCount=c.noseMeshes.length;
   window.__shiftlineCockpitQA.cabinFairing=true;
   window.__shiftlineCockpitQA.undersideFilled=true;
+  window.__shiftlineCockpitQA.continuityStations=rig.continuationStations.length;
+  window.__shiftlineCockpitQA.continuityRendered=true;
   window.__shiftlineCockpitQA.factoryNose=design.name;
   window.__shiftlineCockpitQA.noseFinish=finish;
  }
