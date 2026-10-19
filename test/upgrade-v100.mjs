@@ -34,7 +34,7 @@ try{
  checkImage(await page.screenshot({path:'upgrade-screenshots/01-menu.png'}),'menu');
  for(let course=1;course<=6;course++){
   await openSoloDemo(page,course);
-  await page.waitForFunction(n=>document.querySelector('[data-course="'+n+'"]').classList.contains('selected'),course,null,{timeout:20000});
+  await page.waitForFunction(n=>document.querySelector('[data-course="'+n+'"]').classList.contains('selected'),course,{timeout:20000});
   const display=await page.evaluate(()=>({name:document.querySelector('#trackTitle').textContent,ready:window.shiftlineReady}));
   assert.ok(display.name.length>3&&display.ready);
   await openTrackInspection(page);
