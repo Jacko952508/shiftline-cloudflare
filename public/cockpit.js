@@ -33,12 +33,6 @@ function realNoseUnderside(stations,steps=20){
    pts.push(rx*Math.cos(a),cy+ry*Math.sin(a),z);uv.push(k/steps,j/(stations.length-1));}}
  for(let j=0;j<stations.length-1;j++)for(let k=0;k<steps;k++){
   const a=j*(steps+1)+k,b=a+steps+1;ix.push(a,b,a+1,a+1,b,b+1);}
- // Close both ends of the lowered shell. Most importantly, the front
- // cap seals the cut rear ring of the authentic nose itself, preventing
- // the visible black opening below the painted upper fuselage.
- const [frontZ,,,frontCY]=stations[0],frontCentre=pts.length/3;
- pts.push(0,frontCY,frontZ);uv.push(.5,0);
- for(let k=0;k<steps;k++)ix.push(frontCentre,k,k+1);
  const [z,,,cy]=stations.at(-1),center=pts.length/3;
  pts.push(0,cy,z);uv.push(.5,1);const start=(stations.length-1)*(steps+1);
  for(let k=0;k<steps;k++)ix.push(center,start+k+1,start+k);
