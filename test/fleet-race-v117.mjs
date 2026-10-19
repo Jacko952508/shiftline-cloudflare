@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
@@ -10,7 +11,7 @@ await mkdir('garage-visible-artifacts',{recursive:true});
 await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({seaRevision:3,courseRevisions:{1:2,2:3},xp:5000,craft:5,color:0,custom:{edition:2,livery:2},records:{1:112000},ghosts:{},medals:{},races:4,shipBuilds:{5:{color:0,custom:{edition:2,livery:2}}}})));
 try{
  await page.goto((process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765')+'/?shipqa=1',{waitUntil:'domcontentloaded',timeout:50000});
- await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
+ await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
  await page.locator('#launch').click({timeout:15000});
  // Wait for the actual in-game countdown, not wall-clock time: software WebGL
  // may render fewer frames while shaders compile, delaying the game timer.

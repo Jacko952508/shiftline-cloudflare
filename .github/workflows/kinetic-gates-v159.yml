@@ -1,7 +1,7 @@
 name: SHIFTLINE V159 Kinetic Gates
 on:
   push:
-    branches: [graphics-v159, lighting-v160, main]
+    branches: [graphics-v159, lighting-v160, menu-v164, main]
     paths:
       - 'public/**'
       - 'test/kinetic-gates-*.mjs'

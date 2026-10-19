@@ -4,7 +4,7 @@ import {chaseProfile,attachSightlines} from '../public/race-sightlines-v158.js';
 import {actuationPeriod,familySpecifications,familyState} from '../public/hazard-families-v156.js';
 import {markHazardGeometry,illuminateHazard} from '../public/obstacle-glow-v155.js';
 const saved={};assert.equal(chaseProfile(390/844,false,false,saved),saved);
-assert.ok(saved.distance>4.7&&saved.distance<5);assert.ok(saved.height>1);assert.equal(saved.lookAhead,14);
+assert.ok(saved.distance>5.9&&saved.distance<6.2,'Portrait camera must leave room for the larger sculpted ships');assert.ok(saved.height>1.3,'Camera must look over the hull');assert.ok(saved.lookAhead>14.5);
 assert.deepEqual(chaseProfile(16/9),{distance:3.8,height:.8,lookAhead:12});
 assert.equal(chaseProfile(.46,true,true).distance,chaseProfile(.46,false,true).distance);
 let previous=Infinity;for(let aspect=.4;aspect<2;aspect+=.01){const p=chaseProfile(aspect);assert.ok(p.distance<=previous+1e-10);previous=p.distance;}

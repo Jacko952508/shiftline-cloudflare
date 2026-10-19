@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import {chromium,webkit} from 'playwright';
 import {PNG} from 'pngjs';
 import assert from 'node:assert/strict';
@@ -15,11 +16,11 @@ async function check(kind,courses){
  try{
   await page.addInitScript(()=>localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:5000,craft:2,color:0,custom:{wing:2,engine:2,fin:1,trail:0},records:{1:112000},ghosts:{},medals:{},races:4})));
   await page.goto(base+'/?graphicsqa=1&shipqa=1&sceneryqa=1',{waitUntil:'domcontentloaded',timeout:65000});
-  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
-  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=163');
+  await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
+  assert.equal(await page.locator('script[src^="race-engine.js"]').getAttribute('src'),'race-engine.js?v=164');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
-   await page.locator('#obsOpen').click({timeout:35000});
+   await openTrackInspection(page);
    await page.waitForFunction(n=>window.__shiftlineGraphicsQA?.course===n,course,{timeout:80000});
    const info=await page.evaluate(()=>window.__shiftlineGraphicsQA);
    assert.equal(info.version,147);assert.equal(info.addedPasses,0);assert.equal(info.addedLights,0);

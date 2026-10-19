@@ -1,3 +1,4 @@
+import {openSoloDemo,openTrackInspection} from './menu-navigation.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const site=process.env.SHIFTLINE_SITE||'http://127.0.0.1:8765';
@@ -16,7 +17,7 @@ try{
   }));
  });
  await page.goto(site+'/?shipqa=1',{waitUntil:'domcontentloaded',timeout:65000});
- await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});
+ await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
  await page.locator('#launch').click();
  await page.waitForFunction(()=>document.querySelector('#count')?.classList.contains('off'),null,{timeout:150000});
  await page.waitForFunction(()=>window.__shiftlineRaceVisualQA?.path==='native-webkit'&&window.__shiftlineTrailQA?.raceView===true,null,{timeout:35000});

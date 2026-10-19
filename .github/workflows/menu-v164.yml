@@ -1,0 +1,43 @@
+name: SHIFTLINE V164 Clean Menu Flow
+on:
+  push:
+    branches: [menu-v164, main]
+    paths: ['public/**', 'test/menu*', '.github/workflows/menu-v164.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: menu-v164-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          node --check public/menu.js
+          node --check public/race-engine.js
+          node --experimental-loader ./test/three-loader.mjs test/menu-v164.mjs
+          node --experimental-loader ./test/three-loader.mjs test/fleet-v163.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm install --no-save playwright pngjs
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Serve candidate
+        run: python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-menu-v164.log 2>&1 &
+      - name: Navigate every screen and render all six demos
+        run: node test/menu-browser-v164.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shiftline-menu-v164-review
+          path: qa-v164
+          if-no-files-found: ignore

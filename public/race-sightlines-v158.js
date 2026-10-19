@@ -2,8 +2,11 @@
 // Reuse the caller's result object on the render path.
 export function chaseProfile(aspect,boost=false,reduced=false,out={}){
  const t=Math.max(0,Math.min(1,(1/Math.max(.1,aspect)-1.1)/.65)),portrait=t*t*(3-2*t);
- out.distance=3.8+portrait*1.05+(boost&&!reduced?.55:0);
- out.height=.8+portrait*.32;out.lookAhead=12+portrait*2;return out;
+ // Portrait needs a genuinely unobstructed approach corridor. The larger V163
+ // 3D airframes are physically wider than V159; compensate with framing,
+ // not collider shrinkage or a hidden ship. Smooth across aspect ratios.
+ out.distance=3.8+portrait*2.3+(boost&&!reduced?.50:0);
+ out.height=.8+portrait*.59;out.lookAhead=12+portrait*2.7;return out;
 }
 
 function depthCue(material){

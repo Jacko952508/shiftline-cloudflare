@@ -1,4 +1,4 @@
-import {attachSightlines} from './race-sightlines-v158.js?v=160';
+import {attachSightlines} from './race-sightlines-v158.js?v=164';
 import {createStarfield,attachSkyVisibility,updateSkyVisibility} from './sky-visibility-v157.js?v=157';
 import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=158';
 import{attachChapterLandmarks,updateChapterLandmarks,disposeChapterLandmarks}from'./chapter-landmarks-v143.js?v=153';
