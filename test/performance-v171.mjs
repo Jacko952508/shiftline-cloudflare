@@ -6,7 +6,7 @@ import {poseObject,createTrack} from '../public/race-track.js';
 for(let index=1;index<=4;index++)for(const time of [0,1.2,29.9,30,30.25,31.5,35,40,60,61.2,91]){
  const expected=new THREE.Color(PALETTES[index].base).lerp(new THREE.Color(PALETTES[index].shift),shiftState(time).amount);
  const actual=themeColor(index,time);
- assert.ok(actual.distanceTo(expected)<1e-10,'Theme colour mismatch at '+index+' / '+time);
+ assert.ok(Math.max(Math.abs(actual.r-expected.r),Math.abs(actual.g-expected.g),Math.abs(actual.b-expected.b))<1e-10,'Theme colour mismatch at '+index+' / '+time);
 }
 for(const course of [1,2,3,4,5,6]){
  const track=createTrack(course),ship=new THREE.Object3D();
