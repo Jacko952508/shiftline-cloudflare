@@ -110,9 +110,9 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
  // and depth pass as the matching ship nose and the seat.
  const nearWallShape=new THREE.Shape();
  nearWallShape.moveTo(-.99,-1.02);nearWallShape.lineTo(.99,-1.02);
- nearWallShape.lineTo(.91,-.195);nearWallShape.lineTo(.58,-.232);
- nearWallShape.quadraticCurveTo(0,-.273,-.58,-.232);
- nearWallShape.lineTo(-.91,-.195);nearWallShape.closePath();
+ nearWallShape.lineTo(.91,-.145);nearWallShape.lineTo(.58,-.165);
+ nearWallShape.quadraticCurveTo(0,-.175,-.58,-.165);
+ nearWallShape.lineTo(-.91,-.145);nearWallShape.closePath();
  const nearWall=tubMesh(new THREE.ExtrudeGeometry(nearWallShape,{depth:.038,bevelEnabled:true,bevelSize:.009,bevelThickness:.007,bevelSegments:2}),shell,0,0,-.385);
  nearWall.name='solid eye-level cockpit interior sill';
  // The original hull genuinely runs below and behind the pilot. This near-
