@@ -1,4 +1,3 @@
-import{craft,disposeCraft}from'./race-craft.js?v=163';
 import * as THREE from 'three';
 import{appearance,MODELS}from'./ship-catalog.js?v=163';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
@@ -86,11 +85,16 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
   modelPlate(.12,.034,.42,0,-1.01,-2.02,metalInset);
  }
 
- // Reuse the real chassis; the cockpit never invents a second ship shape.
- const nose=new THREE.Group();nose.position.set(0,-.61,-.22);scene.add(nose);
- const forebody=craft(nose,color,model,false,custom);nose.scale.setScalar(1);forebody.updateMatrixWorld(true);
- const clip=new THREE.Plane(new THREE.Vector3(0,0,-1),.1);
- forebody.traverse(o=>{if(o.userData.partRole==='canopy'||o.userData.flame||o.isLight||o.isInstancedMesh)o.visible=false;if(o.material){o.material.clippingPlanes=[clip];o.castShadow=false;}if(o.geometry){o.geometry.computeBoundingBox();const box=o.geometry.boundingBox.clone().applyMatrix4(o.matrix);if(box.min.z>.1)o.visible=false;}});
+ // True pilot-eye view: the dashboard, canopy frame and side consoles remain
+ // present, but NEVER render a second exterior airframe in the cockpit scene.
+ // The old forebody clone showed the craft's entire front fuselage through
+ // the windscreen, blocked the tunnel and doubled expensive 3D materials.
+ // The real gameplay ship is already hidden in first-person by race-engine.
+ const forwardView=new THREE.Group();forwardView.name='v165 / clear pilot windscreen';root.add(forwardView);
+ // Shallow instrument coaming below the horizon is physically part of the
+ // dash, not a false exterior ship nose protruding into the windshield.
+ const coaming=mesh(new THREE.BoxGeometry(.44,.035,.075),metalInset,0,-1.015,-1.93,forwardView);
+ coaming.rotation.x=-.15;
 const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.CylinderGeometry(.14,.16,.045,24),rubber,0,0,0,button);base.rotation.x=Math.PI/2;
  const cap=mesh(new THREE.CylinderGeometry(.112,.125,.028,24),trim,0,0,.036,button);cap.rotation.x=Math.PI/2;
  const ring=mesh(new THREE.TorusGeometry(.135,.009,6,32),new THREE.MeshBasicMaterial({color:tone,toneMapped:false}),0,0,.04,button);
@@ -107,7 +111,12 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
  const sightPoints=[-.24,-.035,-.12,-.035,.12,-.035,.24,-.035,0,.085,0,.145,0,-.11,0,-.17];
  const sightGeo=new THREE.BufferGeometry();const positions=[];for(let i=0;i<sightPoints.length;i+=2)positions.push(sightPoints[i],sightPoints[i+1],-1.72);sightGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  const sight=new THREE.LineSegments(sightGeo,new THREE.LineBasicMaterial({color:tone,transparent:true,opacity:.53,depthTest:false}));sight.renderOrder=7;hud.add(sight);
- const result={scene,camera,root,hud,panels,stick,rightStick,nose,forebody,clip,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};return result;
+ const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
+ if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')){
+  window.__shiftlineCockpitQA={version:165,model,hasExteriorClone:false,interiorParts:root.children.length,
+   windshieldClear:true,view:'pilot-eye',forwardDetail:forwardView.children.length};
+ }
+ return result;
 }
 export function updateCockpit(c,dt,data,rect,width,height){
  c.hud.children[0].material.uniforms.time.value=data.time||0;c.hud.children[0].material.uniforms.boost.value=data.boost?1:0;const aspect=width/Math.max(1,height),fov=THREE.MathUtils.clamp(data.fov||78,66,88);
@@ -122,9 +131,6 @@ export function updateCockpit(c,dt,data,rect,width,height){
  c.root.position.y+=(THREE.MathUtils.clamp(-Math.abs(vertical)*.0015,-.025,0)-c.root.position.y)*sway;
  c.hud.rotation.z+=(c.root.rotation.z*.62-c.hud.rotation.z)*sway;
  c.hud.rotation.x+=(c.root.rotation.x*.56-c.hud.rotation.x)*sway;
- c.nose.rotation.x+=(THREE.MathUtils.clamp(vertical*.004,-.08,.08)-c.nose.rotation.x)*sway;
- c.nose.rotation.z+=(THREE.MathUtils.clamp(-lateral*.0025-bank*.027,-.1,.1)-c.nose.rotation.z)*sway;
- c.nose.updateMatrixWorld(true);c.clip.set(new THREE.Vector3(0,0,-1),.1).applyMatrix4(c.forebody.matrixWorld);
  const k=1-Math.exp(-Math.min(.1,Math.max(0,dt))*24);c.pitch+=(THREE.MathUtils.clamp((data.vertical||0)*.045,-.23,.23)-c.pitch)*k;c.roll+=(THREE.MathUtils.clamp(-(data.lateral||0)*.05,-.24,.24)-c.roll)*k;c.stick.rotation.set(c.pitch,0,c.roll);c.rightStick.rotation.set(c.pitch,0,c.roll);
  c.trim.emissiveIntensity=data.boost?.35:.12;c.cap.position.z=data.boost?.027:.036;c.ring.material.color.setHex(data.boost?0xe4fff5:[0x72efff,0xffbd78,0xa6ffcb][c.custom.instrument]);
  if(rect?.width&&rect?.height){c.camera.updateMatrixWorld();c.scratch.set((rect.left+rect.width/2)/width*2-1,1-(rect.top+rect.height/2)/height*2,.5).unproject(c.camera);c.scratch.multiplyScalar(-1.4/c.scratch.z);c.button.position.copy(c.scratch);const diameter=Math.min(rect.width,rect.height)/height*2*1.4*Math.tan(Math.PI/6);c.button.scale.setScalar(diameter/.3);}
@@ -143,5 +149,5 @@ export function updateCockpit(c,dt,data,rect,width,height){
  if(data.lock){x.textAlign='center';x.font='500 34px Arial, sans-serif';x.textAlign='left';x.font='500 28px Arial, sans-serif';x.fillText(data.lock.length>23?data.lock.slice(0,22)+'…':data.lock,30,715);}if(data.cooling){x.textAlign='center';x.fillStyle='#ffb079';x.font='34px Arial, sans-serif';x.textAlign='right';x.font='28px Arial, sans-serif';x.fillText(data.cooling,988,715);}x.shadowBlur=0;c.texture.needsUpdate=true;
 
 }
-export function renderCockpit(c,renderer){const auto=renderer.autoClear,tone=renderer.toneMapping,shadow=renderer.shadowMap?.enabled,clipping=renderer.localClippingEnabled;try{renderer.setRenderTarget(null);renderer.autoClear=false;renderer.localClippingEnabled=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;if(renderer.shadowMap)renderer.shadowMap.enabled=false;renderer.clearDepth();renderer.render(c.scene,c.camera);}finally{renderer.autoClear=auto;renderer.localClippingEnabled=clipping;renderer.toneMapping=tone;if(renderer.shadowMap)renderer.shadowMap.enabled=shadow;}}
-export function disposeCockpit(c){if(!c)return;disposeCraft(c.nose,c.forebody);const geometry=new Set(),materials=new Set();c.scene.traverse(o=>{if(o.geometry)geometry.add(o.geometry);if(o.material)materials.add(o.material)});geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());c.texture.dispose();c.scene.clear();}
+export function renderCockpit(c,renderer){const auto=renderer.autoClear,tone=renderer.toneMapping,shadow=renderer.shadowMap?.enabled,clipping=renderer.localClippingEnabled;try{renderer.setRenderTarget(null);renderer.autoClear=false;renderer.localClippingEnabled=false;renderer.toneMapping=THREE.ACESFilmicToneMapping;if(renderer.shadowMap)renderer.shadowMap.enabled=false;renderer.clearDepth();renderer.render(c.scene,c.camera);}finally{renderer.autoClear=auto;renderer.localClippingEnabled=clipping;renderer.toneMapping=tone;if(renderer.shadowMap)renderer.shadowMap.enabled=shadow;}}
+export function disposeCockpit(c){if(!c)return;const geometry=new Set(),materials=new Set();c.scene.traverse(o=>{if(o.geometry)geometry.add(o.geometry);if(o.material)materials.add(o.material)});geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());c.texture.dispose();c.scene.clear();}
