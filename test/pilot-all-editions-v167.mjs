@@ -65,6 +65,7 @@ try{
    assert.ok(join.total>40,'Full-circumference ship hull has no visible pixels: '+JSON.stringify({model,edition,label,join}));
    if(label==='portrait')assert.ok(join.gap>25,'Cockpit black gap is still uncovered by actual hull: '+JSON.stringify({model,edition,join}));
    assert.ok(join.horizon<120,'Continuation blocks front racing corridor: '+JSON.stringify({model,edition,label,join}));
+   assert.ok(join.areaPct<(label==='portrait'?15:12),'Cockpit hull too big, swallows controls: '+JSON.stringify({model,edition,label,join}));
    // Use isolated stable cockpit 3D render, avoiding temporal racing
    // post-effects creating false giant nose silhouettes.
    const delta=await page.evaluate(()=>window.__shiftlinePilotAudit167.noseCoverage());
