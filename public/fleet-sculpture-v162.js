@@ -94,7 +94,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  // racing SHIP_SCALE automatically via getWorldPosition().
  if(options.pilotModel){
   const seat=new THREE.Object3D();
-  const eyeY=[.325,.332,.323,.335,.334,.346][index],eyeZ=[.09,-.22,-.12,-.16,-.10,-.25][index];
+  const eyeY=[.325,.332,.323,.350,.334,.346][index],eyeZ=[.09,-.22,-.12,.17,-.10,-.25][index];
   seat.name='pilotSeat / '+NAMES[index];seat.position.set(0,eyeY,eyeZ);root.add(seat);
   // Interpolate midway along the real third-to-fourth body station. This is
   // the authentic taper of the sculpted ship, rather than an arbitrary
