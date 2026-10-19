@@ -29,6 +29,9 @@ window.__shiftlinePilotAudit167={
    craftVisible:player.visible,
    noseAttachmentCount:cockpit.noseCameraRoot.children.length,
    noseBelly:!!cockpit.noseBelly&&cockpit.noseBelly.geometry.index.count>70,
+   realHullContinuity:rig.continuationStations?.length===3 &&
+    cockpit.noseBelly?.name.includes('authentic continuous') &&
+    cockpit.noseBelly.geometry.index.count>300,
    nosePaint:cockpit.noseMeshes.map(m=>({factoryBody:m.material.userData.factoryBody,finish:m.material.userData.factoryFinish,color:m.material.color.getHex(),metalness:m.material.metalness,roughness:m.material.roughness,accentStripes:m.children.filter(x=>x.name.includes('livery')).length})),
    rigidLock:Math.abs(camera.quaternion.dot(player.quaternion)),
    cabinClosed:!!cockpit.tub&&cockpit.tub.children.length>=16,
@@ -78,6 +81,39 @@ window.__shiftlinePilotAudit167={
   }
   return{total,top,bottom,areaPct:100*total/(w*h),topPct:100*top/(w*h),
    firstVisibleY:total?minY/h:1,lastVisibleY:total?maxY/h:0};
+ },
+ continuationCoverage(){
+  // Pixel-difference of the real hull addition in the stable cockpit
+  // render target, independent of animated tunnel graphics and HUD.
+  const w=180,h=390,rt=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true,stencilBuffer:false});
+  const prev=renderer.getRenderTarget(),tone=renderer.toneMapping,auto=renderer.autoClear,
+   clr=renderer.getClearColor(new THREE.Color()).clone(),alpha=renderer.getClearAlpha(),
+   was=cockpit.noseBelly.visible,on=new Uint8Array(w*h*4),off=new Uint8Array(w*h*4);
+  const render=(visible,target)=>{
+   cockpit.noseBelly.visible=visible;
+   renderer.setRenderTarget(rt);renderer.setClearColor(0x08111b,1);
+   renderer.autoClear=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+   renderer.clear(true,true,true);renderer.render(cockpit.scene,cockpit.camera);
+   renderer.readRenderTargetPixels(rt,0,0,w,h,target);
+  };
+  try{render(false,off);render(true,on);}finally{
+   cockpit.noseBelly.visible=was;renderer.setRenderTarget(prev);
+   renderer.setClearColor(clr,alpha);renderer.autoClear=auto;
+   renderer.toneMapping=tone;rt.dispose();
+  }
+  let gap=0,total=0,horizon=0,minY=h,maxY=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const i=(y*w+x)*4,delta=Math.abs(on[i]-off[i])+
+    Math.abs(on[i+1]-off[i+1])+Math.abs(on[i+2]-off[i+2]);
+   if(delta>35){
+    const fromTop=h-1-y;total++;
+    if(fromTop>h*.62&&fromTop<h*.92&&x>w*.22&&x<w*.78)gap++;
+    if(fromTop<h*.36)horizon++;
+    minY=Math.min(minY,fromTop);maxY=Math.max(maxY,fromTop);
+   }
+  }
+  return{gap,total,horizon,firstVisibleY:total?minY/h:1,
+    lastVisibleY:total?maxY/h:0,areaPct:100*total/(w*h)};
  },
  frame(){
   render(1/60);return this.read();
