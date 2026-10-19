@@ -243,16 +243,14 @@ export function attachPilotAirframe(c,ship){
  const box=actual.geometry.boundingBox;
  const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
  const innerStations=[
-  [end-.065,radius*.94,.075,.066],
-  [end+.002,radius,.075,.058],
-  [end+.125,radius*1.15,.082,-.11],
-  [end+.305,radius*1.28,.088,-.30],
-  [end+.46,radius*1.32,.085,-.46]
+  [end-.065,radius*.93,.048,.065],
+  [end+.002,radius,.046,.052],
+  [end+.09,radius*1.08,.035,-.12]
  ];
  const sourcePaint=Array.isArray(actual.material)?actual.material[0]:actual.material;
  const fairingPaint=new THREE.MeshStandardMaterial({
-  color:sourcePaint.color.clone().multiplyScalar(.32),
-  metalness:.72,roughness:.46,side:THREE.DoubleSide
+  color:new THREE.Color(0x101b27).lerp(sourcePaint.color,.10),
+  metalness:.28,roughness:.78,side:THREE.DoubleSide
  });
  // An open top sheet connects bodywork to the instrument coaming, without
  // the old full-volume hull's huge white underside blocking the controls.
