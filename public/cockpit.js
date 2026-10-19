@@ -95,10 +95,10 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
  };
  const inside=new THREE.Shape();
  inside.moveTo(-1.42,-1.55);inside.lineTo(1.42,-1.55);
- inside.lineTo(1.27,-.93);inside.lineTo(.94,-1.00);
- inside.quadraticCurveTo(.45,-1.14,0,-1.155);
- inside.quadraticCurveTo(-.45,-1.14,-.94,-1.00);
- inside.lineTo(-1.27,-.93);inside.closePath();
+ inside.lineTo(1.27,-.65);inside.lineTo(.94,-.77);
+ inside.quadraticCurveTo(.45,-.82,0,-.82);
+ inside.quadraticCurveTo(-.45,-.82,-.94,-.77);
+ inside.lineTo(-1.27,-.65);inside.closePath();
  // This opaque seat-bulkhead closes the hole visible in the V166 screenshot.
  // It sits behind the instrument deck in apparent depth, masking the cockpit
  // opening with actual interior bodywork.
