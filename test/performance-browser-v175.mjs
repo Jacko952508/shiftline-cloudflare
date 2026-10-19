@@ -30,10 +30,10 @@ async function run(course,candidate){
     const original=proto[key];proto[key]=function(...args){stats[counter]++;return original.apply(this,args);};
    }
   });
-  const frames=[];for(let i=0;i<6;i++)frames.push(await page.evaluate(()=>window.__shiftlineRuntimeTest.frame()));
+  const frames=[];for(let i=0;i<3;i++)frames.push(await page.evaluate(()=>{const f=window.__shiftlineRuntimeTest.frame();document.querySelector('#game').getContext('webgl2').finish();return f;}));
   const work=await page.evaluate(()=>({...window.__perf175}));
   await page.evaluate(()=>window.__shiftlineRuntimeTest.position(.12));
-  for(let i=0;i<14;i++)await page.evaluate(()=>window.__shiftlineRuntimeTest.frame());
+  await page.evaluate(()=>window.__shiftlineRuntimeTest.settle());
   const image=await page.screenshot({path:output+'/'+course+'-'+(candidate?'candidate':'baseline')+'.png',timeout:90000});
   const info=await page.evaluate(()=>window.__shiftlineRuntimeTest.read());
   await writeFile(output+'/'+course+'-'+(candidate?'candidate':'baseline')+'-work.json',JSON.stringify({work,info},null,2));
