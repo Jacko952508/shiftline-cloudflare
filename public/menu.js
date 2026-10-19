@@ -1,8 +1,10 @@
-import {courseSectors,sectorKey} from './race-sectors-v176.js?v=176';
+import {handlingProfile} from './ship-handling-v177.js?v=177';
+import {MASTERY_GOALS,availableTitles,pilotTitle,masteryState,masteryCount,equipTitle} from './mastery-v177.js?v=177';
+import {courseSectors,sectorKey} from './race-sectors-v176.js?v=177';
 import {createTrack} from './race-track.js?v=175';
 import {FLEET_EDITIONS,fleetEdition,fleetFinishLabel,editionIndex,equipEdition} from './fleet-designs-v162.js?v=163';
 import {MODELS} from './ship-catalog.js?v=163';
-import {TRACKS,readProgress,saveProgress,selectShip,formatTime} from './progress.js?v=176';
+import {TRACKS,readProgress,saveProgress,selectShip,formatTime} from './progress.js?v=177';
 import {GAME_MODES,modeDetails,createMenuFlow} from './menu-flow-v164.js?v=164';
 
 const $=selector=>document.querySelector(selector),flow=createMenuFlow(),menu=$('#menu');
@@ -14,12 +16,12 @@ $('#gameModes').innerHTML=GAME_MODES.map(m=>'<button type="button" class="modeCh
 function refresh(){
  const p=readProgress(),state=flow.state,mode=modeDetails(state.mode),track=TRACKS[state.course];
  document.documentElement.style.setProperty('--accent',track.color);
- $('#pilotXP').textContent=p.xp.toLocaleString()+' XP';$('#pilotRank').textContent=p.xp>=3000?'ELITE':p.xp>=1500?'ACE':p.xp>=500?'CONTENDER':'ROOKIE';
+ $('#pilotXP').textContent=p.xp.toLocaleString()+' XP';$('#pilotRank').textContent=pilotTitle(p);
  $('#trackTitle').textContent=track.name;$('#demoModeLabel').textContent='/ '+mode.name;$('#levelModeLabel').textContent=mode.name;
  document.querySelectorAll('button[data-mode]').forEach(b=>{const chosen=b.dataset.mode===state.mode;b.classList.toggle('selected',chosen);b.setAttribute('aria-pressed',String(chosen));});
  $('.flowLevels').innerHTML=TRACKS.slice(1).map((t,i)=>{const id=i+1;return'<button type="button" class="levelChoice'+(state.course===id?' selected':'')+'" data-course="'+id+'" style="--level-accent:'+t.color+'"><span class="levelNumber">0'+id+'</span><svg class="levelArt" viewBox="0 0 240 120" aria-hidden="true"><path d="'+paths[id]+'"/></svg><span class="levelArrow" aria-hidden="true">↗</span><strong>'+t.name+'</strong><small class="levelTag">'+tags[id]+'</small><span class="levelBest">'+(p.records[id]?(p.recordVersions?.[id]===176?'BEST / ':'LEGACY BEST / ')+formatTime(p.records[id]):'')+'</span><span id="medal'+id+'" hidden>'+(p.medals[id]||'—')+'</span></button>';}).join('');
  $('#recordsList').innerHTML=TRACKS.slice(1).map((t,i)=>'<div class="recordRow"><span>0'+(i+1)+'</span><b>'+t.name+'</b><strong>'+formatTime(p.records[i+1])+'</strong><em>'+(p.medals[i+1]||'UNRACED')+'</em></div>').join('');
- $('#practiceOptions').classList.toggle('off',state.mode!=='trial');if(state.screen==='demo'&&state.mode==='trial'){$('#practiceSectors').replaceChildren();for(const sector of courseSectors(state.course,createTrack(state.course).length)){const b=document.createElement('button');b.type='button';b.dataset.sector=sector.index;b.textContent=sector.name+' / '+formatTime(p.sectorBests?.[sectorKey(state.course,true)]?.[sector.index]?.ms);$('#practiceSectors').append(b);}}renderGarageOptions(p);
+ renderMastery(p,state.course);$('#practiceOptions').classList.toggle('off',state.mode!=='trial');if(state.screen==='demo'&&state.mode==='trial'){$('#practiceSectors').replaceChildren();for(const sector of courseSectors(state.course,createTrack(state.course).length)){const b=document.createElement('button');b.type='button';b.dataset.sector=sector.index;b.textContent=sector.name+' / '+formatTime(p.sectorBests?.[sectorKey(state.course,true)]?.[sector.index]?.ms);$('#practiceSectors').append(b);}}renderGarageOptions(p);
 }
 function showScreen(){
  const s=flow.state;menu.dataset.screen=s.screen;menu.dataset.currentMode=s.mode;menu.dataset.currentCourse=s.course;
@@ -55,7 +57,7 @@ function renderGarageOptions(p){
  $('#garagePage').style.setProperty('--fleet-accent',hex(d.accent));
  $('#garageFinishLabel').textContent=d.name;
  $('#garageFinishDescription').textContent=fleetFinishLabel(p.craft,p.custom)+' · '+d.description.split(' · ').slice(1).join(' · ');
- $('#garageDescription').textContent=MODELS[p.craft].tag;
+ $('#garageDescription').textContent=MODELS[p.craft].tag;const h=handlingProfile(p.craft);$('#shipHandling').textContent=h.name+' / RESPONSE '+h.response+'/5 · GRIP '+h.grip+'/5';$('#shipHandlingDescription').textContent=h.description+' All ships share the same top speed, boost and collision envelope.';
  $('#garageBuildBadge').textContent='EQUIPPED';
  $('#garageCategoryTitle').textContent='CHOOSE YOUR EDITION';
  $('#garageCategorySubtitle').textContent='Metallic, chrome and pearlescent factory finishes.';
@@ -68,3 +70,6 @@ $('#garageOptionRail').addEventListener('click',e=>{const b=e.target.closest('[d
 $('#garageLighting').addEventListener('click',e=>{const b=e.target.closest('[data-garage-light]');if(!b)return;document.querySelectorAll('[data-garage-light]').forEach(item=>item.setAttribute('aria-pressed',String(item===b)));window.dispatchEvent(new CustomEvent('shiftline-garage-light',{detail:{mode:b.dataset.garageLight}}));});
 
 showScreen();
+
+function renderMastery(p,course){const m=masteryState(p),count=masteryCount(p);$('#masterySummary').textContent='PILOT MASTERY / '+count+' OF 24';$('#trackMastery').textContent='MASTERY '+MASTERY_GOALS.filter(g=>m.courses[course]?.goals?.[g.id]).length+'/4 · '+(MASTERY_GOALS.find(g=>!m.courses[course]?.goals?.[g.id])?.rule||'COURSE MASTERED');const list=$('#masteryCourses');list.replaceChildren();for(let id=1;id<=6;id++){const c=m.courses[id]||{},card=document.createElement('div'),title=document.createElement('b');card.className='masteryCourse';title.textContent=TRACKS[id].name;card.append(title);for(const goal of MASTERY_GOALS){const row=document.createElement('p');row.className=c.goals?.[goal.id]?'earned':'';row.textContent=(c.goals?.[goal.id]?'✓ ':'○ ')+goal.name+' / '+goal.rule+(goal.id==='fleet'?' ('+(c.ships?.length||0)+'/3)':'');card.append(row);}list.append(card);}const select=$('#masteryTitle');select.replaceChildren();for(const title of availableTitles(p)){const option=document.createElement('option');option.value=option.textContent=title.name;select.append(option);}select.value=pilotTitle(p);}
+$('#masteryTitle').onchange=()=>{const p=readProgress();if(equipTitle(p,$('#masteryTitle').value)){const saved=saveProgress(p);$('#masterySave').textContent=saved?'TITLE EQUIPPED':'SAVE UNAVAILABLE';refresh();}};
