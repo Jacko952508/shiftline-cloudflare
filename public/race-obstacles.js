@@ -14,7 +14,7 @@ import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInsta
 import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=161';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=159';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
-import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js';
+import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js?v=171';
 const TAU=Math.PI*2;
 // Keep obstacle hitboxes proportionate to the actual ship, using the original .9-scale envelope as the baseline.
 const collisionScale=SHIP_SCALE/.9;
@@ -100,7 +100,8 @@ export function buildObstacles(scene,track,course,select=null){
  return specs;
 }
 const HAZARD_COLORS=[0,0xffb86b,0xff8fce,0x73efff,0xffd078,0x73ffe7,0xffbc7e],CUE_WHITE=new THREE.Color(0xffffff);
-function obstacleColor(o,time,color){if(o.family)return color.setHex(HAZARD_COLORS[o.course]);if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp(new THREE.Color(EXPANSIONS[o.course].shift),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(new THREE.Color(0xff8056),cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
+const expansionShiftTints=new Map(),cinderShiftTint=new THREE.Color(0xff8056);
+function obstacleColor(o,time,color){if(o.family)return color.setHex(HAZARD_COLORS[o.course]);if(o.course>=4)return color.setHex(EXPANSIONS[o.course].colors[o.theme-1]).lerp((expansionShiftTints.get(o.course)||expansionShiftTints.set(o.course,new THREE.Color(EXPANSIONS[o.course].shift)).get(o.course)),expansionShift(time)*.6);if(o.course===3)return color.setHex(CINDER_ACTS[o.theme-1].color).lerp(cinderShiftTint,cinderShift(time)*.65);if(o.course===2)return seaObstacleColor(o,time,color);return themeColor(o.theme,time,color)}
 export function updateObstacles(specs,along,time){
  const next=upcomingHazard(specs,along),distance=next?next.s-along:Infinity;
  const active=next?cueEnvelope(distance,time,next.seed):null;

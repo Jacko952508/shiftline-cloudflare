@@ -1,0 +1,29 @@
+name: SHIFTLINE V171 Full-Quality Frame Optimisation
+on:
+  push:
+    branches: [main, performance-v171]
+    paths:
+      - 'public/race-engine.js'
+      - 'public/race-world.js'
+      - 'public/race-obstacles.js'
+      - 'public/sea-obstacles.js'
+      - 'public/race-track.js'
+      - 'public/race-theme.js'
+      - 'public/index.html'
+      - 'test/performance-v171.mjs'
+      - '.github/workflows/performance-v171.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preserve-look-and-gameplay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: JS syntax and precision tests
+        run: |
+          for file in public/race-engine.js public/race-world.js public/race-obstacles.js public/sea-obstacles.js public/race-track.js public/race-theme.js; do node --check "$file"; done
+          node --experimental-loader ./test/three-loader.mjs test/performance-v171.mjs
+          node --experimental-loader ./test/three-loader.mjs test/runtime-v152.mjs
