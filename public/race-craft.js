@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {appearance,SHIP_SCALE} from './ship-catalog.js?v=163';
-import {buildFleetSculpture} from './fleet-sculpture-v162.js?v=163';
+import {buildFleetSculpture} from './fleet-sculpture-v162.js?v=166';
 export function craft(scene,color=0x72efff,variant=0,lit=true,custom={},options={}){
  const ship=new THREE.Group();variant=Math.max(0,Math.min(5,variant|0));
  ship.userData.flames=[];ship.userData.rotors=[];ship.userData.materialKinds=[];
