@@ -34,7 +34,8 @@ try{
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
   assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
   assert.equal(state.noseAttachmentCount,state.pieces+2,'Authentic nose, painted rim and solid belly must share cockpit camera');
-  assert.ok(state.noseBelly,'Hollow underside is not physically closed');
+  assert.ok(state.noseBelly,'Cockpit missing filled fuselage');
+  assert.ok(state.realHullContinuity,'No original three-station airframe bridge: mere end caps cannot close the gap');
   assert.equal(state.nosePaint.length,state.pieces,'Missing factory paint on nose sections');
   assert.ok(state.nosePaint.every(p=>p.factoryBody===entry.body),'Ship colour is not the selected factory livery');
   assert.ok(state.nosePaint.every(p=>p.finish===fleetFinish(model,{edition})),'Metallic, chrome or pearlescent coating mismatch');
@@ -58,6 +59,13 @@ try{
    assert.equal(q.pilot.model,model);assert.equal(q.pilot.edition,edition);
    assert.equal(q.pilotParts,model===4?3:1);
    assert.ok(q.pilot.visibleParts.every(p=>p.visible&&p.forward>0&&p.screen.every(Number.isFinite)));
+   // The new V170 hull must ACTUALLY project into the gap between the
+   // painted nose and cockpit rim, while leaving the racing horizon clear.
+   const join=await page.evaluate(()=>window.__shiftlinePilotAudit167.continuationCoverage());
+   assert.ok(join.total>40,'Full-circumference ship hull has no visible pixels: '+JSON.stringify({model,edition,label,join}));
+   if(label==='portrait')assert.ok(join.gap>25,'Cockpit black gap is still uncovered by actual hull: '+JSON.stringify({model,edition,join}));
+   assert.ok(join.horizon<120,'Continuation blocks front racing corridor: '+JSON.stringify({model,edition,label,join}));
+   assert.ok(join.areaPct<(label==='portrait'?15:12),'Cockpit hull too big, swallows controls: '+JSON.stringify({model,edition,label,join}));
    // Use isolated stable cockpit 3D render, avoiding temporal racing
    // post-effects creating false giant nose silhouettes.
    const delta=await page.evaluate(()=>window.__shiftlinePilotAudit167.noseCoverage());
@@ -81,7 +89,7 @@ try{
    assert.ok(delta.total>22,'Nose missing/hidden in '+model+'/'+edition+'/'+label+' '+JSON.stringify(delta));
    assert.ok(delta.areaPct<15,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
    assert.ok(delta.topPct<5.5,'Fuselage blocks forward racing horizon: '+JSON.stringify({model,edition,delta}));
-   console.log('PASS PILOT '+browserName+' '+model+'/'+edition+' '+entry.name+' '+label+' '+JSON.stringify({eye:state.eye,nose:delta,paint:state.nosePaint[0],belly:state.noseBelly}));
+   console.log('PASS PILOT '+browserName+' '+model+'/'+edition+' '+entry.name+' '+label+' '+JSON.stringify({eye:state.eye,nose:delta,continuity:join,paint:state.nosePaint[0],belly:state.noseBelly}));
   }
   // Verify returning to full-chase exterior (no forward-only geometry).
   await page.locator('#cameraBtn').click();

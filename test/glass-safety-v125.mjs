@@ -40,7 +40,7 @@ async function browserSmoke(type,courses,racing=false){
   await page.goto(site+'/?shipqa=1&glassSafety=125',{waitUntil:'domcontentloaded',timeout:65000});
   await page.waitForFunction(()=>window.shiftlineReady===true,null,{timeout:120000});await openSoloDemo(page,1);
   const engine=await page.locator('script[src^="race-engine.js"]').getAttribute('src');
-  assert.equal(engine,'race-engine.js?v=169','Latest safe build must be loaded');
+  assert.equal(engine,'race-engine.js?v=170','Latest safe build must be loaded');
   for(const course of courses){
    if(course!==1)await page.evaluate(n=>document.querySelector('[data-course="'+n+'"]').click(),course);
    await openTrackInspection(page);
