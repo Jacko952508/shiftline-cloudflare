@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
+import{fleetEdition,fleetFinish}from'./fleet-designs-v162.js?v=163';
+import{fleetPaint}from'./fleet-paint-v163.js?v=163';
 // Top-only curved interior coaming; never render the hidden lower half of
 // a sealed exterior loft at arm's length from the pilot eye.
 function fairingCanopySurface(stations,steps=20){
@@ -21,6 +23,43 @@ function fairingCanopySurface(stations,steps=20){
  geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geo.setIndex(ix);geo.computeVertexNormals();return geo;
+}
+// Lower semicircular underside running from the actual aft nose ring into
+// the cockpit tub. It does not occupy the pilot's forward sightline.
+function realNoseUnderside(stations,steps=20){
+ const pts=[],uv=[],ix=[];
+ for(let j=0;j<stations.length;j++){const [z,rx,ry,cy]=stations[j];
+  for(let k=0;k<=steps;k++){const a=Math.PI+k/steps*Math.PI;
+   pts.push(rx*Math.cos(a),cy+ry*Math.sin(a),z);uv.push(k/steps,j/(stations.length-1));}}
+ for(let j=0;j<stations.length-1;j++)for(let k=0;k<steps;k++){
+  const a=j*(steps+1)+k,b=a+steps+1;ix.push(a,b,a+1,a+1,b,b+1);}
+ // Close both ends of the lowered shell. Most importantly, the front
+ // cap seals the cut rear ring of the authentic nose itself, preventing
+ // the visible black opening below the painted upper fuselage.
+ const [frontZ,,,frontCY]=stations[0],frontCentre=pts.length/3;
+ pts.push(0,frontCY,frontZ);uv.push(.5,0);
+ for(let k=0;k<steps;k++)ix.push(frontCentre,k,k+1);
+ const [z,,,cy]=stations.at(-1),center=pts.length/3;
+ pts.push(0,cy,z);uv.push(.5,1);const start=(stations.length-1)*(steps+1);
+ for(let k=0;k<steps;k++)ix.push(center,start+k+1,start+k);
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();return g;
+}
+// Factory-specific accent pinstripes follow the original loft station rings.
+function noseLiveryLines(geometry,color){
+ const positions=geometry.attributes.position,rows=new Map();
+ for(let i=0;i<positions.count;i++){const z=positions.getZ(i),key=Math.round(z*10000),x=positions.getX(i),y=positions.getY(i);
+  let r=rows.get(key);if(!r){r={z,rx:0,low:Infinity,high:-Infinity};rows.set(key,r);}
+  r.rx=Math.max(r.rx,Math.abs(x));r.low=Math.min(r.low,y);r.high=Math.max(r.high,y);
+ }
+ const rings=[...rows.values()].sort((a,b)=>a.z-b.z).filter(r=>r.rx>.007);
+ if(rings.length<3)return[];
+ return [-1,1].map(side=>{
+  const pts=rings.map(r=>new THREE.Vector3(side*r.rx*.44,(r.low+r.high)/2+(r.high-r.low)*.4515+.006,r.z));
+  const line=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),Math.max(12,pts.length*5),.0035,5,false),
+   new THREE.MeshBasicMaterial({color,transparent:true,opacity:.85,toneMapped:false}));
+  line.name='factory livery / nose accent';line.renderOrder=2;return line;
+ });
 }
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
@@ -199,7 +238,7 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
  const sightPoints=[-.24,-.035,-.12,-.035,.12,-.035,.24,-.035,0,.085,0,.145,0,-.11,0,-.17];
  const sightGeo=new THREE.BufferGeometry();const positions=[];for(let i=0;i<sightPoints.length;i+=2)positions.push(sightPoints[i],sightPoints[i+1],-1.72);sightGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  const sight=new THREE.LineSegments(sightGeo,new THREE.LineBasicMaterial({color:tone,transparent:true,opacity:.53,depthTest:false}));sight.renderOrder=7;hud.add(sight);
- const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,tub,noseCameraRoot,noseMeshes:[],noseFairing:null,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
+ const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,tub,noseCameraRoot,noseMeshes:[],noseFairing:null,noseBelly:null,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
  if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')){
   window.__shiftlineCockpitQA={version:165,model,hasExteriorClone:false,interiorParts:root.children.length,
    windshieldClear:true,view:'pilot-eye',forwardDetail:forwardView.children.length,cabinClosed:true,
@@ -211,26 +250,46 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
 // once per race. Their local vertex/profile data and physically based paint
 // match the elected factory edition; no synthetic triangle or fake front.
 export function attachPilotAirframe(c,ship){
- for(const m of c.noseMeshes){m.removeFromParent();m.geometry.dispose();
-  for(const mat of Array.isArray(m.material)?m.material:[m.material])mat.dispose();}
+ for(const m of c.noseMeshes){m.removeFromParent();m.traverse(o=>{o.geometry?.dispose();
+  if(o.material)for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();
+ });}
  c.noseMeshes=[];
  if(c.noseFairing){
   c.noseFairing.removeFromParent();c.noseFairing.geometry.dispose();
   c.noseFairing.material.dispose();c.noseFairing=null;
  }
+ if(c.noseBelly){
+  c.noseBelly.removeFromParent();
+  c.noseBelly.traverse(o=>{o.geometry?.dispose();
+   if(o.material)for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();
+  });
+  c.noseBelly=null;
+ }
  const rig=pilotRig(ship);
  if(!rig)return null;
  const original=rig.seat.parent;
+ const design=fleetEdition(rig.model,{edition:rig.edition});
+ const finish=fleetFinish(rig.model,{edition:rig.edition});
  const scale=new THREE.Vector3(SHIP_SCALE*original.scale.x,SHIP_SCALE*original.scale.y,SHIP_SCALE*original.scale.z);
  c.noseCameraRoot.position.set(-rig.eyeLocal[0]*scale.x,-rig.eyeLocal[1]*scale.y,-rig.eyeLocal[2]*scale.z);
  c.noseCameraRoot.scale.copy(scale);
  for(const source of rig.parts){
-  const mats=(Array.isArray(source.material)?source.material:[source.material]).map(mat=>mat.clone());
-  const copy=new THREE.Mesh(source.geometry.clone(),Array.isArray(source.material)?mats:mats[0]);
+  // Recreate the ORIGINAL selected factory paint (including metallic,
+  // chrome or pearlescent flake shader), then rebalance cockpit exposure.
+  // V168's full-bright material clones appeared almost pure white.
+  const mat=fleetPaint(design.body,rig.model,{edition:rig.edition});
+  mat.name='pilot / '+design.name+' / '+finish;
+  mat.color.setHex(design.body).multiplyScalar(.53);
+  mat.metalness=finish==='chrome'?.70:finish==='metallic'?.52:.25;
+  mat.roughness=finish==='chrome'?.32:finish==='metallic'?.39:.46;
+  mat.clearcoat=finish==='chrome'?.65:.55;mat.envMapIntensity=.20;
+  mat.userData.factoryBody=design.body;mat.userData.factoryFinish=finish;
+  const copy=new THREE.Mesh(source.geometry.clone(),mat);
   copy.name='authentic pilot view / '+source.name;copy.position.copy(source.position);
   copy.quaternion.copy(source.quaternion);copy.scale.copy(source.scale);
   copy.castShadow=false;copy.receiveShadow=false;
   copy.frustumCulled=false;copy.userData.realForwardSection=true;
+  if(source===rig.parts[0])for(const stripe of noseLiveryLines(copy.geometry,design.accent))copy.add(stripe);
   c.noseCameraRoot.add(copy);c.noseMeshes.push(copy);
  }
  // Interior-only transition using the actual nose station dimensions.
@@ -242,19 +301,23 @@ export function attachPilotAirframe(c,ship){
  actual.geometry.computeBoundingBox();
  const box=actual.geometry.boundingBox;
  const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
- // Only the moulded junction lip is exposed. A long inner skirt is
- // forbidden: it fills the viewport, hiding seats and flight controls.
- // A 6mm-deep painted edge seam lies ON the real last fuselage ring.
- // No additional forward shelf should be visible below the nose.
- const innerStations=[
-  [end-.003,radius,.122,.022],
-  [end+.003,radius,.122,.022]
- ];
- const sourcePaint=Array.isArray(actual.material)?actual.material[0]:actual.material;
- const fairingPaint=new THREE.MeshStandardMaterial({
-  color:new THREE.Color(0x101b27).lerp(sourcePaint.color,.10),
-  metalness:.28,roughness:.78,side:THREE.DoubleSide
- });
+ // Fit the underside to the REAL last fuselage ring; keep the upper
+ // factory-painted nose unchanged and close only the hollow lower half.
+ const p=actual.geometry.attributes.position;let low=Infinity,high=-Infinity,rx=0;
+ for(let i=0;i<p.count;i++)if(Math.abs(p.getZ(i)-end)<.0005){
+  rx=Math.max(rx,Math.abs(p.getX(i)));low=Math.min(low,p.getY(i));high=Math.max(high,p.getY(i));
+ }
+ rx=Math.max(.05,rx);const cy=(low+high)/2,ry=(high-low)/2;
+ const dark=new THREE.Color(design.secondary).lerp(new THREE.Color(design.body),.20);
+ const bellyPaint=new THREE.MeshStandardMaterial({color:dark,metalness:.35,roughness:.71,envMapIntensity:.14,side:THREE.DoubleSide});
+ const belly=new THREE.Mesh(realNoseUnderside([
+  [end-.006,rx,ry,cy],[end+.05,rx*.99,ry*.93,cy-.030],
+  [end+.133,rx*.95,ry*.77,cy-.079],[end+.236,rx*.87,ry*.48,cy-.137]
+ ]),bellyPaint);
+ belly.name='fitted sealed lower-nose / genuine factory profile';belly.castShadow=false;belly.receiveShadow=false;belly.frustumCulled=false;
+ c.noseCameraRoot.add(belly);c.noseBelly=belly;
+ const innerStations=[[end-.004,radius,.122,cy],[end+.003,radius,.122,cy]];
+ const fairingPaint=new THREE.MeshStandardMaterial({color:dark.clone().multiplyScalar(.85),metalness:.28,roughness:.78,envMapIntensity:.12,side:THREE.DoubleSide});
  // A narrow shaded crown finishes the end of the authentic fuselage.
  // The physical seating, cowling, consoles and stick mounts stay visible;
  // no full-width nose panel or artificial inner hull is drawn.
@@ -269,6 +332,9 @@ export function attachPilotAirframe(c,ship){
   window.__shiftlineCockpitQA.cameraLocked=true;
   window.__shiftlineCockpitQA.noseCount=c.noseMeshes.length;
   window.__shiftlineCockpitQA.cabinFairing=true;
+  window.__shiftlineCockpitQA.undersideFilled=true;
+  window.__shiftlineCockpitQA.factoryNose=design.name;
+  window.__shiftlineCockpitQA.noseFinish=finish;
  }
  return {model:rig.model,edition:rig.edition,count:c.noseMeshes.length};
 }
