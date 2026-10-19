@@ -1,0 +1,55 @@
+name: SHIFTLINE V167 All 18 Cockpit Edition Audit
+on:
+  push:
+    branches: [pilot-audit-v167,main]
+    paths:
+      - 'test/pilot-audit-bridge-v167.js'
+      - 'test/pilot-all-editions-v167.mjs'
+      - '.github/workflows/pilot-audit-v167.yml'
+      - 'public/pilot-view-v166.js'
+      - 'public/fleet-sculpture-v162.js'
+      - 'public/race-engine.js'
+      - 'public/cockpit.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fleet-pilot-audit-v167-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  all-editions:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+        models: ['0-2', '3-5']
+    name: ${{ matrix.browser }} ships ${{ matrix.models }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FLEET_BROWSER: ${{ matrix.browser }}
+      FLEET_GROUP: ${{ matrix.models }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install browser and PNG analysis
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Serve true Level 1 and append test-only ship edition switcher
+        run: |
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/pilot-audit-bridge-v167.js >> public/race-engine.js
+          node --check public/race-engine.js
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/pilot-audit.log 2>&1 &
+          sleep 2
+      - name: Check each edition inside ECLIPSE, first-person nose pixels, all views
+        run: node test/pilot-all-editions-v167.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cockpit-editions-${{ matrix.browser }}-${{ matrix.models }}
+          path: qa-v167
+          retention-days: 5
+          if-no-files-found: ignore
