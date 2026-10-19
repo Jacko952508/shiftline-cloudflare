@@ -110,20 +110,11 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
  // and depth pass as the matching ship nose and the seat.
  const nearWallShape=new THREE.Shape();
  nearWallShape.moveTo(-.99,-1.02);nearWallShape.lineTo(.99,-1.02);
- nearWallShape.lineTo(.91,-.145);nearWallShape.lineTo(.58,-.165);
- nearWallShape.quadraticCurveTo(0,-.175,-.58,-.165);
- nearWallShape.lineTo(-.91,-.145);nearWallShape.closePath();
+ nearWallShape.lineTo(.91,-.195);nearWallShape.lineTo(.58,-.232);
+ nearWallShape.quadraticCurveTo(0,-.273,-.58,-.232);
+ nearWallShape.lineTo(-.91,-.195);nearWallShape.closePath();
  const nearWall=tubMesh(new THREE.ExtrudeGeometry(nearWallShape,{depth:.038,bevelEnabled:true,bevelSize:.009,bevelThickness:.007,bevelSegments:2}),shell,0,0,-.385);
  nearWall.name='solid eye-level cockpit interior sill';
- // The original hull genuinely runs below and behind the pilot. This near-
- // field solid cockpit coaming is closer to the *eyes* in the visual stack.
- // Unlike the former translucent cutaway, it must occlude the top of the
- // inner hull at the seat threshold, just like a real dashboard bulkhead.
- // The shell renders after the exterior's painted fuselage in the shared
- // cockpit scene, while keeping the central windscreen entirely clear.
- const occludingShell=shell.clone();occludingShell.depthTest=false;
- occludingShell.depthWrite=false;nearWall.material=occludingShell;
- nearWall.renderOrder=8;
  const paddedEdge=tubMesh(new THREE.BoxGeometry(.78,.025,.038),rubber,0,-.256,-.344);
  paddedEdge.name='cockpit forward padded binnacle';
  for(const side of[-1,1]){
