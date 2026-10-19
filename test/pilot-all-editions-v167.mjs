@@ -45,7 +45,11 @@ try{
   assert.equal(state.model,model,'Wrong ship model cockpit loaded');
   assert.equal(state.edition,edition,'Wrong authored edition');
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
-  assert.ok(state.actual&&state.craftVisible,'Real nose hidden');
+  assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
+  assert.equal(state.noseAttachmentCount,state.pieces,'Original mesh geometry not mounted to cockpit camera');
+  assert.ok(state.cabinClosed,'Cockpit interior is transparent / seating shell missing');
+  assert.ok(state.rigidLock>.99999,'Pilot camera orientation drifts from ship rotation');
+  assert.ok(state.independentCockpitSway<1e-5,'Cockpit overlay animates independently of nose');
   assert.deepEqual(state.exteriorParts,[],'Rear fuselage or exhaust remains visible through cockpit');
   assert.ok(state.noseGeometry.every(x=>x.triangles>35),'Degenerate forward hull');
   assert.equal(state.cockpitEdition.instrument,edition,'Incorrect instrument palette');
@@ -56,6 +60,8 @@ try{
    const status=await page.evaluate(()=>window.__shiftlinePilotAudit167.frame());
    assert.equal(status.edition,edition);assert.ok(status.actual);
    const q=await page.evaluate(()=>window.__shiftlineCockpitQA);
+   assert.equal(q.cabinClosed,true);assert.equal(q.lockedOverlay,true);
+   assert.equal(q.cameraLocked,true);assert.equal(q.renderNoseInOverlay,true);
    assert.equal(q.pilot.model,model);assert.equal(q.pilot.edition,edition);
    assert.equal(q.pilotParts,model===4?3:1);
    assert.ok(q.pilot.visibleParts.every(p=>p.visible&&p.forward>0&&p.screen.every(Number.isFinite)));
@@ -65,7 +71,7 @@ try{
    const img=await page.screenshot({path:output+'/'+model+'-'+edition+'-'+label+'.png',timeout:60000});
    const delta=difference(img,back);
    assert.ok(delta.total>22,'Nose missing/hidden in '+model+'/'+edition+'/'+label+' '+JSON.stringify(delta));
-   assert.ok(delta.areaPct<17,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
+   assert.ok(delta.areaPct<15,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
    assert.ok(delta.topPct<5.5,'Fuselage blocks forward racing horizon: '+JSON.stringify({model,edition,delta}));
    console.log('PASS PILOT '+browserName+' '+model+'/'+edition+' '+entry.name+' '+label+' '+JSON.stringify({eye:state.eye,nose:delta}));
   }
