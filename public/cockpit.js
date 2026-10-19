@@ -104,6 +104,25 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
  // opening with actual interior bodywork.
  const seatBulkhead=tubMesh(new THREE.ExtrudeGeometry(inside,{depth:.14,bevelEnabled:true,bevelSize:.022,bevelThickness:.015,bevelSegments:2}),shell,0,0,-1.32);
  seatBulkhead.name='opaque forward cabin bulkhead';
+ // Actual near-field inner cockpit brow: closes the sightline into the
+ // fuselage at the pilot's feet. Unlike an overlay black bar it is a solid
+ // curved interior wall at the seat eyepoint, in the SAME rendered 3D scene
+ // and depth pass as the matching ship nose and the seat.
+ const nearWallShape=new THREE.Shape();
+ nearWallShape.moveTo(-.99,-1.02);nearWallShape.lineTo(.99,-1.02);
+ nearWallShape.lineTo(.91,-.195);nearWallShape.lineTo(.58,-.232);
+ nearWallShape.quadraticCurveTo(0,-.273,-.58,-.232);
+ nearWallShape.lineTo(-.91,-.195);nearWallShape.closePath();
+ const nearWall=tubMesh(new THREE.ExtrudeGeometry(nearWallShape,{depth:.038,bevelEnabled:true,bevelSize:.009,bevelThickness:.007,bevelSegments:2}),shell,0,0,-.385);
+ nearWall.name='solid eye-level cockpit interior sill';
+ const paddedEdge=tubMesh(new THREE.BoxGeometry(.78,.025,.038),rubber,0,-.256,-.344);
+ paddedEdge.name='cockpit forward padded binnacle';
+ for(const side of[-1,1]){
+  const knee=tubMesh(new THREE.BoxGeometry(.19,.31,.26),shell,side*.65,-.43,-.40);
+  knee.rotation.z=side*.24;knee.name='inner knee-panel cowling';
+  const joint=tubMesh(new THREE.BoxGeometry(.035,.25,.05),metalInset,side*.53,-.45,-.36);
+  joint.rotation.z=side*.24;
+ }
  const lowerDeck=tubMesh(new THREE.BoxGeometry(2.28,.10,.94),rubber,0,-1.29,-.98);lowerDeck.name='nontransparent enclosed cabin floor';
  // Side-wall panels connect the instrument board to the seat rather than
  // leaving visible open gaps through the hull.
