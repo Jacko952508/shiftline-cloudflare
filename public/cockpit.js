@@ -329,11 +329,12 @@ export function attachPilotAirframe(c,ship){
  // This actual internal connecting panel is narrow and sits BELOW the
  // existing forward nose, rather than covering the tunnel like a fake hood.
  const innerDeck=new THREE.Mesh(noseInteriorDeck([
-  [end-.008,rx*.70,cy+ry*.41],
-  [end+.037,rx*.73,cy-.015],
-  [end+.092,rx*.62,cy-.065],
-  [end+.182,rx*.49,cy-.117],
-  [end+.250,rx*.35,cy-.148]
+  // Small dark transition stays with the real nose edge. Do not reach
+  // towards the pilot seat: perspective makes near-field flats enormous.
+  [end-.008,rx*.63,cy+ry*.34],
+  [end+.022,rx*.55,cy-.010],
+  [end+.053,rx*.35,cy-.044],
+  [end+.088,rx*.14,cy-.078]
  ]),new THREE.MeshStandardMaterial({
   color:dark.clone().lerp(new THREE.Color(0x101922),.28),
   metalness:.31,roughness:.79,envMapIntensity:.09,side:THREE.DoubleSide
