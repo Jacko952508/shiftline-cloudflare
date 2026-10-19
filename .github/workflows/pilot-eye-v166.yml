@@ -1,0 +1,58 @@
+name: SHIFTLINE V166 Real Pilot Eye
+on:
+  push:
+    branches: [pilot-eye-v166,main]
+    paths:
+      - 'public/pilot-view-v166.js'
+      - 'public/fleet-sculpture-v162.js'
+      - 'public/race-craft.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/pilot-eye-v166.mjs'
+      - 'test/pilot-browser-v166.mjs'
+      - '.github/workflows/pilot-eye-v166.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pilot-eye-v166-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Test physical cockpit geometry and pilot camera
+        run: |
+          node --check public/pilot-view-v166.js
+          node --check public/fleet-sculpture-v162.js
+          node --check public/race-engine.js
+          node --experimental-loader ./test/three-loader.mjs test/pilot-eye-v166.mjs
+          node --experimental-loader ./test/three-loader.mjs test/cockpit-v165.mjs
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install browser dependencies
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve race with CI-only deterministic frame controls
+        run: |
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/pilot-eye-v166.log 2>&1 &
+          sleep 2
+      - name: Render original VECTOR and forward-nacelle GEMINI in real Level 1
+        run: node test/pilot-browser-v166.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pilot-eye-v166-frames
+          path: qa-v166-pilot-eye
+          if-no-files-found: ignore

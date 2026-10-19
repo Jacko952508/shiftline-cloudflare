@@ -24,11 +24,13 @@ async function checkStatic() {
   const r=await get(site+'/?smoke='+Date.now());
   const t=await r.text();
   assert.match(r.headers.get('content-type')||'',/text\/html/i);
-  assert.match(t,/race-engine\.js\?v=105/);
+  assert.match(t,/race-engine\.js\?v=\d+/, 'Cloudflare must serve a versioned race engine');
   return t;
  });
  assert.match(html,/type="importmap"/);
- for(const file of ['race-engine.js?v=105','vendor/three.module.js','vendor/three.core.js']){
+ const activeEngine=html.match(/race-engine\.js\?v=\d+/)?.[0];
+ assert.ok(activeEngine,'Current race engine asset missing from live HTML');
+ for(const file of [activeEngine,'vendor/three.module.js','vendor/three.core.js']){
   await retry('Cloudflare '+file,async()=>{
    const r=await get(site+'/'+file);
    const t=await r.text();

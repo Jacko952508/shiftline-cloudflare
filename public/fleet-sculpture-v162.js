@@ -6,14 +6,14 @@ import {installShipExhaust} from './ship-exhaust-v119.js?v=163';
 
 // Closed, capped surfaces. Every aerodynamic panel has thickness; all roots
 // deliberately penetrate the structure they attach to, including the underside.
-export function sealedLoft(stations,sides=32){
+export function sealedLoft(stations,sides=32,capRear=true){
  const p=[],uv=[],ix=[],tau=Math.PI*2;
  for(let i=0;i<stations.length;i++){
   const [z,rx,ry,cy=0]=stations[i];
   for(let k=0;k<=sides;k++){const a=k/sides*tau;p.push(Math.cos(a)*rx,cy+Math.sin(a)*ry,z);uv.push(k/sides,i/(stations.length-1));}
  }
  for(let i=0;i<stations.length-1;i++)for(let k=0;k<sides;k++){const a=i*(sides+1)+k,b=a+sides+1;ix.push(a,a+1,b,a+1,b+1,b);}
- for(const end of[0,stations.length-1]){
+ for(const end of(capRear?[0,stations.length-1]:[0])){
   const [z,rx,ry,cy=0]=stations[end],center=p.length/3;p.push(0,cy,z);uv.push(.5,.5);
   for(let k=0;k<=sides;k++){const a=k/sides*tau;p.push(Math.cos(a)*rx,cy+Math.sin(a)*ry,z);uv.push(.5+Math.cos(a)*.5,.5+Math.sin(a)*.5);}
   for(let k=0;k<sides;k++){const a=center+1+k,b=a+1;ix.push(center,...(end===0?[b,a]:[a,b]));}
@@ -86,6 +86,35 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  const stations=[[front,.012,.018,-.014],[front+.28,width*.32,.055,0],[-.60,width*.76,.105,.015],[-.24,width,.16,.023],[.22,width*.96,.145,.018],[.57,width*.72,.11,0],[rear,width*.42,.075,-.012]];
  // The two main nacelles lead GEMINI's cockpit, giving a recognisable catamaran.
  hull(stations);hull(stations.map(([z,rx,ry,cy])=>[z,rx*.91,ry*.58,cy-.055]),dark,0,0,'continuous lower keel');
+ // Each first-person pilot eye is anchored inside the actual authored ship.
+ // A separately clipped section of the ORIGINAL station loft is exposed to
+ // the pilot camera; never create a second entire ship and never fabricate a
+ // generic false nose. The open rear edge sits beneath the cockpit coaming.
+ // The world-scale anchor accounts for both root span normalization and the
+ // racing SHIP_SCALE automatically via getWorldPosition().
+ if(options.pilotModel){
+  const seat=new THREE.Object3D();
+  const eyeY=[.325,.332,.323,.335,.334,.346][index],eyeZ=[.09,-.22,-.12,-.16,-.10,-.25][index];
+  seat.name='pilotSeat / '+NAMES[index];seat.position.set(0,eyeY,eyeZ);root.add(seat);
+  // Interpolate midway along the real third-to-fourth body station. This is
+  // the authentic taper of the sculpted ship, rather than an arbitrary
+  // nose mesh. It stays below the canopy frame instead of filling portrait.
+  const foreJoin=stations[2].map((v,k)=>v+(stations[3][k]-v)*.5);
+  const nose=add(sealedLoft([...stations.slice(0,3),foreJoin],high?32:20,false),body,[0,0,0],'pilot forward fuselage / exact loft');
+  nose.visible=false;nose.castShadow=false;nose.receiveShadow=false;nose.userData.pilotVisible=true;nose.userData.noBatch=true;
+  const parts=[nose];
+  // GEMINI's two forward nacelles genuinely project farther forward than its
+  // central hull; show only the visible leading sections from the same loft.
+  if(index===4){
+   const podFront=-1.43,rad=.205*[1,1.10,.88][e];
+   for(const side of[-1,1]){
+    const tip=add(sealedLoft([[podFront,.022,.025,0],[podFront+.21,rad*.72,rad*.72,0],[-.55,rad,rad*.88,0]],high?32:20,false),body,[side*.76,.02,0],'pilot nacelle nose / original Gemini profile');
+    tip.visible=false;tip.castShadow=false;tip.receiveShadow=false;tip.userData.pilotVisible=true;tip.userData.noBatch=true;parts.push(tip);
+   }
+  }
+  root.userData.pilotRig={version:166,seat,nose,parts,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
+ }
+
  const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
  for(const side of[-1,1]){
   const points=PLANS[index].map(([x,z],k)=>{
