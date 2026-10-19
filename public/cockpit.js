@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import{appearance,MODELS}from'./ship-catalog.js?v=163';
+import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
+import{pilotRig}from'./pilot-view-v166.js?v=167';
 function glassPatch(radius,center,span,height,y,uv){const p=[],t=[],ix=[],n=24;for(let j=0;j<=1;j++)for(let i=0;i<=n;i++){const a=center+(i/n-.5)*span;p.push(Math.sin(a)*radius,y+(j-.5)*height,-Math.cos(a)*radius);t.push(uv[0]+i/n*uv[2],uv[1]+j*uv[3]);}for(let i=0;i<n;i++)ix.push(i,i+1,i+n+1,i+1,i+n+2,i+n+1);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(t,2));g.setIndex(ix);g.computeVertexNormals();return g;}
 export function createCockpit(custom={},model=0,color=0x72efff,environment=null){
  const a=appearance(custom),gold=color===0xffbd55,chrome=color===0xb5f8ee,scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.05,10),root=new THREE.Group();scene.add(root);
@@ -85,6 +86,53 @@ export function createCockpit(custom={},model=0,color=0x72efff,environment=null)
   modelPlate(.12,.034,.42,0,-1.01,-2.02,metalInset);
  }
 
+ // V167: physically enclosed pilot tub, not a transparent dashboard floating
+ // in space. Camera-local surfaces are solid and use the selected edition's
+ // cockpit trim. Geometry deliberately stays outside the central windshield.
+ const tub=new THREE.Group();tub.name='FLIGHTWORKS / sealed seating module';root.add(tub);
+ const tubMesh=(geometry,material,x,y,z)=>{
+  const m=mesh(geometry,material,x,y,z,tub);m.receiveShadow=false;return m;
+ };
+ const inside=new THREE.Shape();
+ inside.moveTo(-1.42,-1.55);inside.lineTo(1.42,-1.55);
+ inside.lineTo(1.27,-.93);inside.lineTo(.94,-1.00);
+ inside.quadraticCurveTo(.45,-1.14,0,-1.155);
+ inside.quadraticCurveTo(-.45,-1.14,-.94,-1.00);
+ inside.lineTo(-1.27,-.93);inside.closePath();
+ // This opaque seat-bulkhead closes the hole visible in the V166 screenshot.
+ // It sits behind the instrument deck in apparent depth, masking the cockpit
+ // opening with actual interior bodywork.
+ const seatBulkhead=tubMesh(new THREE.ExtrudeGeometry(inside,{depth:.14,bevelEnabled:true,bevelSize:.022,bevelThickness:.015,bevelSegments:2}),shell,0,0,-1.32);
+ seatBulkhead.name='opaque forward cabin bulkhead';
+ const lowerDeck=tubMesh(new THREE.BoxGeometry(2.28,.10,.94),rubber,0,-1.29,-.98);lowerDeck.name='nontransparent enclosed cabin floor';
+ // Side-wall panels connect the instrument board to the seat rather than
+ // leaving visible open gaps through the hull.
+ for(const side of[-1,1]){
+  const wall=tubMesh(new THREE.BoxGeometry(.16,.60,1.42),shell,side*1.13,-.83,-.80);
+  wall.rotation.z=side*.11;wall.name='side cockpit inner hull';
+  const arm=tubMesh(new THREE.BoxGeometry(.32,.15,.85),metalInset,side*.91,-.94,-.83);
+  arm.rotation.z=-side*.09;
+  const cushion=tubMesh(new THREE.CapsuleGeometry(.095,.43,3,8),rubber,side*.69,-1.13,-.46);
+  cushion.rotation.x=Math.PI/2;cushion.name='seat side bolster';
+  const harness=tubMesh(new THREE.BoxGeometry(.055,.27,.22),trim,side*.48,-1.13,-.39);
+  harness.rotation.z=side*.24;
+  const footwell=tubMesh(new THREE.BoxGeometry(.42,.035,.46),metalInset,side*.50,-1.305,-1.39);
+  footwell.rotation.x=-.12;
+  for(let i=0;i<3;i++)tubMesh(new THREE.BoxGeometry(.12,.008,.016),rubber,side*.50,-1.278,-1.55+i*.105);
+ }
+ // Seat's front lip and central structural sill are visible from the pilot
+ // eyepoint; the remainder of the seat is underneath and behind the viewer.
+ const seatLip=tubMesh(new THREE.BoxGeometry(.80,.13,.33),shell,0,-1.25,-.29);
+ seatLip.name='moulded seat base';seatLip.rotation.x=.10;
+ const seatPadding=tubMesh(new THREE.BoxGeometry(.74,.047,.29),rubber,0,-1.18,-.26);
+ seatPadding.name='pilot seat cushion';
+ const cabinCentre=tubMesh(new THREE.BoxGeometry(.29,.10,.67),shell,0,-1.20,-.87);
+ cabinCentre.name='central cockpit tunnel';
+ const closure=tubMesh(new THREE.BoxGeometry(.52,.13,.43),metalInset,0,-1.09,-1.39);
+ closure.rotation.x=-.08;closure.name='lower instrument shroud';
+ // Separate camera-mounted authoring branch for the true nose of the current
+ // ship. It shares original mesh profiles but NOT world transform or shake.
+ const noseCameraRoot=new THREE.Group();noseCameraRoot.name='true-nose cockpit camera fixture';scene.add(noseCameraRoot);
  // True pilot-eye view: the dashboard, canopy frame and side consoles remain
  // present, but NEVER render a second exterior airframe in the cockpit scene.
  // The old forebody clone showed the craft's entire front fuselage through
@@ -111,26 +159,54 @@ const button=new THREE.Group();scene.add(button);const base=mesh(new THREE.Cylin
  const sightPoints=[-.24,-.035,-.12,-.035,.12,-.035,.24,-.035,0,.085,0,.145,0,-.11,0,-.17];
  const sightGeo=new THREE.BufferGeometry();const positions=[];for(let i=0;i<sightPoints.length;i+=2)positions.push(sightPoints[i],sightPoints[i+1],-1.72);sightGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  const sight=new THREE.LineSegments(sightGeo,new THREE.LineBasicMaterial({color:tone,transparent:true,opacity:.53,depthTest:false}));sight.renderOrder=7;hud.add(sight);
- const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
+ const result={scene,camera,root,hud,panels,stick,rightStick,forwardView,tub,noseCameraRoot,noseMeshes:[],button,cap,ring,trim,canvas,ctx,texture,custom:a,model,lastPaint:-1,pitch:0,roll:0,scratch:new THREE.Vector3(),viewport:[],signature:''};
  if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')){
   window.__shiftlineCockpitQA={version:165,model,hasExteriorClone:false,interiorParts:root.children.length,
-   windshieldClear:true,view:'pilot-eye',forwardDetail:forwardView.children.length};
+   windshieldClear:true,view:'pilot-eye',forwardDetail:forwardView.children.length,cabinClosed:true,
+   lockedOverlay:true,seatBuilt:true};
  }
  return result;
+}
+// Build visible real ship sections from the EXACT original authored meshes
+// once per race. Their local vertex/profile data and physically based paint
+// match the elected factory edition; no synthetic triangle or fake front.
+export function attachPilotAirframe(c,ship){
+ for(const m of c.noseMeshes){m.removeFromParent();m.geometry.dispose();
+  for(const mat of Array.isArray(m.material)?m.material:[m.material])mat.dispose();}
+ c.noseMeshes=[];
+ const rig=pilotRig(ship);
+ if(!rig)return null;
+ const original=rig.seat.parent;
+ const scale=new THREE.Vector3(SHIP_SCALE*original.scale.x,SHIP_SCALE*original.scale.y,SHIP_SCALE*original.scale.z);
+ c.noseCameraRoot.position.set(-rig.eyeLocal[0]*scale.x,-rig.eyeLocal[1]*scale.y,-rig.eyeLocal[2]*scale.z);
+ c.noseCameraRoot.scale.copy(scale);
+ for(const source of rig.parts){
+  const mats=(Array.isArray(source.material)?source.material:[source.material]).map(mat=>mat.clone());
+  const copy=new THREE.Mesh(source.geometry.clone(),Array.isArray(source.material)?mats:mats[0]);
+  copy.name='authentic pilot view / '+source.name;copy.position.copy(source.position);
+  copy.quaternion.copy(source.quaternion);copy.scale.copy(source.scale);
+  copy.castShadow=false;copy.receiveShadow=false;
+  copy.frustumCulled=false;copy.userData.realForwardSection=true;
+  c.noseCameraRoot.add(copy);c.noseMeshes.push(copy);
+ }
+ c.noseCameraRoot.visible=true;
+ if(typeof window!=='undefined'&&location.search.includes('cockpitqa=1')&&window.__shiftlineCockpitQA){
+  window.__shiftlineCockpitQA.renderNoseInOverlay=true;
+  window.__shiftlineCockpitQA.cameraLocked=true;
+  window.__shiftlineCockpitQA.noseCount=c.noseMeshes.length;
+ }
+ return {model:rig.model,edition:rig.edition,count:c.noseMeshes.length};
 }
 export function updateCockpit(c,dt,data,rect,width,height){
  c.hud.children[0].material.uniforms.time.value=data.time||0;c.hud.children[0].material.uniforms.boost.value=data.boost?1:0;const aspect=width/Math.max(1,height),fov=THREE.MathUtils.clamp(data.fov||78,66,88);
  if(Math.abs(c.camera.aspect-aspect)>.001||Math.abs(c.camera.fov-fov)>.15){c.camera.aspect=aspect;c.camera.fov=fov;c.camera.updateProjectionMatrix();}
  c.root.scale.x=THREE.MathUtils.clamp(aspect*(fov/60),.58,1.7);
  const fit=Math.min(1,aspect/.55);c.hud.scale.set(fit,fit,1);
- const sway=1-Math.exp(-Math.min(.1,Math.max(0,dt))*14);
- const lateral=THREE.MathUtils.clamp(data.lateral||0,-15,15),vertical=THREE.MathUtils.clamp(data.vertical||0,-15,15);
- const bank=THREE.MathUtils.clamp(data.bank||0,-1.1,1.1);
- c.root.rotation.z+=(THREE.MathUtils.clamp(-lateral*.0022-bank*.026,-.09,.09)-c.root.rotation.z)*sway;
- c.root.rotation.x+=(THREE.MathUtils.clamp(vertical*.004,-.075,.075)-c.root.rotation.x)*sway;
- c.root.position.y+=(THREE.MathUtils.clamp(-Math.abs(vertical)*.0015,-.025,0)-c.root.position.y)*sway;
- c.hud.rotation.z+=(c.root.rotation.z*.62-c.hud.rotation.z)*sway;
- c.hud.rotation.x+=(c.root.rotation.x*.56-c.hud.rotation.x)*sway;
+ // The windshield frame, pilot seat and real forward ship are a single
+ // camera-relative assembly. In particular DO NOT apply spring/sway to the
+ // interior separately from the ship or the two will visibly slide apart.
+ c.root.rotation.set(0,0,0);c.root.position.set(0,0,0);
+ c.hud.rotation.set(0,0,0);
  const k=1-Math.exp(-Math.min(.1,Math.max(0,dt))*24);c.pitch+=(THREE.MathUtils.clamp((data.vertical||0)*.045,-.23,.23)-c.pitch)*k;c.roll+=(THREE.MathUtils.clamp(-(data.lateral||0)*.05,-.24,.24)-c.roll)*k;c.stick.rotation.set(c.pitch,0,c.roll);c.rightStick.rotation.set(c.pitch,0,c.roll);
  c.trim.emissiveIntensity=data.boost?.35:.12;c.cap.position.z=data.boost?.027:.036;c.ring.material.color.setHex(data.boost?0xe4fff5:[0x72efff,0xffbd78,0xa6ffcb][c.custom.instrument]);
  if(rect?.width&&rect?.height){c.camera.updateMatrixWorld();c.scratch.set((rect.left+rect.width/2)/width*2-1,1-(rect.top+rect.height/2)/height*2,.5).unproject(c.camera);c.scratch.multiplyScalar(-1.4/c.scratch.z);c.button.position.copy(c.scratch);const diameter=Math.min(rect.width,rect.height)/height*2*1.4*Math.tan(Math.PI/6);c.button.scale.setScalar(diameter/.3);}
