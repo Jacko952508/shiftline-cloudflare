@@ -14,8 +14,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: fleet-pilot-audit-v167-${{ github.ref }}
-  cancel-in-progress: true
+  group: fleet-pilot-audit-v167-${{ github.sha }}
+  cancel-in-progress: false
 jobs:
   all-editions:
     strategy:
