@@ -42,8 +42,6 @@ jobs:
           npx playwright install --with-deps chromium webkit
       - name: Serve preview
         run: |
-          # CI-only instrumentation, never committed to the shipped race engine.
-          cat test/runtime-bridge-v152.js >> public/race-engine.js
           python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-level1-cockpit.log 2>&1 &
           sleep 2
       - name: Test real Level 1 pilot and chase cameras at both orientations
