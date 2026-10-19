@@ -33,7 +33,13 @@ try{
   assert.equal(state.edition,edition,'Wrong authored edition');
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
   assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
-  assert.equal(state.noseAttachmentCount,state.pieces+1,'Authentic nose and one structural cabin transition must share the cockpit camera');
+  assert.equal(state.noseAttachmentCount,state.pieces+2,'Authentic nose, painted rim and solid belly must share cockpit camera');
+  assert.ok(state.noseBelly,'Hollow underside is not physically closed');
+  assert.equal(state.nosePaint.length,state.pieces,'Missing factory paint on nose sections');
+  assert.ok(state.nosePaint.every(p=>p.factoryBody===entry.body),'Ship colour is not the selected factory livery');
+  assert.ok(state.nosePaint.every(p=>p.finish===fleetFinish(model,{edition})),'Metallic, chrome or pearlescent coating mismatch');
+  assert.ok(state.nosePaint.every(p=>p.color!==0xffffff),'Cockpit nose has been overpainted white');
+  assert.equal(state.nosePaint[0].accentStripes,2,'Missing coloured factory markings on forward nose');
   assert.ok(state.cabinClosed,'Cockpit interior is transparent / seating shell missing');
   assert.ok(state.rigidLock>.99999,'Pilot camera orientation drifts from ship rotation');
   assert.ok(state.independentCockpitSway<1e-5,'Cockpit overlay animates independently of nose');
@@ -75,7 +81,7 @@ try{
    assert.ok(delta.total>22,'Nose missing/hidden in '+model+'/'+edition+'/'+label+' '+JSON.stringify(delta));
    assert.ok(delta.areaPct<15,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
    assert.ok(delta.topPct<5.5,'Fuselage blocks forward racing horizon: '+JSON.stringify({model,edition,delta}));
-   console.log('PASS PILOT '+browserName+' '+model+'/'+edition+' '+entry.name+' '+label+' '+JSON.stringify({eye:state.eye,nose:delta}));
+   console.log('PASS PILOT '+browserName+' '+model+'/'+edition+' '+entry.name+' '+label+' '+JSON.stringify({eye:state.eye,nose:delta,paint:state.nosePaint[0],belly:state.noseBelly}));
   }
   // Verify returning to full-chase exterior (no forward-only geometry).
   await page.locator('#cameraBtn').click();
