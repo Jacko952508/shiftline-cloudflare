@@ -33,8 +33,8 @@ for(let course=1;course<=6;course++){
 assert.equal(palettes.size,6);
 const engine=readFileSync(new URL('../public/race-engine.js',import.meta.url),'utf8');
 assert.ok(engine.includes('finishGate=createFinishPortal(course);'));
-assert.ok(engine.includes('updateFinishPortal(finishGate,time,track.length-along,boost)'));
-assert.ok(engine.includes('if(along>=track.length)finishRace()'),'Original race timing must not change');
+assert.ok(engine.includes('updateFinishPortal(finishGate,time,raceEnd-along,boost)'));
+assert.ok(engine.includes('if(along>=raceEnd)finishRace()'),'Full races and practice must finish at their destination');
 assert.ok(!engine.includes("fillText('FINISH'"),'Old sign must be removed');
 assert.ok(engine.includes('disposeFinishPortal(scene,finishGate)'));
 console.log('PASS SHIFT LINE V174 six distinct glowing vortex destinations, approach animation, disposal and unchanged finish timing ('+count+' tracks)');

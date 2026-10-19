@@ -1,6 +1,8 @@
+import {courseSectors,sectorKey} from './race-sectors-v176.js?v=176';
+import {createTrack} from './race-track.js?v=175';
 import {FLEET_EDITIONS,fleetEdition,fleetFinishLabel,editionIndex,equipEdition} from './fleet-designs-v162.js?v=163';
 import {MODELS} from './ship-catalog.js?v=163';
-import {TRACKS,readProgress,saveProgress,selectShip,formatTime} from './progress.js?v=163';
+import {TRACKS,readProgress,saveProgress,selectShip,formatTime} from './progress.js?v=176';
 import {GAME_MODES,modeDetails,createMenuFlow} from './menu-flow-v164.js?v=164';
 
 const $=selector=>document.querySelector(selector),flow=createMenuFlow(),menu=$('#menu');
@@ -15,9 +17,9 @@ function refresh(){
  $('#pilotXP').textContent=p.xp.toLocaleString()+' XP';$('#pilotRank').textContent=p.xp>=3000?'ELITE':p.xp>=1500?'ACE':p.xp>=500?'CONTENDER':'ROOKIE';
  $('#trackTitle').textContent=track.name;$('#demoModeLabel').textContent='/ '+mode.name;$('#levelModeLabel').textContent=mode.name;
  document.querySelectorAll('button[data-mode]').forEach(b=>{const chosen=b.dataset.mode===state.mode;b.classList.toggle('selected',chosen);b.setAttribute('aria-pressed',String(chosen));});
- $('.flowLevels').innerHTML=TRACKS.slice(1).map((t,i)=>{const id=i+1;return'<button type="button" class="levelChoice'+(state.course===id?' selected':'')+'" data-course="'+id+'" style="--level-accent:'+t.color+'"><span class="levelNumber">0'+id+'</span><svg class="levelArt" viewBox="0 0 240 120" aria-hidden="true"><path d="'+paths[id]+'"/></svg><span class="levelArrow" aria-hidden="true">↗</span><strong>'+t.name+'</strong><small class="levelTag">'+tags[id]+'</small><span class="levelBest">'+(p.records[id]?'BEST / '+formatTime(p.records[id]):'')+'</span><span id="medal'+id+'" hidden>'+(p.medals[id]||'—')+'</span></button>';}).join('');
+ $('.flowLevels').innerHTML=TRACKS.slice(1).map((t,i)=>{const id=i+1;return'<button type="button" class="levelChoice'+(state.course===id?' selected':'')+'" data-course="'+id+'" style="--level-accent:'+t.color+'"><span class="levelNumber">0'+id+'</span><svg class="levelArt" viewBox="0 0 240 120" aria-hidden="true"><path d="'+paths[id]+'"/></svg><span class="levelArrow" aria-hidden="true">↗</span><strong>'+t.name+'</strong><small class="levelTag">'+tags[id]+'</small><span class="levelBest">'+(p.records[id]?(p.recordVersions?.[id]===176?'BEST / ':'LEGACY BEST / ')+formatTime(p.records[id]):'')+'</span><span id="medal'+id+'" hidden>'+(p.medals[id]||'—')+'</span></button>';}).join('');
  $('#recordsList').innerHTML=TRACKS.slice(1).map((t,i)=>'<div class="recordRow"><span>0'+(i+1)+'</span><b>'+t.name+'</b><strong>'+formatTime(p.records[i+1])+'</strong><em>'+(p.medals[i+1]||'UNRACED')+'</em></div>').join('');
- renderGarageOptions(p);
+ $('#practiceOptions').classList.toggle('off',state.mode!=='trial');if(state.screen==='demo'&&state.mode==='trial'){$('#practiceSectors').replaceChildren();for(const sector of courseSectors(state.course,createTrack(state.course).length)){const b=document.createElement('button');b.type='button';b.dataset.sector=sector.index;b.textContent=sector.name+' / '+formatTime(p.sectorBests?.[sectorKey(state.course,true)]?.[sector.index]?.ms);$('#practiceSectors').append(b);}}renderGarageOptions(p);
 }
 function showScreen(){
  const s=flow.state;menu.dataset.screen=s.screen;menu.dataset.currentMode=s.mode;menu.dataset.currentCourse=s.course;
@@ -35,6 +37,7 @@ $('#menuBack').onclick=back;$('#demoBack').onclick=back;
 $('[data-home="solo"]').onclick=()=>{flow.solo();showScreen();};$('[data-home="garage"]').onclick=()=>{flow.garage();showScreen();};
 $('#gameModes').addEventListener('click',event=>{const b=event.target.closest('[data-mode]');if(b){flow.mode(b.dataset.mode);showScreen();}});
 $('.flowLevels').addEventListener('click',event=>{const b=event.target.closest('[data-course]');if(b){flow.level(+b.dataset.course);showScreen();}});
+$('#practiceSectors').onclick=e=>{const b=e.target.closest('[data-sector]');if(!b||!window.shiftlineReady||$('#launch').disabled)return;window.dispatchEvent(new CustomEvent('shiftline-launch',{detail:{course:flow.state.course,mode:'practice',sector:+b.dataset.sector}}));};
 $('#launch').onclick=()=>{if(!window.shiftlineReady||$('#launch').disabled)return;window.dispatchEvent(new CustomEvent('shiftline-launch',{detail:{course:flow.state.course,mode:flow.state.mode}}));};
 $('#recordsBtn').onclick=()=>{$('#settings').classList.add('off');menu.classList.remove('off');flow.records();showScreen();};
 window.addEventListener('shiftline-menu',()=>{flow.home();showScreen();});

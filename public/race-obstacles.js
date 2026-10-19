@@ -3,8 +3,8 @@ import {upcomingHazard,cueEnvelope,idleHazardGlow} from './obstacle-lighting-v16
 import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=161';
 import {markHazardGeometry} from './obstacle-glow-v155.js?v=161';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
-import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=175';
-export function specifications(course,length){return sharedSpecifications(course,length)}
+import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=176';
+export function specifications(course,length,profile){return sharedSpecifications(course,length,profile)}
 export function obstacleState(o,time,out){return sharedObstacleState(o,time,out)}
 export function solidDistance(p,x,y,z){return sharedSolidDistance(p,x,y,z)}
 export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,x,y,z)}
@@ -87,8 +87,13 @@ function createWarningRing(){
  for(const m of [alarmA,alarmB]){m.castShadow=false;m.receiveShadow=false;m.userData.obstacleDecoration=true;group.add(m)}
  return {group,base,a,b,alarmA,alarmB,owner:null};
 }
-export function buildObstacles(scene,track,course,select=null){
- const generated=specifications(course,track.length),specs=select?generated.filter(select):generated;
+function routeLabel(specs,text,color){
+ specs.choiceTextures??=new Map();let texture=specs.choiceTextures.get(text);
+ if(!texture){const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;const c=canvas.getContext('2d');c.fillStyle='rgba(5,15,24,.82)';c.fillRect(0,0,512,96);c.strokeStyle=color;c.lineWidth=5;c.strokeRect(3,3,506,90);c.fillStyle=color;c.font='bold 38px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(text,256,48);texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;specs.choiceTextures.set(text,texture);}
+ const label=new THREE.Mesh(new THREE.PlaneGeometry(3.25,.61),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false}));label.name=text;return label;
+}
+export function buildObstacles(scene,track,course,select=null,profile='classic'){
+ const generated=specifications(course,track.length,profile),specs=select?generated.filter(select):generated;
  const quality=typeof document!=='undefined'?document.getElementById('quality')?.value||'auto':'auto';let bodyworkCount=0,metalParts=0,glowParts=0;
  for(const o of specs){
   o.material=makeObstacleMaterial(o);o.edge=new THREE.LineBasicMaterial({color:0x9cdbeb,transparent:true,opacity:.72,toneMapped:false});o.trim=[o.edge];o.frame=track.frame(o.s);o.rig=new THREE.Group();o.motion=new THREE.Group();o.pieces=[];o.rig.add(o.motion);poseObject(o.rig,o.frame);
@@ -99,6 +104,7 @@ export function buildObstacles(scene,track,course,select=null){
    // Organic reef structures retain their bioluminescent edge construction.
    if(o.course===2&&/reef/.test(o.family))seaDetail(o,m,p);
   }
+  if(o.choice){const precision=routeLabel(specs,'PRECISION +24','#ffd58a'),flow=routeLabel(specs,'FLOW +16','#9cece7');precision.position.set(-3.15,2.35,.25);flow.position.set(2.5,3.35,.25);o.motion.add(precision,flow);}
   const kit=installObstacleBodywork(o,quality);bodyworkCount+=kit.meshes.length;metalParts+=kit.metal;glowParts+=kit.lit;finishObstacleGeometry(o);scene.add(o.rig);freezeWorld(o.rig,[o.motion,...o.pieces]);
  }
  if(specs.length)specs.warningRing=createWarningRing();
@@ -159,4 +165,4 @@ export function updateObstacles(specs,along,time){
    activeCount:warning?.group.visible?1:0,ringOpacity:warning?.group.visible?warning.base.material.opacity:0,
    sweepOpacity:warning?.group.visible?warning.a.material.opacity:0};
 }
-export function disposeObstacles(scene,specs){if(specs.warningRing){const w=specs.warningRing;w.group.parent?.remove(w.group);for(const m of [w.base,w.a,w.b,w.alarmA,w.alarmB])m.material.dispose();w.base.geometry.dispose();w.a.geometry.dispose();w.alarmA.geometry.dispose();specs.warningRing=null;}for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}
+export function disposeObstacles(scene,specs){specs.choiceTextures?.forEach(t=>t.dispose());if(specs.warningRing){const w=specs.warningRing;w.group.parent?.remove(w.group);for(const m of [w.base,w.a,w.b,w.alarmA,w.alarmB])m.material.dispose();w.base.geometry.dispose();w.a.geometry.dispose();w.alarmA.geometry.dispose();specs.warningRing=null;}for(const o of specs){scene.remove(o.rig);o.surfaceTexture?.dispose();ringHaloUsers-=o.ringHalos?.length||0;releaseObstacleSurface(o);o.rig.traverse(m=>{m.geometry?.dispose();m.material?.dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose()})}if(!ringHaloUsers&&ringHaloTexture){ringHaloTexture.dispose();ringHaloTexture=null;}}

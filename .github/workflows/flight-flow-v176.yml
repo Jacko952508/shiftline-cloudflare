@@ -1,0 +1,60 @@
+name: SHIFT LINE V176 Flight Flow
+on:
+  push:
+    branches: [flight-flow-v176]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  precision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Physics, sector clocks, safe paths and preserved geometry
+        run: |
+          for file in public/*.js; do node --check "$file"; done
+          for name in flight-flow-v176 performance-v175 runtime-v152 performance-v171 racing-polish-v146 pilot-eye-v166 fleet-v162 finish-portal-v174 obstacle-v126; do
+            node --experimental-loader ./test/three-loader.mjs "test/$name.mjs"
+          done
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [webkit]
+        courses: ['1,2', '3,4', '5,6']
+        include:
+          - browser: chromium
+            courses: '1,4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 04c6a4eba3a113b6827ce2c56beb120d85ba1946
+          path: .performance-baseline
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Prepare exact V175 comparison
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps ${{ matrix.browser }}
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/flight-flow-bridge-v176.js >> public/race-engine.js
+          cat test/runtime-bridge-v152.js >> .performance-baseline/public/race-engine.js
+          python3 -m http.server 8764 --bind 127.0.0.1 --directory .performance-baseline/public >/tmp/shiftline-v175.log 2>&1 &
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v176.log 2>&1 &
+      - name: High graphics comparison and practice navigation
+        env:
+          FLOW_BROWSER: ${{ matrix.browser }}
+          FLOW_COURSES: ${{ matrix.courses }}
+        run: node test/flight-flow-browser-v176.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flight-flow-v176-${{ matrix.browser }}-${{ matrix.courses }}
+          path: qa-v176
+          if-no-files-found: ignore

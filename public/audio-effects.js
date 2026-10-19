@@ -2,7 +2,7 @@
 const SR=32000,TAU=Math.PI*2,cache=new Map();
 export function effectBuffer(ctx,name,water=false){
  const key=name+':'+Number(water);if(cache.has(key))return cache.get(key);
- const looping=name.startsWith('engine'),duration=looping?1:({pulse:.24,missile:1.05,mine:.62,crash:1.25,shield:.48,hull:.6,boost:.75,release:.38,scrape:.22,hit:.2,kill:.8}[name]||.3);
+ const looping=name.startsWith('engine'),duration=looping?1:({pulse:.24,missile:1.05,mine:.62,crash:1.25,shield:.48,hull:.6,boost:.75,release:.38,scrape:.22,flyby:.42,hit:.2,kill:.8}[name]||.3);
  const N=Math.round(duration*SR),b=ctx.createBuffer(2,N,SR),L=b.getChannelData(0),R=b.getChannelData(1);
  let seed=9157,low=0,slow=0;const sin=n=>Math.sin(TAU*n),dec=(t,k)=>Math.exp(-t*k);
  for(let i=0;i<N;i++){
@@ -38,6 +38,7 @@ export function effectBuffer(ctx,name,water=false){
   }else if(name==='boost'){
    const env=Math.min(1,t/.04)*dec(t,5);v=(sin(85*t+260*t*t)*.42+(low-slow)*.65+hiss*.08)*env+sin(46*t)*dec(t,13)*.25;side=hiss*env*.09;
   }else if(name==='release'){v=(low*.8+sin(210*t-130*t*t)*.25)*Math.min(1,t/.008)*dec(t,13);side=hiss*dec(t,18)*.05;}
+  else if(name==='flyby'){const e=Math.sin(Math.PI*Math.min(1,t/.42))**3;v=((low-slow)*.7+hiss*.12)*e;side=hiss*e*.06;}
   else if(name==='scrape'){v=(hiss*.3+sin(1450*t+60*sin(24*t))*.16)*dec(t,16);side=hiss*dec(t,20)*.07;}
   if(water&&!looping){v=v*.7+slow*.35*dec(t,8);side*=.6;}
   const edge=looping&&name!=='engineAir'?1:Math.min(1,i/(looping?256:64),(N-1-i)/(looping?256:320));

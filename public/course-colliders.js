@@ -1,3 +1,4 @@
+import {flowSpecifications} from './encounter-flow-v176.js?v=176';
 import {familySpecifications,familyState} from './hazard-families-v156.js?v=175';
 import{expansionSpecifications,expansionState}from'./expansion-courses.js?v=67';
 import{cinderSpecifications,cinderState,cinderShift}from'./cinder-colliders.js?v=67';
@@ -48,4 +49,4 @@ export function localDistance(o,state,x,y,z){
 }
 export const obstacleDistance=(o,time,x,y,z=0)=>localDistance(o,obstacleState(o,time),x,y,z);
 
-export function specifications(course,length){return familySpecifications(course,length);}
+export function specifications(course,length,profile='classic'){return profile==='flow176'?flowSpecifications(course,length):familySpecifications(course,length);}
