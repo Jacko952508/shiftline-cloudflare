@@ -11,6 +11,7 @@ window.__shiftlinePilotAudit167={
   player=craft(scene,PAINT[0],model,true,custom,{pilotModel:true});
   player.userData.exhaustFX.racing=true;
   cockpit=createCockpit(custom,model,fleetEdition(model,custom).accent,scene.environment);
+  attachPilotAirframe(cockpit,player);
   x=y=vx=vy=bank=dead=0;visualPrevious=null;
   firstPerson=true;
   render(1/60);
@@ -23,16 +24,20 @@ window.__shiftlinePilotAudit167={
   if(!rig)throw Error('No pilot rig');
   return {
    model:rig.model,edition:rig.edition,eye:rig.eyeLocal,
-   pieces:rig.parts.length,actual:rig.parts.every(p=>p.visible),
+   pieces:cockpit.noseMeshes.length,actual:cockpit.noseMeshes.every(p=>p.visible),
    noseGeometry:rig.parts.map(p=>({name:p.name,triangles:p.geometry.index?.count/3||p.geometry.attributes.position.count/3})),
    craftVisible:player.visible,
+   noseAttachmentCount:cockpit.noseCameraRoot.children.length,
+   rigidLock:Math.abs(camera.quaternion.dot(player.quaternion)),
+   cabinClosed:!!cockpit.tub&&cockpit.tub.children.length>=16,
+   independentCockpitSway:Math.abs(cockpit.root.rotation.z)+Math.abs(cockpit.root.rotation.x),
    exteriorParts:rig.exterior.map(({child})=>({name:child.name,visible:child.visible})).filter(x=>x.visible),
    cockpitEdition:cockpit.custom,front:viewClip()
   };
  },
  draw(showNose){
   const rig=player.children.find(o=>o.userData.pilotRig)?.userData.pilotRig;
-  for(const mesh of rig.parts)mesh.visible=!!showNose;
+  for(const mesh of cockpit.noseMeshes)mesh.visible=!!showNose;
   effects.render(scene,camera,time,boost,$('#quality').value,$('#reducedMotion').checked);
   renderCockpit(cockpit,renderer);
  },
@@ -42,11 +47,12 @@ window.__shiftlinePilotAudit167={
 };
 function viewClip(){
  const rig=player.children.find(o=>o.userData.pilotRig)?.userData.pilotRig;
- const boxes=rig.parts.map(part=>{
+ cockpit.camera.updateMatrixWorld(true);cockpit.noseCameraRoot.updateMatrixWorld(true);
+ const boxes=cockpit.noseMeshes.map(part=>{
   const b=new THREE.Box3().setFromObject(part);
   const v=new THREE.Vector3();const points=[];
   for(const X of[b.min.x,b.max.x])for(const Y of[b.min.y,b.max.y])for(const Z of[b.min.z,b.max.z]){
-   v.set(X,Y,Z).project(camera);points.push([v.x,v.y,v.z]);
+   v.set(X,Y,Z).project(cockpit.camera);points.push([v.x,v.y,v.z]);
   }
   return {name:part.name,rect:[Math.min(...points.map(p=>p[0])),Math.max(...points.map(p=>p[0])),Math.min(...points.map(p=>p[1])),Math.max(...points.map(p=>p[1]))]};
  });
