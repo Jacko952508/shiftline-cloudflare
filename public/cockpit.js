@@ -3,7 +3,7 @@ import{appearance,MODELS,SHIP_SCALE}from'./ship-catalog.js?v=163';
 import{pilotRig}from'./pilot-view-v166.js?v=167';
 import{fleetEdition,fleetFinish}from'./fleet-designs-v162.js?v=163';
 import{fleetPaint}from'./fleet-paint-v163.js?v=163';
-import{sealedLoft}from'./fleet-sculpture-v162.js?v=166';
+import{sealedLoft}from'./fleet-sculpture-v162.js?v=170';
 // Top-only curved interior coaming; never render the hidden lower half of
 // a sealed exterior loft at arm's length from the pilot eye.
 function fairingCanopySurface(stations,steps=20){
