@@ -116,9 +116,11 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
   // nose. The cockpit camera sees through the black interval left by V169.
   // A continuation of REAL authored stations bridges this interval at a
   // distance, rather than attaching a large sheet near the camera.
-  const joinFraction=.22;
-  const nearStation=stations[3].map((v,k)=>v+(stations[4][k]-v)*joinFraction);
-  const continuationStations=[foreJoin,stations[3],nearStation];
+  // Camera projection, NOT just mesh dimensions, determines the safe
+  // continuation length. Ending near the pilot's seat fills 25% of a
+  // portrait viewport and hides controls; stay on the original taper.
+  const stationAt=t=>foreJoin.map((v,k)=>v+(stations[3][k]-v)*t);
+  const continuationStations=[foreJoin,stationAt(.27),stationAt(.55)];
   root.userData.pilotRig={version:166,continuityVersion:170,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
  }
 
