@@ -219,7 +219,9 @@ export function attachPilotAirframe(c,ship){
 export function updateCockpit(c,dt,data,rect,width,height){
  c.hud.children[0].material.uniforms.time.value=data.time||0;c.hud.children[0].material.uniforms.boost.value=data.boost?1:0;const aspect=width/Math.max(1,height),fov=THREE.MathUtils.clamp(data.fov||78,66,88);
  if(Math.abs(c.camera.aspect-aspect)>.001||Math.abs(c.camera.fov-fov)>.15){c.camera.aspect=aspect;c.camera.fov=fov;c.camera.updateProjectionMatrix();}
- c.root.scale.x=THREE.MathUtils.clamp(aspect*(fov/60),.58,1.7);
+ // Device aspect framing may differ, but SPEED/BOOST FOV is never allowed
+ // to scale the instrument shell independently of the authentic nose.
+ c.root.scale.x=THREE.MathUtils.clamp(aspect*1.30,.58,1.7);
  const fit=Math.min(1,aspect/.55);c.hud.scale.set(fit,fit,1);
  // The windshield frame, pilot seat and real forward ship are a single
  // camera-relative assembly. In particular DO NOT apply spring/sway to the
