@@ -28,6 +28,8 @@ window.__shiftlinePilotAudit167={
    noseGeometry:rig.parts.map(p=>({name:p.name,triangles:p.geometry.index?.count/3||p.geometry.attributes.position.count/3})),
    craftVisible:player.visible,
    noseAttachmentCount:cockpit.noseCameraRoot.children.length,
+   noseBelly:!!cockpit.noseBelly&&cockpit.noseBelly.geometry.index.count>70,
+   nosePaint:cockpit.noseMeshes.map(m=>({factoryBody:m.material.userData.factoryBody,finish:m.material.userData.factoryFinish,color:m.material.color.getHex(),metalness:m.material.metalness,roughness:m.material.roughness,accentStripes:m.children.filter(x=>x.name.includes('livery')).length})),
    rigidLock:Math.abs(camera.quaternion.dot(player.quaternion)),
    cabinClosed:!!cockpit.tub&&cockpit.tub.children.length>=16,
    independentCockpitSway:Math.abs(cockpit.root.rotation.z)+Math.abs(cockpit.root.rotation.x),
