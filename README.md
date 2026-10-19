@@ -87,3 +87,15 @@ Solo races and time trials use linked hazard phrases and occasional labelled pre
 Engine tone, peripheral speed effects and boost shake follow actual speed. Near passes use a prewarmed, bounded stereo flyby effect; Reduced Camera Motion disables the extra motion.
 
 `test/flight-flow-v176.mjs` checks all six layouts, 876 safe target probes, 24 continuous full-course flights, preview safety, exact batching, interpolated sector times, practice isolation and legacy record migration. The V176 browser workflows compare Ultra images with V175 and exercise sector start/finish, ghosts, clean-versus-impact saving, retry, next sector, cockpit, Reduced Camera Motion, and portrait/landscape control separation.
+
+## V177 signature worlds, handling, mastery and room sessions
+
+Each world gains two named exterior moments: gyro machinery, tidal pump cathedrals, forge hammers, storm harvesters, root arches and excavation arrays. The assemblies use three opaque draws each, no additional lights or shadow passes, and bounded approach visibility. Placement checks the entire centreline against the full swept annulus, including nearby loops. Reduced Camera Motion and Battery Saver stop their rotation.
+
+The six airframes now differ in steering spring and damping. The garage explains response, grip and glide. Top speed, boost, hitbox, input range and sensitivity remain equal; Flight School and cinematic autopilot retain the reference handling. Ghosts use the airframe that recorded the best.
+
+Pilot Mastery adds four one-time stamps per world: all four sectors clean, three tight rings, six boosted gate passes without a crash, and finishes in three different ships. Each stamp awards 100 XP; 6/12/18/24 stamps unlock optional Navigator/Ace/Master/Legend titles. Existing XP rank remains the default. Only completed full solo races and Time Attack qualify; practice, online, training and battle cannot farm these stamps.
+
+Online final results enable host-controlled same-course rematches or the next course in the existing room, using the relay's supported return-to-lobby/start protocol. Session points and wins carry across rounds; duplicate classifications do not count twice. There is also a copy-code action and a same-tab last-room rejoin shortcut. Online bests save separately from solo records and ghosts. This does not add server-side identity recovery or automatic reconnection.
+
+Validation includes 144 complete swept-collision planning simulations across every ship/course at normal and boosted speeds; geometry/clearance and visibility bounds; idempotent mastery awards and title eligibility; browser garage, cockpit, practice, mastery and rematch flows; and two temporary peers exercising the real relay's timed race, final results, lobby return, next-course start and host transfer.

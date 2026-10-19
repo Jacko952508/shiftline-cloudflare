@@ -1,0 +1,37 @@
+name: SHIFT LINE V177 Pilot Title Review
+on:
+  push:
+    branches: [world-mastery-v177-review]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  title-and-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Confirm existing XP rank, mastery unlocks and progress persistence
+        run: node --experimental-loader ./test/three-loader.mjs test/world-mastery-v177.mjs
+      - name: Prepare WebKit
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps webkit
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/flight-flow-bridge-v176.js >> public/race-engine.js
+          cat test/world-mastery-bridge-v177.js >> public/race-engine.js
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-title177.log 2>&1 &
+      - name: Preserve XP rank, equip earned title and return to automatic rank
+        env:
+          WORLD_BROWSER: webkit
+          WORLD_COURSES: '1'
+          TITLE_REVIEW: '1'
+        run: node test/world-mastery-browser-v177.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-mastery-v177-title-review
+          path: qa-v177
+          if-no-files-found: ignore
