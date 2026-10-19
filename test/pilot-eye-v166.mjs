@@ -19,7 +19,7 @@ ship.position.set(3,4,-9);ship.scale.setScalar(.83);ship.rotateY(.4);
 const p=new THREE.Vector3();
 assert.ok(placePilotCamera(ship,p));const local=new THREE.Vector3(0,.325,-.16).applyMatrix4(root.matrixWorld);assert.ok(p.distanceTo(local)<1e-7);
 const active=setPilotView(ship,true);
-assert.equal(active.version,166);assert.equal(tip.visible,true);assert.equal(original.visible,false);assert.equal(glass.visible,false);assert.equal(ship.visible,true);
+assert.equal(active.version,166);assert.equal(tip.visible,false);assert.equal(original.visible,false);assert.equal(glass.visible,false);assert.equal(ship.visible,false); // world ship hidden: authentic nose now in rigid cockpit overlay
 const camera=new THREE.PerspectiveCamera(78,390/844,.1,100);camera.position.copy(p);camera.quaternion.copy(ship.quaternion);camera.updateMatrixWorld();
 const silhouette=inspectPilotSilhouette(ship,camera);
 assert.ok(silhouette.visibleParts[0].forward>0);
@@ -38,4 +38,4 @@ assert.ok(fleet.includes('parts=[nose]'));
 const seatVals=fleet.match(/eyeY=\[([^\]]+)\]\[index\],eyeZ=\[([^\]]+)\]\[index\]/);
 assert.ok(seatVals,'Expected six calibrated pilot seats');
 assert.equal(seatVals[1].split(',').length,6);assert.equal(seatVals[2].split(',').length,6);
-console.log('PASS V166 real forward fuselage geometry, 6 pilot-seat anchors, world pose, cockpit visibility switching, active nose projection');
+console.log('PASS V167 seat anchor and world ship hidden in FP, chase restore, 6 calibrated pilot positions');
