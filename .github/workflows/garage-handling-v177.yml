@@ -1,0 +1,28 @@
+name: SHIFT LINE V177 Garage Handling Labels
+on:
+  push:
+    branches: [world-mastery-v177-garage]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  six-labels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Prepare WebKit
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps webkit
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-garage177.log 2>&1 &
+      - name: Six names and handling descriptions survive selection and reload
+        run: node test/garage-handling-browser-v177.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: garage-handling-v177
+          path: qa-v177-garage
+          if-no-files-found: ignore

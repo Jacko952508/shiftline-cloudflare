@@ -57,7 +57,7 @@ function renderGarageOptions(p){
  $('#garagePage').style.setProperty('--fleet-accent',hex(d.accent));
  $('#garageFinishLabel').textContent=d.name;
  $('#garageFinishDescription').textContent=fleetFinishLabel(p.craft,p.custom)+' · '+d.description.split(' · ').slice(1).join(' · ');
- $('#garageDescription').textContent=MODELS[p.craft].tag;const h=handlingProfile(p.craft);$('#shipHandling').textContent=h.name+' / RESPONSE '+h.response+'/5 · GRIP '+h.grip+'/5';$('#shipHandlingDescription').textContent=h.description+' All ships share the same top speed, boost and collision envelope.';
+ $('#garageModel').textContent=MODELS[p.craft].name;$('#garageDescription').textContent=MODELS[p.craft].tag;const h=handlingProfile(p.craft);$('#shipHandling').textContent=h.name+' / RESPONSE '+h.response+'/5 · GRIP '+h.grip+'/5';$('#shipHandlingDescription').textContent=h.description+' All ships share the same top speed, boost and collision envelope.';
  $('#garageBuildBadge').textContent='EQUIPPED';
  $('#garageCategoryTitle').textContent='CHOOSE YOUR EDITION';
  $('#garageCategorySubtitle').textContent='Metallic, chrome and pearlescent factory finishes.';
