@@ -119,7 +119,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
   const joinFraction=.22;
   const nearStation=stations[3].map((v,k)=>v+(stations[4][k]-v)*joinFraction);
   const continuationStations=[foreJoin,stations[3],nearStation];
-  root.userData.pilotRig={version:170,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
+  root.userData.pilotRig={version:166,continuityVersion:170,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
  }
 
  const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
