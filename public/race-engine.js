@@ -1,7 +1,7 @@
 import {createTrackDemo,advanceTrackDemo,frameTrackDemo} from './track-demo-v164.js?v=164';
 import {clearOfFleetCamera} from './fleet-camera-v162.js?v=163';
 import {fleetEdition} from './fleet-designs-v162.js?v=163';
-import {chaseProfile} from './race-sightlines-v158.js?v=158';
+import {chaseProfile} from './race-sightlines-v158.js?v=164';
 import {prepareRaceGraphics} from './race-preparation-v152.js?v=152';
 import{recoveryPose,racerInView}from'./race-recovery.js?v=159';
 import{createPulseSight,updatePulseSight}from'./pulse-sight.js?v=73';
