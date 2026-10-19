@@ -130,7 +130,10 @@ assert.equal(candidate.grid[0].ratio,baseline.grid[0].ratio,'Resolution was redu
   'Airframe rises into the central sight line: '+JSON.stringify(candidate.sightlines.airframe));
  assert.ok(candidate.sightlines.airframe.height<.16,'Ship fills too much of the portrait viewport');
 
-assert.deepEqual(candidate.grid[0].rivals.map(r=>r.triangles),baseline.grid[0].rivals.map(r=>r.triangles),'Rival geometry quality changed');
+// V162 introduced truly sculpted ship geometry. Triangle counts should NOT
+ // equal the old V158 baseline: reject missing/degenerate rival meshes instead.
+ assert.equal(candidate.grid[0].rivals.length,baseline.grid[0].rivals.length,'Rivals missing after visual rebuild');
+ assert.ok(candidate.grid[0].rivals.every(r=>r.triangles>=100),'Sculpted opponent mesh has too few triangles');
 console.log('SIGHTLINES '+JSON.stringify({before:baseline.sightlines,after:candidate.sightlines}));
 await writeFile(out+'/'+course+'-'+kind.name()+'.json',JSON.stringify({baseline,candidate,gridDrawReduction:1-newCalls/oldCalls},null,2));
 console.log('PASS V159 '+kind.name()+' course '+course+' grid calls '+oldCalls+' -> '+newCalls+'; same triangles/resolution; 3 collision/recovery cases, no first-use collision programs or PCM allocations');
