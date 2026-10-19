@@ -48,6 +48,14 @@ window.__shiftlinePilotAudit167={
   effects.render(scene,camera,time,boost,$('#quality').value,$('#reducedMotion').checked);
   renderCockpit(cockpit,renderer);
  },
+ hoodCoverage(){
+  // Isolate the ACTUAL model-specific exterior hood from every other cockpit
+  // element and prove its painted pixels appear at the pilot's viewpoint.
+  const nose=cockpit.noseMeshes;
+  cockpit.noseMeshes=cockpit.hoodMeshes;
+  try{return this.noseCoverage();}
+  finally{cockpit.noseMeshes=nose;}
+ },
  noseCoverage(){
   // Compare two screenshots of the ISOLATED cockpit scene, never two frames
   // from the temporal world postprocessor. This prevents false 70% 'nose'
