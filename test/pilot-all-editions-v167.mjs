@@ -73,6 +73,11 @@ try{
    // Use isolated stable cockpit 3D render, avoiding temporal racing
    // post-effects creating false giant nose silhouettes.
    const delta=await page.evaluate(()=>window.__shiftlinePilotAudit167.noseCoverage());
+   const hood=await page.evaluate(()=>window.__shiftlinePilotAudit167.hoodCoverage());
+   assert.ok(hood.total>12,'V172 ship hood is not actually visible in the pilot camera: '+JSON.stringify({model,edition,label,hood}));
+   assert.ok(hood.topPct<8,'Ship-specific hood blocks racing sightline: '+JSON.stringify({model,edition,label,hood}));
+   console.log('PILOT HOOD V172 '+browserName+' '+model+'/'+edition+' '+label+' '+JSON.stringify(hood));
+
    // readRenderTargetPixels binds an offscreen framebuffer. A new FULL
    // render is mandatory before taking a screenshot, particularly on WebKit:
    // otherwise only HTML HUD overlays are captured against an empty canvas.
