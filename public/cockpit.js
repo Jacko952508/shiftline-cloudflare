@@ -244,9 +244,11 @@ export function attachPilotAirframe(c,ship){
  const end=box.max.z,radius=Math.max(.075,Math.max(Math.abs(box.min.x),Math.abs(box.max.x)));
  // Only the moulded junction lip is exposed. A long inner skirt is
  // forbidden: it fills the viewport, hiding seats and flight controls.
+ // A 6mm-deep painted edge seam lies ON the real last fuselage ring.
+ // No additional forward shelf should be visible below the nose.
  const innerStations=[
-  [end-.018,radius*.96,.038,.068],
-  [end+.018,radius*1.01,.036,.061]
+  [end-.003,radius,.122,.022],
+  [end+.003,radius,.122,.022]
  ];
  const sourcePaint=Array.isArray(actual.material)?actual.material[0]:actual.material;
  const fairingPaint=new THREE.MeshStandardMaterial({
