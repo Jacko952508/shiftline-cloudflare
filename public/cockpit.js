@@ -299,6 +299,9 @@ export function attachPilotAirframe(c,ship){
  const hull=new THREE.Mesh(continuousFuselage(continuation),sourcePaint.clone());
  hull.name='V170 authentic continuous painted forward fuselage';
  hull.castShadow=false;hull.receiveShadow=false;hull.frustumCulled=false;
+ // Exterior should sit BEHIND the real pilot interior. Do not let its
+ // short continuation erase the instrument board or the padded sill.
+ hull.material.depthWrite=false;hull.renderOrder=-2;
  hull.userData.factoryBody=design.body;hull.userData.factoryFinish=finish;
  c.noseCameraRoot.add(hull);c.noseBelly=hull;
  // Slightly recessed shadow-colored former ring: gives the true transition
