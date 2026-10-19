@@ -14,19 +14,6 @@ const browser=await kind.launch(kind===chromium?{headless:true,args:flags}:{head
 const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true}),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',e=>{if(e.type()==='error'&&/shader error|WebGLProgram|INVALID_OPERATION|race preparation failed/i.test(e.text()))errors.push(e.text());});
-function difference(withNose,withoutNose){
- const a=PNG.sync.read(withNose),b=PNG.sync.read(withoutNose);
- assert.equal(a.width,b.width);assert.equal(a.height,b.height);
- let total=0,top=0,bottom=0,minY=a.height,maxY=0;
- for(let y=0;y<a.height;y++)for(let x=0;x<a.width;x++){
-  const i=(y*a.width+x)*4,delta=Math.abs(a.data[i]-b.data[i])+Math.abs(a.data[i+1]-b.data[i+1])+Math.abs(a.data[i+2]-b.data[i+2]);
-  if(delta>46){
-   total++;if(y/a.height<.3)top++;if(y/a.height>.55)bottom++;
-   minY=Math.min(y,minY);maxY=Math.max(y,maxY);
-  }
- }
- return {total,top,bottom,areaPct:total/(a.width*a.height)*100,topPct:top/(a.width*a.height)*100,firstVisibleY:total?minY/a.height:1,lastVisibleY:total?maxY/a.height:0};
-}
 try{
  await page.addInitScript(()=>{
   localStorage.setItem('shiftlineEclipseProgressV1',JSON.stringify({xp:18000,craft:0,color:0,custom:{edition:0,wing:0,engine:0},records:{1:110000},ghosts:{},medals:{},races:8}));
@@ -65,11 +52,11 @@ try{
    assert.equal(q.pilot.model,model);assert.equal(q.pilot.edition,edition);
    assert.equal(q.pilotParts,model===4?3:1);
    assert.ok(q.pilot.visibleParts.every(p=>p.visible&&p.forward>0&&p.screen.every(Number.isFinite)));
-   const bare=await page.evaluate(()=>window.__shiftlinePilotAudit167.draw(false));
-   const back=await page.screenshot({timeout:60000});
-   await page.evaluate(()=>window.__shiftlinePilotAudit167.draw(true));
+   // Use isolated stable cockpit 3D render, avoiding temporal racing
+   // post-effects creating false giant nose silhouettes.
+   const delta=await page.evaluate(()=>window.__shiftlinePilotAudit167.noseCoverage());
    const img=await page.screenshot({path:output+'/'+model+'-'+edition+'-'+label+'.png',timeout:60000});
-   const delta=difference(img,back);
+   assert.equal(PNG.sync.read(img).width,w);assert.equal(PNG.sync.read(img).height,h);
    assert.ok(delta.total>22,'Nose missing/hidden in '+model+'/'+edition+'/'+label+' '+JSON.stringify(delta));
    assert.ok(delta.areaPct<15,'Nose blocks too much of '+label+' screen: '+JSON.stringify({model,edition,delta}));
    assert.ok(delta.topPct<5.5,'Fuselage blocks forward racing horizon: '+JSON.stringify({model,edition,delta}));
