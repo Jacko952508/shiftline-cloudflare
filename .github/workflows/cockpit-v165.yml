@@ -1,0 +1,54 @@
+name: SHIFTLINE V165 Level One Cockpit Repair
+on:
+  push:
+    branches: [level1-cockpit-v165,main]
+    paths:
+      - 'public/cockpit.js'
+      - 'public/race-engine.js'
+      - 'public/index.html'
+      - 'test/cockpit-v165.mjs'
+      - 'test/cockpit-browser-v165.mjs'
+      - '.github/workflows/cockpit-v165.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cockpit-v165-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Validate cockpit geometry and first course
+        run: |
+          node --check public/cockpit.js
+          node --check public/race-engine.js
+          node --experimental-loader ./test/three-loader.mjs test/cockpit-v165.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-v126.mjs
+          node --experimental-loader ./test/three-loader.mjs test/obstacle-lighting-v160.mjs
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps chromium webkit
+      - name: Serve preview
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-level1-cockpit.log 2>&1 &
+          sleep 2
+      - name: Test real Level 1 pilot and chase cameras at both orientations
+        run: node test/cockpit-browser-v165.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cockpit-v165-review
+          path: qa-v165-cockpit
+          if-no-files-found: ignore
