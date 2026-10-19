@@ -33,7 +33,11 @@ try{
   assert.equal(state.edition,edition,'Wrong authored edition');
   assert.equal(state.pieces,model===4?3:1,'Missing or extra forward geometry');
   assert.ok(state.actual&&!state.craftVisible,'Nose should be in cockpit overlay and world hull fully hidden');
-  assert.equal(state.noseAttachmentCount,state.pieces+2,'Authentic nose, painted rim and solid belly must share cockpit camera');
+  assert.equal(state.noseAttachmentCount,state.pieces+state.hoodCount+2,'True hood, authentic nose, painted rim and solid belly must share cockpit camera');
+  assert.equal(state.hoodCount,4,'Each ship must load two physical body cowls and two illuminated shoulder rails');
+  assert.equal(state.hoodSource.length,4,'Pilot hood must come from four real exterior ship components');
+  assert.ok(state.hoodSource.every(p=>p.model===model&&p.edition===edition),'Cockpit hood belongs to the wrong ship');
+  assert.ok(state.hoodGeometry.every(p=>p.triangles>=10&&p.paint&&p.body===entry.body&&p.finish===fleetFinish(model,{edition})),'Pilot hood silhouette or factory colour incorrect');
   assert.ok(state.noseBelly,'Cockpit missing filled fuselage');
   assert.ok(state.realHullContinuity,'No original three-station airframe bridge: mere end caps cannot close the gap');
   assert.equal(state.nosePaint.length,state.pieces,'Missing factory paint on nose sections');

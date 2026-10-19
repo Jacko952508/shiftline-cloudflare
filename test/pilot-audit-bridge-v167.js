@@ -28,6 +28,9 @@ window.__shiftlinePilotAudit167={
    noseGeometry:rig.parts.map(p=>({name:p.name,triangles:p.geometry.index?.count/3||p.geometry.attributes.position.count/3})),
    craftVisible:player.visible,
    noseAttachmentCount:cockpit.noseCameraRoot.children.length,
+   hoodCount:cockpit.hoodMeshes.length,
+   hoodGeometry:cockpit.hoodMeshes.map(m=>({name:m.name,triangles:(m.geometry.index?.count||m.geometry.attributes.position.count)/3,points:m.geometry.attributes.position.count,paint:m.userData.realExteriorHood,body:m.material.userData.factoryBody,finish:m.material.userData.factoryFinish})),
+   hoodSource:rig.hoodParts?.map(m=>({name:m.name,role:m.userData.pilotHood,model:m.userData.hoodModel,edition:m.userData.hoodEdition}))||[],
    noseBelly:!!cockpit.noseBelly&&cockpit.noseBelly.geometry.index.count>70,
    realHullContinuity:rig.continuationStations?.length===3 &&
     cockpit.noseBelly?.name.includes('authentic continuous') &&

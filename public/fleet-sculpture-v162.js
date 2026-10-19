@@ -49,6 +49,30 @@ function aerofoil(points,depth=.075,rounded=false,baseY=0){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.userData.sealed=true;return g;
 }
 const NAMES=['VECTOR','RAZOR','PHANTOM','MANTA','GEMINI','SPECTRE'];
+
+// V172: real, model-specific exterior shoulder hoods, shared exactly with the
+// pilot-view overlay. The cockpit never substitutes a generic nose illustration.
+const PILOT_HOOD_PROFILES=[
+ {name:'VECTOR / twin touring shoulders',y:.148,depth:.064,round:true,
+  outline:[[.095,-.32],[.28,-.34],[.48,-.54],[.49,-.79],[.31,-.89],[.13,-.56]],
+  light:[[.19,.210,-.36],[.33,.201,-.49],[.41,.178,-.72]]},
+ {name:'RAZOR / extended trident prongs',y:.155,depth:.052,round:false,
+  outline:[[.09,-.32],[.21,-.43],[.47,-1.14],[.36,-1.25],[.14,-.73]],
+  light:[[.15,.211,-.44],[.27,.186,-.76],[.36,.158,-1.12]]},
+ {name:'PHANTOM / stealth delta hood',y:.111,depth:.036,round:false,
+  outline:[[.09,-.29],[.32,-.37],[.58,-.72],[.51,-.98],[.16,-.60]],
+  light:[[.18,.171,-.38],[.35,.141,-.55],[.49,.116,-.78]]},
+ {name:'MANTA / flowing crescent shoulders',y:.151,depth:.069,round:true,
+  outline:[[.09,-.30],[.29,-.29],[.57,-.39],[.70,-.75],[.46,-.83],[.14,-.52]],
+  light:[[.18,.220,-.32],[.39,.201,-.39],[.56,.171,-.62]]},
+ {name:'GEMINI / paired nacelle bridge',y:.172,depth:.083,round:false,
+  outline:[[.08,-.29],[.32,-.32],[.39,-.53],[.26,-.85],[.12,-.61]],
+  light:[[.17,.237,-.31],[.30,.212,-.43],[.29,.186,-.70]]},
+ {name:'SPECTRE / narrow spear shoulders',y:.134,depth:.046,round:false,
+  outline:[[.085,-.29],[.19,-.35],[.36,-.70],[.28,-1.33],[.135,-.83]],
+  light:[[.14,.192,-.37],[.22,.177,-.64],[.27,.142,-1.08]]}
+];
+
 const PLANS=[
  [[.08,-.49],[.30,-.66],[.52,-.42],[1.04,.52],[.88,.74],[.40,.46],[.10,.65]],
  [[.08,-.24],[.40,-.51],[.79,-1.29],[.94,-1.15],[.85,.41],[1.03,.68],[.37,.65]],
@@ -121,7 +145,7 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
   // portrait viewport and hides controls; stay on the original taper.
   const stationAt=t=>foreJoin.map((v,k)=>v+(stations[3][k]-v)*t);
   const continuationStations=[foreJoin,stationAt(.27),stationAt(.55)];
-  root.userData.pilotRig={version:166,continuityVersion:170,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
+  root.userData.pilotRig={version:166,continuityVersion:172,seat,nose,parts,continuationStations,eyeLocal:[0,eyeY,eyeZ],model:index,edition:e};
  }
 
  const shell=(points,side,mat=wingPaint,top=.012,thickness=.085)=>add(aerofoil(points.map(([x,z])=>[side*x,z]),thickness,index===3,top),mat,[0,0,0],'integrated wing',true);
@@ -162,6 +186,31 @@ export function buildFleetSculpture(ship,index,custom={},high=true,options={}){
  hull(canopyShape.map(([z,x,y,c])=>[z,x+.026,y+.012,c-.026]),titanium,0,0,'continuous canopy gasket');
  const canopy=hull(canopyShape,glass,0,0,'sealed wraparound canopy');canopy.userData.partRole='canopy';
  const spine=stroke([[0,.171,canopyFront+.04],[0,.278,canopyFront+.25],[0,.309,-.18],[0,.239,canopyBack-.10]],titanium,.008);spine.name='fitted canopy spine';
+
+// V172: moulded hoods are part of the real ship exterior. They continue the
+// body's inner wings and vary by chassis, factory edition and paint, without
+// adding an overlaid fake hood to the cockpit.
+const hoodProfile=PILOT_HOOD_PROFILES[index],hoodParts=[];
+for(const side of[-1,1]){
+ const profile=hoodProfile.outline.map(([px,z])=>[
+  side*px*(e===1?1.09:e===2?.93:1),
+  z+(e===1?-.045*(px/.5):e===2?.038*(px/.5):0)
+ ]);
+ const cowling=add(aerofoil(profile,hoodProfile.depth,hoodProfile.round,hoodProfile.y),body,[0,0,0],
+  hoodProfile.name+' / '+(side<0?'port':'starboard'),true);
+ cowling.castShadow=false;cowling.receiveShadow=false;
+ cowling.userData.pilotHood='paint';cowling.userData.hoodModel=index;cowling.userData.hoodEdition=e;
+ const rail=stroke(hoodProfile.light.map(([px,py,z])=>[
+  side*px*(e===1?1.09:e===2?.93:1),py,z+(e===1?-.045*(px/.5):e===2?.038*(px/.5):0)
+ ]),light,.0062);
+ rail.name=hoodProfile.name+' / factory illuminated shoulder '+(side<0?'port':'starboard');
+ rail.castShadow=false;rail.receiveShadow=false;
+ rail.userData.pilotHood='accent';rail.userData.hoodModel=index;rail.userData.hoodEdition=e;
+ hoodParts.push(cowling,rail);
+ if(options.pilotModel){cowling.userData.noBatch=true;rail.userData.noBatch=true;}
+}
+if(options.pilotModel)root.userData.pilotRig.hoodParts=hoodParts;
+
  // Light rails follow the central hull's shoulder station coordinates.
  for(const side of[-1,1]){
   stroke([[side*.07,.055,front+.32],[side*(width*.69),.105,-.56],[side*(width*.95),.10,-.22],[side*(width*.90),.10,.22],[side*(width*.58),.065,.62]],light,.007);
