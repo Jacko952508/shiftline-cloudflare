@@ -1,22 +1,22 @@
 import {attachSightlines} from './race-sightlines-v158.js?v=164';
 import {createStarfield,attachSkyVisibility,updateSkyVisibility} from './sky-visibility-v157.js?v=157';
-import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=158';
+import{createExpansionWorld,updateExpansionWorld,disposeExpansionWorld}from'./expansion-world.js?v=175';
 import{attachChapterLandmarks,updateChapterLandmarks,disposeChapterLandmarks}from'./chapter-landmarks-v143.js?v=153';
 import{attachBiomeAtmosphere,updateBiomeAtmosphere,disposeBiomeAtmosphere}from'./biome-atmosphere-v142.js?v=154';
 import{attachFarScenery,updateFarScenery,disposeFarScenery}from'./far-scenery-v129.js?v=154';
 import{attachTunnelDetails,updateTunnelDetails,disposeTunnelDetails}from'./tunnel-detail.js?v=153';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=147';
-import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=153';
-import{freezeWorld}from'./scene-performance.js';
+import{createCinderWorld,updateCinderWorld,disposeCinderWorld}from'./cinder-world.js?v=175';
+import{freezeWorld}from'./scene-performance.js?v=175';
 import{createHorizon,updateHorizon}from'./eclipse-horizon.js?v=58';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';
 import * as THREE from 'three';
 import {finishSurface,refineAlpineGeology} from './art-direction-v148.js?v=153';
 import {attachRaceFinish} from './race-finish-v147.js?v=147';
-import{RADIUS,poseObject,actAt}from'./race-track.js?v=58';
+import{RADIUS,poseObject,actAt}from'./race-track.js?v=175';
 import{shiftState,themeColor,themeColorAt,section,PALETTES}from'./race-theme.js?v=171';
-import{createLeviathanWorld,updateLeviathanWorld,disposeLeviathanWorld}from'./leviathan-world.js?v=154';
+import{createLeviathanWorld,updateLeviathanWorld,disposeLeviathanWorld}from'./leviathan-world.js?v=175';
 const TAU=Math.PI*2;
 const vertex=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
 function energyMaterial(color){return new THREE.ShaderMaterial({uniforms:{time:{value:0},accent:{value:new THREE.Color(color)},power:{value:1}},vertexShader:vertex,fragmentShader:`varying vec2 vUv;uniform float time;uniform vec3 accent;uniform float power;void main(){float core=pow(1.-abs(vUv.x-.5)*2.,2.);float wave=.82+.18*sin(vUv.y*3.-time*2.);float pulse=exp(-pow(sin(vUv.y*.35-time*.9)*5.,2.));float dash=.28+.72*pow(.5+.5*cos(vUv.y*5.02655-time*2.5),5.);gl_FragColor=vec4(accent*(1.0+core*2.8+pulse*.8)*wave*power,dash*(.3+core*.65));}`,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false})}

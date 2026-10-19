@@ -3,9 +3,9 @@ import {upcomingHazard,cueEnvelope,idleHazardGlow} from './obstacle-lighting-v16
 import {updateObstacleBodywork} from './obstacle-bodywork-v126.js?v=161';
 import {markHazardGeometry} from './obstacle-glow-v155.js?v=161';
 import{EXPANSIONS,expansionShift}from'./expansion-courses.js?v=67';
-import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=159';
+import{polygonSector,specifications as sharedSpecifications,obstacleState as sharedObstacleState,solidDistance as sharedSolidDistance,localDistance as sharedLocalDistance}from'./course-colliders.js?v=175';
 export function specifications(course,length){return sharedSpecifications(course,length)}
-export function obstacleState(o,time){return sharedObstacleState(o,time)}
+export function obstacleState(o,time,out){return sharedObstacleState(o,time,out)}
 export function solidDistance(p,x,y,z){return sharedSolidDistance(p,x,y,z)}
 export function localDistance(o,state,x,y,z){return sharedLocalDistance(o,state,x,y,z)}
 import{cinderSpecifications,cinderState,CINDER_ACTS,cinderShift}from'./cinder-colliders.js?v=67';
@@ -14,8 +14,9 @@ import{makeObstacleMaterial,releaseObstacleSurface,detailObstacleSolid,makeInsta
 import{installObstacleBodywork}from'./obstacle-bodywork-v126.js?v=161';
 import{seaSpecifications,seaState,seaDetail,seaObstacleColor}from'./sea-obstacles.js?v=159';
 import{SHIP_SCALE}from'./ship-catalog.js?v=107';
-import * as THREE from 'three';import{poseObject}from'./race-track.js?v=58';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js?v=171';
-const TAU=Math.PI*2;
+import {freezeWorld} from './scene-performance.js?v=175';
+import * as THREE from 'three';import{poseObject,createTrackFrame}from'./race-track.js?v=175';import{section,PALETTES,shiftState,themeColor}from'./race-theme.js?v=171';
+const TAU=Math.PI*2,collisionFrame=createTrackFrame();
 // Keep obstacle hitboxes proportionate to the actual ship, using the original .9-scale envelope as the baseline.
 const collisionScale=SHIP_SCALE/.9;
 export const BODY=[{x:0,y:0,z:-1.12,r:.3},{x:0,y:0,z:0,r:.47},{x:-.76,y:0,z:.35,r:.2},{x:.76,y:0,z:.35,r:.2},{x:0,y:0,z:1.0,r:.3}].map(b=>({x:b.x*collisionScale,y:b.y*collisionScale,z:b.z*collisionScale,r:b.r*collisionScale}));
@@ -27,19 +28,24 @@ function smallRingGlow(o,mesh,p){
 }
 
 export function clearance(o,state,x,y){return Math.min(localDistance(o,state,x+BODY[1].x,y+BODY[1].y,0)-BODY[1].r,localDistance(o,state,x+BODY[2].x,y+BODY[2].y,0)-BODY[2].r,localDistance(o,state,x+BODY[3].x,y+BODY[3].y,0)-BODY[3].r);}
-export function collisionAt(track,specs,s,x,y,time,bank=0,onClearance=null){let first=0,last=specs.length;while(first<last){const mid=(first+last)>>>1;if(specs[mid].s<s-10)first=mid+1;else last=mid}if(first===specs.length||specs[first].s>s+10)return null;const F=track.frame(s),cx=F.p.x+F.r.x*x+F.u.x*y,cy=F.p.y+F.r.y*x+F.u.y*y,cz=F.p.z+F.r.z*x+F.u.z*y,c=Math.cos(bank),si=Math.sin(bank);for(let i=first;i<specs.length;i++){const o=specs[i];if(o.s>s+10)break;const O=o.frame||track.frame(o.s),state=obstacleState(o,time);let gap=Infinity;for(const b of BODY){const bx=b.x*c-b.y*si,by=b.x*si+b.y*c,px=cx+F.r.x*bx+F.u.x*by-F.f.x*b.z-O.p.x,py=cy+F.r.y*bx+F.u.y*by-F.f.y*b.z-O.p.y,pz=cz+F.r.z*bx+F.u.z*by-F.f.z*b.z-O.p.z;const d=localDistance(o,state,px*O.r.x+py*O.r.y+pz*O.r.z,px*O.u.x+py*O.u.y+pz*O.u.z,-(px*O.f.x+py*O.f.y+pz*O.f.z))-b.r;if(d<0)return o;gap=Math.min(gap,d);}if(onClearance&&gap<=.55)onClearance(o,gap);}return null;}
+export function collisionAt(track,specs,s,x,y,time,bank=0,onClearance=null){let first=0,last=specs.length;while(first<last){const mid=(first+last)>>>1;if(specs[mid].s<s-10)first=mid+1;else last=mid}if(first===specs.length||specs[first].s>s+10)return null;const F=track.frame(s,collisionFrame),cx=F.p.x+F.r.x*x+F.u.x*y,cy=F.p.y+F.r.y*x+F.u.y*y,cz=F.p.z+F.r.z*x+F.u.z*y,c=Math.cos(bank),si=Math.sin(bank);for(let i=first;i<specs.length;i++){const o=specs[i];if(o.s>s+10)break;const O=o.frame||track.frame(o.s),state=obstacleState(o,time,o.collisionState??={});let gap=Infinity;for(const b of BODY){const bx=b.x*c-b.y*si,by=b.x*si+b.y*c,px=cx+F.r.x*bx+F.u.x*by-F.f.x*b.z-O.p.x,py=cy+F.r.y*bx+F.u.y*by-F.f.y*b.z-O.p.y,pz=cz+F.r.z*bx+F.u.z*by-F.f.z*b.z-O.p.z;const d=localDistance(o,state,px*O.r.x+py*O.r.y+pz*O.r.z,px*O.u.x+py*O.u.y+pz*O.u.z,-(px*O.f.x+py*O.f.y+pz*O.f.z))-b.r;if(d<0)return o;gap=Math.min(gap,d);}if(onClearance&&gap<=.55)onClearance(o,gap);}return null;}
 export function safeTarget(o,time,x=0,y=0){const state=obstacleState(o,time);let best=null,score=Infinity;for(let r=0;r<6.25;r+=.65)for(let k=0;k<24;k++){const a=k*TAU/24,nx=Math.cos(a)*r,ny=Math.sin(a)*r,d=clearance(o,state,nx,ny);if(d<.3)continue;const cost=Math.hypot(nx-x,ny-y)+r*.015;if(cost<score){score=cost;best={x:nx,y:ny,clearance:d}}}return best;}
 // Predict the complete crossing window, then choose a line with margin for wings and motion.
 export function planTarget(o,at,x=0,y=0,traffic=[],preference=0){
- const states=[-.13,0,.13].map(t=>obstacleState(o,at+t));let best=null,score=Infinity;
+ const states=o.planningStates??=[{},{},{}];
+ for(let i=0;i<3;i++)states[i]=obstacleState(o,at+(i-1)*.13,states[i]);
+ let best=null,score=Infinity;
  // All score penalties are nonnegative. Reject candidates whose cheap lower
  // bound already loses, before evaluating nine signed-distance envelopes.
  // Candidate order and the exact crossing/safety tests remain unchanged.
- const candidates=[{x,y},...RACING_LINES];
- for(const p of candidates){
+ for(let i=-1;i<RACING_LINES.length;i++){
+  // The 24 radius-zero samples are identical, so retain their first tie only.
+  if(i>0&&i<24)continue;
+  const p=i<0?{x,y}:RACING_LINES[i];
   const travel=Math.hypot(p.x-x,p.y-y)*.45;
-  const crowd=traffic.reduce((n,r)=>n+Math.max(0,2.1-Math.hypot(r.x-p.x,r.y-p.y)),0);
   const preferred=Math.abs(p.x-preference)*.035;
+  if(travel+preferred>score+1.e-10)continue;
+  let crowd=0;for(const r of traffic)crowd+=Math.max(0,2.1-Math.hypot(r.x-p.x,r.y-p.y));
   if(travel+crowd*.55+preferred>score+1.e-10)continue;
   let d=clearance(o,states[1],p.x,p.y);if(d<.55)continue;
   d=Math.min(d,clearance(o,states[0],p.x,p.y),clearance(o,states[2],p.x,p.y));if(d<.5)continue;
@@ -93,7 +99,7 @@ export function buildObstacles(scene,track,course,select=null){
    // Organic reef structures retain their bioluminescent edge construction.
    if(o.course===2&&/reef/.test(o.family))seaDetail(o,m,p);
   }
-  const kit=installObstacleBodywork(o,quality);bodyworkCount+=kit.meshes.length;metalParts+=kit.metal;glowParts+=kit.lit;finishObstacleGeometry(o);scene.add(o.rig);
+  const kit=installObstacleBodywork(o,quality);bodyworkCount+=kit.meshes.length;metalParts+=kit.metal;glowParts+=kit.lit;finishObstacleGeometry(o);scene.add(o.rig);freezeWorld(o.rig,[o.motion,...o.pieces]);
  }
  if(specs.length)specs.warningRing=createWarningRing();
  if(typeof window!=='undefined'&&typeof location!=='undefined'&&(/obstacleqa=1|shipqa=1/.test(location.search)))window.__shiftlineObstacleQA={course,obstacles:specs.length,detailMeshes:bodyworkCount,metalParts,glowParts,quality,collisionTypes:specs.reduce((n,o)=>n+o.solids.length,0),decorOnly:true,clipped:specs.every(o=>o.bodywork?.clipped),families:[...new Set(specs.map(o=>o.family))],version:157};
@@ -144,7 +150,7 @@ export function updateObstacles(specs,along,time){
    o.bodywork.indicatorMaterial.color.copy(tint).multiplyScalar((focus?focus.indicators*.85:.33)*pulse);
   }
   for(const h of o.ringHalos||[])h.material.opacity=.035+.21*energy;
-  const st=obstacleState(o,time);
+  const st=obstacleState(o,time,o.renderState??={});
   o.motion.position.set(st.x,st.y,0);o.motion.rotation.set(0,0,st.a);o.motion.scale.setScalar(st.scale);
   if(st.pieces){for(let i=0;i<o.pieces.length;i++){const j=i*6,node=o.pieces[i];node.position.set(st.pieces[j],st.pieces[j+1],st.pieces[j+2]);node.rotation.z=st.pieces[j+3];}updateObstacleBodywork(o,st);}
  }

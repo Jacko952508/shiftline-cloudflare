@@ -5,5 +5,16 @@ export function batchScenery(root,excludedRoots=[]){
  for(const list of buckets.values()){if(list.length<3)continue;const first=list[0],mesh=new THREE.InstancedMesh(first.geometry,first.material,list.length);mesh.name='batched-exterior';for(let i=0;i<list.length;i++){const o=list[i];relative.multiplyMatrices(rootInverse,o.matrixWorld);mesh.setMatrixAt(i,relative);o.parent.remove(o);if(o.geometry!==first.geometry)o.geometry.dispose();}mesh.instanceMatrix.needsUpdate=true;mesh.receiveShadow=first.receiveShadow;mesh.castShadow=false;root.add(mesh);before+=list.length;after++;}
  return{before,after,saved:before-after};
 }
+// Three.js updates invisible descendants even though it never draws them.
+// Keep their last world transform dirty, so revealing or reparenting a branch
+// recomputes its complete pose before the next visible draw.
+function updateVisibleMatrixWorld(force){
+ if(!this.visible){this.matrixWorldNeedsUpdate=true;return;}
+ THREE.Object3D.prototype.updateMatrixWorld.call(this,force);
+}
+export function skipHiddenTransforms(root){
+ root.traverse(o=>{if(o.isGroup&&o.updateMatrixWorld===THREE.Object3D.prototype.updateMatrixWorld)o.updateMatrixWorld=updateVisibleMatrixWorld;});
+ return root;
+}
 // Bake fixed transforms once. Moving objects keep Three.js's normal matrix updates.
-export function freezeWorld(root,dynamic){root.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false});for(const o of dynamic)o.matrixAutoUpdate=true;}
+export function freezeWorld(root,dynamic){skipHiddenTransforms(root);root.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false});for(const o of dynamic)o.matrixAutoUpdate=true;}

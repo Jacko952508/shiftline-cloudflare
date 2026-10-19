@@ -2,9 +2,9 @@ import{installWorldFinish}from'./world-finish.js?v=153';
 import{glassDetail,fixtureLighting}from'./surface-detail.js?v=147';
 import * as THREE from 'three';
 import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';
-import{poseObject}from'./race-track.js?v=58';
+import{poseObject}from'./race-track.js?v=175';
 import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';
-import{freezeWorld}from'./scene-performance.js';
+import{freezeWorld}from'./scene-performance.js?v=175';
 import{cinderAct,cinderShift}from'./cinder-colliders.js?v=58';
 const TAU=Math.PI*2;
 export function cinderGround(x,z){const r=Math.hypot(x,z+750);return -155+540*Math.exp(-(((r-610)/130)**2))+24*Math.sin(x*.006)*Math.sin(z*.005)*Math.min(1,r/420)}

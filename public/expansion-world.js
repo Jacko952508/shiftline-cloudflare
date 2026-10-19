@@ -5,8 +5,8 @@ import{glassDetail}from'./surface-detail.js?v=147';
 import{trackClearance}from'./scenery-clearance.js?v=51';
 import * as THREE from 'three';
 import{EXPANSIONS,expansionShift,expansionAct}from'./expansion-courses.js?v=58';
-import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=58';
-import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';import{freezeWorld,batchScenery}from'./scene-performance.js?v=69';
+import{shell,makeRibbon}from'./tunnel-geometry.js?v=58';import{poseObject}from'./race-track.js?v=175';
+import{acquirePBR,releasePBR,hdrEnvironment}from'./material-lab.js?v=147';import{freezeWorld,batchScenery}from'./scene-performance.js?v=175';
 const TAU=Math.PI*2;
 export function expansionGround(course,x,z,endZ){
  // V141: carve into the *existing* heightfield rather than raising it.

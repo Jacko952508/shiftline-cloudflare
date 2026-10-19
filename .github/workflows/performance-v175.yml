@@ -1,0 +1,56 @@
+name: SHIFT LINE V175 Full Quality Polish
+on:
+  push:
+    branches: [performance-polish-v175]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  precision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Six-course physics, AI, cockpit and wormhole regression
+        run: |
+          for file in public/*.js; do node --check "$file"; done
+          for file in performance-v175 runtime-v152 performance-v171 racing-polish-v146 pilot-eye-v166 fleet-v162 finish-portal-v174 obstacle-v126; do
+            node --experimental-loader ./test/three-loader.mjs "test/$file.mjs"
+          done
+  mobile-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+        courses: ['1,2,3', '4,5,6']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: bef6c38f1f3f6346425e21a01be4d32e38f72862
+          path: .performance-baseline
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Prepare browser and exact V174 comparison
+        run: |
+          npm install --no-save playwright pngjs
+          npx playwright install --with-deps ${{ matrix.browser }}
+          cat test/runtime-bridge-v152.js >> public/race-engine.js
+          cat test/runtime-bridge-v152.js >> .performance-baseline/public/race-engine.js
+          python3 -m http.server 8764 --bind 127.0.0.1 --directory .performance-baseline/public >/tmp/shiftline-v174.log 2>&1 &
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory public >/tmp/shiftline-v175.log 2>&1 &
+      - name: Compare actual High-quality pixels and work on all six courses
+        env:
+          PERF_BROWSER: ${{ matrix.browser }}
+          PERF_COURSES: ${{ matrix.courses }}
+        run: node test/performance-browser-v175.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-v175-${{ matrix.browser }}-${{ matrix.courses }}
+          path: qa-v175
+          if-no-files-found: ignore

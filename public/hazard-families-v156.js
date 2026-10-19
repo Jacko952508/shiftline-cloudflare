@@ -83,7 +83,7 @@ export function familySpecifications(course,length){
  return out;
 }
 export function actuationPeriod(family){return family==='forge-press'?5.4:family==='furnace-shutters'?6.2:6.8;}
-export function familyState(o,time){
+export function familyState(o,time,out={}){
  const clock=time+o.seed,period=actuationPeriod(o.family);
  // A smooth dwell at each end of a cycle makes direction changes readable.
  const cycle=phase=>{const v=.5-.5*Math.cos(clock*TAU/period+phase);return v*v*(3-2*v);};
@@ -92,10 +92,10 @@ export function familyState(o,time){
  else if(!isKineticGate(o.family)&&/segments|gate|arch|machinery/.test(o.family)){x=Math.sin(clock*.16)*.35;y=Math.cos(clock*.13)*.25;}
  if(/vanes|rotor|turbine|wheel|drill|assembly/.test(o.family))a=o.variant*.18+(o.orientation||0);
  else a=(o.orientation||0)+(isKineticGate(o.family)?0:Math.sin(clock*.12)*.055);
- const pieces=new Float64Array(o.solids.length*6);
+ const pieces=out.pieces?.length===o.solids.length*6?out.pieces:new Float64Array(o.solids.length*6);
  for(let i=0;i<o.solids.length;i++){
   const p=o.solids[i],d=p.drive,travel=d?cycle(d.phase||0):0,angularSpeed=(d?.turn||0)*(1.8+o.variant*.18),angle=(p.a||0)+angularSpeed*clock+(d?.rock||0)*(2*travel-1),j=i*6;
   pieces[j]=(p.x||0)+(d?.x||0)*travel;pieces[j+1]=(p.y||0)+(d?.y||0)*travel;pieces[j+2]=p.z||0;pieces[j+3]=angle;pieces[j+4]=Math.cos(angle);pieces[j+5]=Math.sin(angle);
  }
- return {x,y,a,scale:1,pieces,cycle:cycle(0)};
+ out.x=x;out.y=y;out.a=a;out.scale=1;out.pieces=pieces;out.cycle=cycle(0);return out;
 }

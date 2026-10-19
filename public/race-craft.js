@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {skipHiddenTransforms} from './scene-performance.js?v=175';
 import {appearance,SHIP_SCALE} from './ship-catalog.js?v=163';
 import {buildFleetSculpture} from './fleet-sculpture-v162.js?v=173';
 export function craft(scene,color=0x72efff,variant=0,lit=true,custom={},options={}){
  const ship=new THREE.Group();variant=Math.max(0,Math.min(5,variant|0));
  ship.userData.flames=[];ship.userData.rotors=[];ship.userData.materialKinds=[];
  buildFleetSculpture(ship,variant,appearance(custom),lit,options);
- ship.scale.setScalar(SHIP_SCALE);scene.add(ship);return ship;
+ ship.scale.setScalar(SHIP_SCALE);skipHiddenTransforms(ship);scene.add(ship);return ship;
 }
 export function animateCraft(ship,time,boost,course=1,s=0,reduced=false){ship.userData.exhaustFX?.update(time,boost,reduced);}
 export function disposeCraft(scene,ship){
