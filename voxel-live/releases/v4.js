@@ -1,1 +1,1 @@
-export const release={version:4,engineCommit:'5475275f8bd13a5ec6e0166e79fe7f2ab85e2bb4',engineFile:'engine-v4.js',message:'V4 fixed: expanded metropolis, vehicles, world map, weather and developer tools (traffic initialization repaired)'};
+export const release={version:4,engineCommit:'5475275f8bd13a5ec6e0166e79fe7f2ab85e2bb4',engineFile:'engine-v4.js',message:'Reality Engine V4 hotfix: scene initialization corrected, 256x256 metropolis, six vehicles and Director tools'};
