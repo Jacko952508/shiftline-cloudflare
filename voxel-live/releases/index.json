@@ -1,0 +1,24 @@
+{
+  "schema": "reality.engine/releases/1",
+  "latest": 13,
+  "releases": [
+    {
+      "version": 11,
+      "engineCommit": "40c8235c90a2bb35eb66af38f4870f4b45a38c78",
+      "engineFile": "engine-v11.js"
+    },
+    {
+      "version": 12,
+      "engineCommit": "b06b618984d9dc1d7be79435d65ef69711e601ee",
+      "engineFile": "engine-v12.js"
+    },
+    {
+      "version": 13,
+      "engineCommit": "f1fd70bf54c9923d7456e9db14ae34a9253f4822",
+      "engineFile": "engine-v13.js"
+    }
+  ],
+  "sourceBranch": "voxel-chat-live",
+  "sourceDir": "voxel-live",
+  "notes": "Direct immutable engine loading avoids requiring a live GitHub API directory listing. Fallback when discovery fails is to keep the current playable engine."
+}
