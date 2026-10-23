@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 13,
+  "latest": 14,
   "releases": [
     {
       "version": 11,
@@ -16,6 +16,11 @@
       "version": 13,
       "engineCommit": "f1fd70bf54c9923d7456e9db14ae34a9253f4822",
       "engineFile": "engine-v13.js"
+    },
+    {
+      "version": 14,
+      "engineCommit": "e8597256949a5261c3e6b53b6292cdf3e7fd2cba",
+      "engineFile": "engine-v14.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
