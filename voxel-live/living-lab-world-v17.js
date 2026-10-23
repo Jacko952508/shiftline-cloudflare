@@ -228,6 +228,7 @@ export function mountLivingWorld3D(root, sim) {
     next=!!next;
     if(next===active)return;
     active=next;
+    hook.active=active;
     if(next){
       sim.close?.();
       hideEngineControls();
