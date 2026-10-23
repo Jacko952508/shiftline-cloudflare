@@ -1,0 +1,1 @@
+export const release={version:17,engineCommit:'0a5de39398dcd2f89182d196431ba0c389609fa9',engineFile:'engine-v17.js',message:'LIVING WORLD 3D: dedicated terrain, forests, growing settlements, autonomous resident meshes, orbit/zoom controls and simulation experiments using the original V15 WebGL canvas; 2D atlas optional and ASTRAEUS preserved'};
