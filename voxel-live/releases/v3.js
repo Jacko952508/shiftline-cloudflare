@@ -1,0 +1,1 @@
+export const release={version:3,engineCommit:'5922d164bd50d8027777933c3daf436d35365438',engineFile:'engine-v3.js',message:'REALITY ENGINE: Director Mode, autonomous citizens, building settlement, meteor impacts, ancient relic and flyable SKYRIDER'};
