@@ -3024,6 +3024,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
    if(action==='effects'){
      overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
+     if(overdrive.enabled){
+       // Retry any previously failed GPU effect using newly allocated targets.
+       overdrive.failed=false;overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
+       overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
+     }
      spaceNotify('V13 GAUSSIAN BLOOM '+(overdrive.enabled?'ENABLED — threshold + H/V blur':'OFF — direct renderer'),3.2);
    }
    if(action==='graphics'){
