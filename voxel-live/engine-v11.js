@@ -153,6 +153,8 @@ export async function mount(root,resume=null){
  const savedPosition=resume?.player??(()=>{try{return JSON.parse(localStorage.getItem(saveKey)||'{}').player}catch(e){return null}})();
  loc=new T.Vector3(savedPosition?.x??32.5,savedPosition?.y??ground(32,32)+2.6,savedPosition?.z??32.5);
  let newMapActive=directorState.activeMap!=='voxel';
+ let spaceMode=false;
+ const spaceAutoEnter=directorState.activeMap==='space'||!directorState.spaceWorldSeen;
  // Lightweight autonomous traffic: 14 moving vehicles on city street loops.
  const traffic=[],trafficRoot=new T.Group();trafficRoot.visible=!newMapActive;scene.add(trafficRoot);
  const trafficColors=[0x8fdad5,0xe7a46b,0xb3b8d3,0xeadfbd,0x9879a9];
@@ -1915,7 +1917,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    previousSun:sun.intensity,previousHemi:hemi.intensity};
  const spaceSave=directorState.spacePosition||{};
  const spaceCraftState={
-   pos:new T.Vector3(Number.isFinite(spaceSave.x)?spaceSave.x:0,Number.isFinite(spaceSave.y)?spaceSave.y:12,Number.isFinite(spaceSave.z)?spaceSave.z:110),
+   pos:new T.Vector3(Number.isFinite(spaceSave.x)?spaceSave.x:-70,Number.isFinite(spaceSave.y)?spaceSave.y:42,Number.isFinite(spaceSave.z)?spaceSave.z:-525),
    speed:0,boost:false,up:false,down:false,warp:null,clock:0,
    heading:Number.isFinite(spaceSave.heading)?spaceSave.heading:0,
    elevation:Number.isFinite(spaceSave.elevation)?spaceSave.elevation:-.025
@@ -2257,6 +2259,247 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      }
    }
    warpGeometry.attributes.position.needsUpdate=true;
+ }
+
+
+ // Space exploration UI is touch-first and separate from terrestrial builder controls.
+ const spaceStatus=document.createElement('div');
+ spaceStatus.style.cssText='position:absolute;z-index:5;top:65px;left:9px;right:9px;pointer-events:none;color:#e4f8ff;display:none;font:11px/1.5 ui-monospace,monospace;text-shadow:0 1px 8px #001420';
+ spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V11</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
+ stage.appendChild(spaceStatus);
+ const spaceControls=document.createElement('div');
+ spaceControls.style.cssText='position:absolute;bottom:8px;right:7px;z-index:6;display:none;pointer-events:auto;width:163px;font:700 11px system-ui;color:#fff;touch-action:manipulation';
+ spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="world">🌍 WORLD</button><button data-space="director">✦ DIRECTOR</button></div>';
+ for(const button of spaceControls.querySelectorAll('button')){
+   button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
+ }
+ stage.appendChild(spaceControls);
+ const starNav=document.createElement('div');
+ starNav.style.cssText='position:absolute;z-index:8;left:9px;right:9px;top:101px;max-height:57%;overflow:auto;overscroll-behavior:contain;background:linear-gradient(155deg,#061a2df5,#18264eea);border:1px solid #8bcefaaa;border-radius:12px;color:#e9faff;display:none;padding:11px;font:11px/1.4 system-ui;box-shadow:0 10px 28px #000b';
+ starNav.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><b style="letter-spacing:1.5px">✧ ASTRAEUS · EXPLORATION INDEX</b><button data-n="close">✕</button></div><p style="color:#b7cde5;margin:6px 0 9px">Select a destination to begin a guided warp. Scan interesting objects to log discoveries.</p><div data-routes style="display:grid;grid-template-columns:1fr;gap:5px"></div><div data-count style="margin-top:10px;color:#8dd5ec"></div>';
+ stage.appendChild(starNav);
+ const navRoutes=starNav.querySelector('[data-routes]');
+ const navCount=starNav.querySelector('[data-count]');
+ function updateNavigation(){
+   navRoutes.innerHTML=spaceWaypoints.map((w,i)=>{
+     const visited=spaceDiscoveries.has(w.id);
+     const dist=Math.round(spaceCraftState.pos.distanceTo(new T.Vector3(...w.p)));
+     return '<button data-route="'+i+'" style="width:100%;text-align:left;background:#142d50df;color:#d8f5ff;border:1px solid '+(visited?'#5ed8b8':'#6383b1')+';border-radius:8px;padding:8px;font:11px system-ui">'+(visited?'✓ ':'◇ ')+w.name+' <span style="float:right;color:#b6c7e2">'+dist+' km</span></button>';
+   }).join('');
+   navCount.textContent='SURVEY LOG · '+spaceDiscoveries.size+' / '+spaceWaypoints.length+' UNIQUE SIGHTINGS DISCOVERED';
+ }
+ const universeToast=document.createElement('div');
+ universeToast.style.cssText='position:absolute;top:164px;left:10px;right:10px;z-index:8;background:#071d35d9;border:1px solid #65e7eea5;border-radius:10px;padding:10px;display:none;color:#c8fbff;font:11px/1.45 system-ui;pointer-events:none;box-shadow:0 2px 15px #0006';
+ stage.appendChild(universeToast);
+ let universeToastUntil=0,lastSight=null,lastSpaceHUD=0,spaceFPSstart=performance.now(),spaceFrameCount=0;
+ function spaceNotify(textMsg,seconds=3.5){
+   universeToast.textContent=textMsg;
+   universeToast.style.display='block';universeToastUntil=performance.now()+seconds*1000;
+ }
+ function scanUniverse(){
+   const sorted=spaceWaypoints.map(w=>({w,dist:spaceCraftState.pos.distanceTo(new T.Vector3(...w.p))})).sort((a,b)=>a.dist-b.dist);
+   const near=sorted[0];
+   if(!near||near.dist>340){
+     const signal=sorted[0];
+     spaceNotify('NO DIRECT SIGNAL · nearest object '+signal.w.name+' ('+Math.floor(signal.dist)+' km). Use SIGHTS to warp.',4);
+     return;
+   }
+   lastSight=near.w.id;
+   if(!spaceDiscoveries.has(near.w.id)){
+     spaceDiscoveries.add(near.w.id);
+     directorState.spaceDiscoveries=[...spaceDiscoveries];
+     directorState.events=(directorState.events||0)+1;
+     spaceNotify('✧ FIRST CONTACT · '+near.w.name+' — '+near.w.note,8);
+   }else spaceNotify('✧ '+near.w.name+' — '+near.w.note,7);
+   updateNavigation();
+ }
+ function warpTo(index){
+   const target=spaceWaypoints[index];
+   if(!target||!spaceMode)return;
+   const from=spaceCraftState.pos.clone(),to=new T.Vector3(...target.p);
+   if(from.distanceTo(to)<45){spaceNotify('Already in the '+target.name+' sector. Try SCAN.',4);return}
+   spaceCraftState.warp={from,to,elapsed:0,duration:3.65,targetIndex:index};
+   spaceCraftState.boost=false;lastSight=target.id;
+   starNav.style.display='none';
+   spaceNotify('✧ WARP ENGAGED · '+target.name,3.4);
+ }
+ starNav.addEventListener('click',e=>{
+   const route=e.target.closest('[data-route]');
+   if(route){warpTo(Number(route.dataset.route));return}
+   if(e.target.closest('[data-n="close"]'))starNav.style.display='none';
+ });
+ for(const type of ['up','down']){
+   const button=spaceControls.querySelector('[data-space="'+type+'"]');
+   button.addEventListener('pointerdown',e=>{
+     if(!spaceMode)return;
+     e.preventDefault();e.stopPropagation();button.setPointerCapture(e.pointerId);
+     spaceCraftState[type]=true;button.style.background='#297ba5';});
+   for(const ev of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(ev,()=>{
+     spaceCraftState[type]=false;button.style.background='linear-gradient(145deg,#0f3857ef,#1e2554f1)';
+   });
+ }
+ spaceControls.addEventListener('click',e=>{
+   const b=e.target.closest('button[data-space]');if(!b||!spaceMode)return;
+   const action=b.dataset.space;
+   if(action==='nav'){updateNavigation();starNav.style.display=starNav.style.display==='none'?'block':'none'}
+   if(action==='scan')scanUniverse();
+   if(action==='warp'){
+     const route=spaceWaypoints.findIndex(w=>w.id===lastSight);
+     warpTo(route>=0?route:2);
+   }
+   if(action==='boost'){
+     spaceCraftState.boost=!spaceCraftState.boost;
+     b.style.borderColor=spaceCraftState.boost?'#8fffe2':'#75a9d077';
+     spaceNotify(spaceCraftState.boost?'ION AFTERBURNERS · ENGAGED':'ION AFTERBURNERS · IDLE',1.7);
+   }
+   if(action==='world')leaveSpaceWorld();
+   if(action==='director'){directorPanel.style.display='block';updateDirectorStats()}
+ });
+ function enterSpaceWorld(auto=false){
+   if(spaceMode)return;
+   if(riding)endFlight();
+   spaceStates.previousPosition.copy(loc);
+   spaceStates.previousYaw=yaw;spaceStates.previousPitch=pitch;
+   spaceStates.previousCameraFar=camera.far;
+   spaceStates.previousFog=scene.fog;spaceStates.previousBackground=scene.background;
+   spaceStates.previousSun=sun.intensity;spaceStates.previousHemi=hemi.intensity;
+   directorState.spaceReturnMap=directorState.activeMap==='voxel'?'voxel':'crescent';
+   spaceStates.restore.clear();
+   for(const child of scene.children){
+     if(child===spaceRoot||child===sun||child===hemi)continue;
+     spaceStates.restore.set(child,child.visible);child.visible=false;
+   }
+   spaceRoot.visible=true;spaceMode=true;directorState.spaceWorldSeen=true;directorState.activeMap='space';
+   camera.far=12000;camera.fov=72;camera.updateProjectionMatrix();
+   scene.fog=null;scene.background=new T.Color(0x020410);
+   hemi.intensity=1.9;sun.intensity=1.5;
+   yaw=spaceCraftState.heading;pitch=spaceCraftState.elevation;
+   spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
+   q('vxHotbar').style.display='none';
+   for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
+   const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='.68';
+   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V11 · ASTRAEUS / THE CELESTIAL EXPANSE';
+   spaceNotify(auto?'ASTRAEUS V11 · NEW WORLD LOADED · left thumb to fly, SIGHTS to explore':'ASTRAEUS · WELCOME BACK TO THE EXPANSE',5.8);
+ }
+ function leaveSpaceWorld(silent=false){
+   if(!spaceMode)return;
+   directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,
+      heading:yaw,elevation:pitch};
+   spaceMode=false;spaceRoot.visible=false;
+   for(const [object,vis] of spaceStates.restore)object.visible=vis;
+   spaceStates.restore.clear();
+   camera.far=spaceStates.previousCameraFar;camera.fov=directorState.cinematic?61:73;
+   camera.updateProjectionMatrix();
+   scene.fog=spaceStates.previousFog;scene.background=spaceStates.previousBackground;
+   sun.intensity=spaceStates.previousSun;hemi.intensity=spaceStates.previousHemi;
+   loc.copy(spaceStates.previousPosition);
+   yaw=spaceStates.previousYaw;pitch=spaceStates.previousPitch;velY=0;
+   directorState.activeMap=directorState.spaceReturnMap||'crescent';
+   starNav.style.display='none';spaceStatus.style.display='none';spaceControls.style.display='none';
+   universeToast.style.display='none';
+   for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='';
+   q('vxHotbar').style.display='';
+   const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='';
+   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='CRESCENT COAST · REALITY ENGINE V11';
+   if(!silent)notify('Returned to '+(newMapActive?'Crescent Coast':'Voxel World')+' · space expedition saved');
+   persist();
+ }
+ function spaceStep(dt,t){
+   const st=spaceCraftState;
+   st.clock+=dt;
+   cosmicSkyMat.uniforms.time.value=t;
+   cosmicSky.position.copy(st.pos);
+   // Throttle controls: left-side steering joystick; drag viewport for pitch/heading.
+   if(st.warp){
+     const w=st.warp;w.elapsed+=dt;
+     const progress=T.MathUtils.clamp(w.elapsed/w.duration,0,1);
+     const eased=progress*progress*(3-2*progress);
+     st.pos.copy(w.from).lerp(w.to,eased);
+     const dir=w.to.clone().sub(w.from).normalize();
+     yaw=Math.atan2(-dir.x,-dir.z);pitch=Math.asin(T.MathUtils.clamp(dir.y,-.94,.94));
+     st.speed=420+Math.sin(Math.PI*progress)*1350;
+     if(progress>=1){
+       st.warp=null;st.speed=0;lastSight=spaceWaypoints[w.targetIndex].id;
+       spaceNotify('WARP COMPLETE · '+spaceWaypoints[w.targetIndex].name+' · press SCAN',4.5);
+     }
+   }else{
+     yaw-=move.x*dt*1.12;
+     if(keys.has('a')||keys.has('arrowleft'))yaw+=dt*.95;
+     if(keys.has('d')||keys.has('arrowright'))yaw-=dt*.95;
+     pitch=T.MathUtils.clamp(pitch,-1.28,1.28);
+     const desired=(move.y+(keys.has('w')?1:0)-(keys.has('s')?1:0))*(st.boost?350:115);
+     st.speed=T.MathUtils.damp(st.speed,desired,st.boost?.9:1.6,dt);
+     const rise=Number(st.up||keys.has(' '))-Number(st.down||keys.has('q'));
+     const cp=Math.cos(pitch),direction=new T.Vector3(-Math.sin(yaw)*cp,Math.sin(pitch),-Math.cos(yaw)*cp);
+     st.pos.addScaledVector(direction,st.speed*dt);
+     st.pos.y+=rise*dt*(st.boost?180:78);
+     st.pos.clamp(new T.Vector3(-6500,-3400,-7300),new T.Vector3(6500,3400,4100));
+   }
+   st.heading=yaw;st.elevation=pitch;
+   const cosPitch=Math.cos(pitch);
+   const forward=new T.Vector3(-Math.sin(yaw)*cosPitch,Math.sin(pitch),-Math.cos(yaw)*cosPitch);
+   const right=new T.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+   const shipLocation=st.pos.clone();
+   explorer.position.copy(shipLocation);
+   explorer.rotation.order='YXZ';explorer.rotation.y=yaw;explorer.rotation.x=pitch;
+   explorerBody.rotation.z=T.MathUtils.damp(explorerBody.rotation.z,move.x*.23,4,dt);
+   scannerRing.rotation.z+=dt*.7;scannerDome.material=spaceGlow;
+   for(const x of explorerThrust)x.scale.z=2.6+Math.sin(t*13)*.8+(st.boost?2.1:0);
+   for(const unit of mainThrusters){
+     unit.glow.material.opacity=st.boost?.98:.72;
+     unit.glow.scale.setScalar(st.boost?9+Math.sin(t*27)*.9:6+Math.sin(t*10)*.4);
+   }
+   explorerThrusterLight.intensity=st.boost?9:3.2;
+   // Chase camera: flight craft always visible in front of the user.
+   const wanted=shipLocation.clone().addScaledVector(forward,-30).add(new T.Vector3(0,9,0));
+   camera.position.lerp(wanted,1-Math.exp(-dt*5.6));
+   const focus=shipLocation.clone().addScaledVector(forward,46);
+   camera.lookAt(focus);
+   for(const p of spacePlanets){
+     p.sphere.rotation.y+=dt*.018;
+     p.material.uniforms.time.value=t;
+     if(p.ringMat)p.ringMat.uniforms.time.value=t;
+   }
+   discMat.uniforms.time.value=t;accretion.rotation.z=t*.065;
+   blackOrbit.rotation.y=t*.22;
+   signalRing.rotation.z+=dt*.07;
+   horizonGate.rotation.y=Math.sin(t*.08)*.14;
+   gatewayEye.material.rotation=t*.015;
+   crystalSite.rotation.y=Math.sin(t*.09)*.09;
+   sunGlow.material.opacity=.81+Math.sin(t*.4)*.1;
+   for(const drone of artifactDrones){
+     const a=t*drone.rate+drone.phase,r=drone.radius;
+     drone.drone.position.set(Math.cos(a)*r,Math.sin(a*1.7)*r*.25,Math.sin(a)*r);
+   }
+   // Lower visual detail when very far from landmarks.
+   arraySite.visible=shipLocation.distanceTo(arraySite.position)<3100;
+   crystalSite.visible=shipLocation.distanceTo(crystalSite.position)<3100;
+   ghostArk.visible=shipLocation.distanceTo(ghostArk.position)<3800;
+   horizonGate.visible=shipLocation.distanceTo(horizonGate.position)<3600;
+   singularity.visible=shipLocation.distanceTo(singularity.position)<6200;
+   updateWarpVisual(t,forward);
+   // Cheap per-discovery signal marker when player approaches a curious object.
+   if(performance.now()-lastSpaceHUD>420){
+     lastSpaceHUD=performance.now();
+     const nearest=spaceWaypoints.map(w=>({w,dist:shipLocation.distanceTo(new T.Vector3(...w.p))})).sort((a,b)=>a.dist-b.dist)[0];
+     const count=spaceDiscoveries.size;
+     spaceStatus.querySelector('[data-readout]').textContent=st.warp?'HYPERSPACE · '+Math.round(st.speed)+' KM/S':Math.round(Math.abs(st.speed))+' KM/S · '+(st.boost?'BOOST':'CRUISE');
+     spaceStatus.querySelector('[data-telemetry]').textContent=
+        'DISCOVERIES '+count+'/8  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
+        '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM';
+     if(universeToastUntil<performance.now())universeToast.style.display='none';
+     spaceFrameCount+=1;
+     const rate=Math.round(1000/Math.max(10,adaptive.frameMs));
+     text('vxFps',rate+' FPS · SPACE · '+renderer.getPixelRatio().toFixed(2)+'x');
+     if(quality==='auto'&&performance.now()>adaptive.nextCheck){
+       const ratio=renderer.getPixelRatio(),fps=1000/Math.max(1,adaptive.frameMs);
+       if(fps<28&&ratio>.68)renderer.setPixelRatio(Math.max(.68,ratio-.075));
+       else if(fps>49&&ratio<Math.min(devicePixelRatio||2,mobile?1.25:1.8))renderer.setPixelRatio(Math.min(mobile?1.25:1.8,ratio+.045));
+       adaptive.nextCheck=performance.now()+8500;
+     }
+   }
+   // Render star and ship at full quality, never the distant terrestrial worlds.
+   renderer.render(scene,camera);
  }
 
  const directorPanel=document.createElement('div');
