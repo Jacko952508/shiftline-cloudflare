@@ -91,3 +91,31 @@ Therefore **create each version's release pointer on `nimbus-chat-live`**, even 
 - Release pointers on \`nimbus-chat-live\`; game code on \`voxel-chat-live\`. Do not modify live SHIFT LINE main.
 - Each engine passed source compilation checks (\`new Function(...)\`), version manifest checks and static scene-initialization order checks. Not yet validated in the iPhone ChatGPT WebGL runtime.
 - User selected GitHub-only distribution: do NOT deploy to Hatchable.
+
+
+## V11 — ASTRAEUS: The Celestial Expanse (2026-10-23)
+
+GitHub source: \`voxel-chat-live/voxel-live/engine-v11.js\`.
+Immutable engine commit: \`40c8235c90a2bb35eb66af38f4870f4b45a38c78\`.
+Live ChatGPT update descriptor: \`nimbus-chat-live/voxel-live/releases/v11.js\`.
+**This is the next selectable world inside the existing in-chat Reality Engine; do not redeploy with Hatchable or touch Shiftline production main.**
+
+### Visual engine
+- Deep-space environment with animated 4-octave fBm nebula dome, thousands of parallax stars and additive corona sprites.
+- Three procedurally shaded planets: AEON (giant, complex translucent particle-like rings and orbiting moons), NIX (polar aurora shells), EMBER (volcanic atmosphere). A luminous star and a singularity accretion-disc shader complete the astronomical scale.
+- Hundreds of GPU-instanced asteroids with unique per-instance colours and rotations, alien beacons and complex scene monuments.
+- KESTREL XR exploration craft with bespoke metallic body, canopy, wings, swept engine nacelles, animated ion jets, scanner dome and floating companion micro-probe.
+- View-dependent distance culling for rare artefacts and adjustable pixel density based on measured frame time. No live HDR or per-frame expensive cubemap capture.
+
+### Exploration and control
+- First V11 launch automatically opens space; Director > ASTRAEUS SPACE WORLD reopens later. Return to Crescent Coast/Voxel World at any time.
+- Existing left-side joystick steers/throttles the craft. Swipe the 3D viewport to look/aim. RISE/DIVE hold buttons, BOOST toggles, SCAN discovers points of interest, SIGHTS lists destinations, WARP animates warp travel.
+- Eight discoverable regions: Silent Array, Crystal Reef, AEON ringed giant, Ember Drift, Horizon Gate, NIX ice world, Ghost Ark and Gravity Well X9.
+- Position, orientation and all discovered sightings live in \`directorState.spacePosition\` and \`directorState.spaceDiscoveries\`, included in the engine's snapshot for hot updates.
+- Space has its own dedicated render loop. The voxel and Crescent Coast scenes are hidden and not ticked, preserving device performance.
+- Shader/runtime errors in space rendering attempt to return to the previous terrestrial world rather than leaving a black screen.
+
+### Verification limitations
+- Exact source and immutable GitHub descriptor verified, JavaScript parsed, startup ordering inspected.
+- **Not yet proven to render on the user's iPhone or to have a non-cached CDN response**.
+- The existing viewer must be at V10 to pick up V11 on the next update; older versions install sequentially unless they use a direct pinned V11 loader.
