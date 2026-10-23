@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 15,
+  "latest": 16,
   "releases": [
     {
       "version": 11,
@@ -26,9 +26,14 @@
       "version": 15,
       "engineCommit": "44824f16cf50e1e982e9a0da8e0351a7a7936a49",
       "engineFile": "engine-v15.js"
+    },
+    {
+      "version": 16,
+      "engineCommit": "0f1aafcded90a024f3bd349d4c68de748367f9a6",
+      "engineFile": "engine-v16.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
   "sourceDir": "voxel-live",
-  "notes": "Immutable engine pins. V15 iOS direct-first ASTRAEUS mode. Existing in-chat widgets need their loader updated to adopt new releases."
+  "notes": "V16 Living Lab simulation integrated with V15 iPhone-safe Three.js engine. Poll CDN release index. World experiment mutation events: voxel-live/living-lab-events.json on nimbus-chat-live. Existing viewer requires V16-capable loader."
 }
