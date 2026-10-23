@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V6 · CINEMATIC LIGHTING · REFLECTIONS · WEATHER';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V7 · VISTA REMASTER · LIGHTHOUSE · NEW SCENERY';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -253,7 +253,7 @@ soilTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
  groundNormal.repeat.copy(soilTex.repeat);
  groundNormal.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
 
-const landscapeMat=new T.MeshStandardMaterial({map:soilTex,normalMap:groundNormal,normalScale:new T.Vector2(.48,.48),vertexColors:true,roughness:.94,metalness:0,envMapIntensity:.2});
+const landscapeMat=new T.MeshStandardMaterial({map:soilTex,normalMap:groundNormal,normalScale:new T.Vector2(.6,.6),vertexColors:true,roughness:.89,metalness:0,envMapIntensity:.28});
 const terrainGeom=new T.PlaneGeometry(256,256,128,128);
 terrainGeom.rotateX(-Math.PI/2);terrainGeom.translate(128,0,128);
 const coords=terrainGeom.attributes.position,terrainColors=[];
@@ -451,9 +451,9 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const archGroup=new T.Group();archGroup.position.set(55,coastH(55,113),113);vistaGroup.add(archGroup);
  const archMaterial=new T.MeshPhysicalMaterial({color:0x65a8c5,metalness:.56,roughness:.16,clearcoat:1,envMapIntensity:1.8});
  const archGlow=new T.MeshBasicMaterial({color:0x9ef4f8,toneMapped:false});
- const arch=new T.Mesh(new T.TorusGeometry(9,.48,10,44,Math.PI),archMaterial);
- arch.rotation.y=Math.PI/2;arch.rotation.z=Math.PI;arch.position.y=3.9;archGroup.add(arch);
- const innerArch=new T.Mesh(new T.TorusGeometry(8.43,.12,8,44,Math.PI),archGlow);
+ const arch=new T.Mesh(new T.TorusGeometry(7,.48,10,44,Math.PI),archMaterial);
+ arch.rotation.y=Math.PI/2;arch.rotation.z=0;arch.position.y=2.4;archGroup.add(arch);
+ const innerArch=new T.Mesh(new T.TorusGeometry(6.43,.12,8,44,Math.PI),archGlow);
  innerArch.rotation.copy(arch.rotation);innerArch.position.copy(arch.position);archGroup.add(innerArch);
  // Bold branded information billboard at the viewpoint: actual canvas glyphs, not floating placeholders.
  const billboard=document.createElement('canvas');billboard.width=768;billboard.height=240;
@@ -478,7 +478,7 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
   lighthouse.beacon.intensity=weather==='night'?65:weather==='sunset'?31:14;
   vistaLight.intensity=weather==='night'?10:weather==='sunset'?4:1;
   const skyEmissive=weather==='night'?1:.68;
-  innerArch.material.opacity=skyEmissive;
+  innerArch.material.transparent=true;innerArch.material.opacity=skyEmissive;
  }
 
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
@@ -1373,7 +1373,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1507,10 +1507,36 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    if(debugHudOn)debugHud.textContent='REALITY ENGINE V6 / RENDER CORE\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nDRAWS: '+renderer.info.render.calls+' / '+renderer.info.render.triangles+' TRI'+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
  }
 
- directorPanel.addEventListener('click',e=>{
+ 
+ // One-tap showcase: ensures a user who updated while exploring another area
+ // can find the actual redesigned part of the map immediately.
+ const showcaseButton=document.createElement('button');
+ showcaseButton.textContent='📸 V7 SHOWCASE';
+ showcaseButton.style.cssText='position:absolute;top:145px;left:10px;z-index:3;background:#13445dda;color:#e2fffa;border:1px solid #88e5d5;border-radius:8px;padding:7px 10px;font:bold 10px system-ui;box-shadow:0 2px 10px #072032aa';
+ stage.appendChild(showcaseButton);
+ showcaseButton.onclick=()=>{
+   if(!newMapActive)setMap('crescent');
+   if(riding)endFlight();
+   loc.set(52,coastH(52,116)+2.35,116);
+   yaw=.13;pitch=-.05;velY=0;
+   q('vxWeather').value='sunset';q('vxWeather').dispatchEvent(new Event('change'));
+   notify('Crescent Coast V7 showcase loaded');
+ };
+
+directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='vista'){
+     if(!newMapActive)setMap('crescent');
+     if(riding)endFlight();
+     loc.set(52,coastH(52,116)+2.35,116);
+     yaw=.13;pitch=-.055;velY=0;
+     directorPanel.style.display='none';
+     q('vxWeather').value='sunset';q('vxWeather').dispatchEvent(new Event('change'));
+     notify('V7 scenic vista · lighthouse, arch, coast and roadside detail');
+   }
+
    if(action==='coast'||action==='voxel'){directorPanel.style.display='none';setMap(action==='coast'?'crescent':'voxel');}
 
 
@@ -1623,6 +1649,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  stage.tabIndex=0;stage.addEventListener('keydown',kd);stage.addEventListener('keyup',ku);
  const resizeObserver=new ResizeObserver(resize);
  function resize(){let w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+ q('vxWeather').value='sunset';q('vxWeather').dispatchEvent(new Event('change'));
  setQuality('auto');resizeObserver.observe(stage);
  if(directorState.cinematic){camera.fov=61;camera.updateProjectionMatrix()}
  q('vxLoad').style.opacity='0';setTimeout(()=>{if(alive&&q('vxLoad'))q('vxLoad').style.display='none'},750);
