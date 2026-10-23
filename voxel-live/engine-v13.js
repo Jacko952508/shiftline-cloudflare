@@ -2759,7 +2759,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const overdrive={
    enabled:directorState.overdrivePost!==false,
    failed:false,mode:directorState.overdriveQuality||'adaptive',
-   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,blur2:null,renderPasses:0
+   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,blur2:null,renderPasses:0,lastSceneDraws:0,lastPassCount:0
  };
  const postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
  const postTriangle=new T.BufferGeometry();
@@ -2867,11 +2867,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
  }
  function spaceRenderOverdrive(t){
-   if(!setupSpacePost()){renderer.render(scene,camera);return}
+   if(!setupSpacePost()){renderer.render(scene,camera);overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;return}
    const original=renderer.getRenderTarget();
    try{
      renderer.setRenderTarget(overdrive.beauty);
      renderer.clear();renderer.render(scene,camera);
+     overdrive.lastSceneDraws=renderer.info.render.calls;
      renderer.setRenderTarget(overdrive.blur);
      renderer.clear();renderer.render(postStage1,postCamera);
      bloomGaussian.uniforms.source.value=overdrive.blur.texture;
@@ -2886,10 +2887,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      spaceFinalMat.uniforms.time.value=t;
      renderer.render(postStage2,postCamera);
      overdrive.renderPasses++;
+     overdrive.lastPassCount=5;
    }catch(e){
      overdrive.failed=true;
      console.warn('V12 post-processing disabled after render error',e);
      renderer.setRenderTarget(original);renderer.render(scene,camera);
+     overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;
    }finally{
      renderer.setRenderTarget(original);
    }
@@ -3251,7 +3254,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      spaceStatus.querySelector('[data-telemetry]').textContent=
         'DISCOVERIES '+count+'/'+spaceWaypoints.length+'  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
         '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM'+
-        ' · '+renderer.info.render.calls+' DRAWS';
+        ' · '+overdrive.lastSceneDraws+' SCENE DRAWS · '+overdrive.lastPassCount+' PASSES';
      if(universeToastUntil<performance.now())universeToast.style.display='none';
      spaceFrameCount+=1;
      const rate=Math.round(1000/Math.max(10,adaptive.frameMs));
