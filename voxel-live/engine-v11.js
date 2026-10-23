@@ -2070,6 +2070,39 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   planetSurface('NIX',[740,150,-2290],147,['#123359','#9deafb','#2a91bf',.65],false),
   planetSurface('EMBER',[-520,-85,-1140],83,['#210b19','#ed492b','#ffcc63',1.8],false)
  ];
+
+ // Polar aurora curtains over NIX: physically curved shell with animated chromatic ribbons.
+ const nixAurora=new T.ShaderMaterial({
+   transparent:true,depthWrite:false,side:T.BackSide,blending:T.AdditiveBlending,
+   uniforms:{time:{value:0}},
+   vertexShader:`varying vec3 vPos,vNormal;void main(){vPos=normalize(position);vNormal=normal;
+      gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+   fragmentShader:`varying vec3 vPos,vNormal;uniform float time;
+      void main(){float poles=pow(abs(vPos.y),4.);
+       float ribbon=sin(atan(vPos.z,vPos.x)*13.+vPos.y*23.+time*.27);
+       ribbon+=.42*sin(atan(vPos.z,vPos.x)*29.-time*.13);
+       float curtain=pow(max(0.,ribbon*.5+.45),4.);
+       float alpha=poles*curtain*.27;
+       vec3 col=mix(vec3(.07,.88,.85),vec3(.48,.37,1.),.5+.5*sin(vPos.x*12.+time*.25));
+       gl_FragColor=vec4(col*2.1,alpha);
+      }`
+ });
+ const aurora=spaceMesh(spacePlanets[1].group,new T.SphereGeometry(170,38,30),nixAurora);
+ const aeonMoons=[];
+ for(let i=0;i<3;i++){
+   const moonMat=new T.MeshStandardMaterial({color:[0xb9abce,0x728999,0xb7a8a0][i],roughness:.95,metalness:.04});
+   const moon=spaceBall(spaceRoot,[20,13,25][i],moonMat,0,0,0,20);
+   aeonMoons.push({mesh:moon,radius:430+i*112,speed:.011+(3-i)*.006,phase:i*2.39});
+ }
+ // An orbiting micro-probe records weak signals and gives the craft a personal companion.
+ const probe=new T.Group();explorer.add(probe);
+ spaceBall(probe,.66,spaceMetal);
+ for(const a of [0,Math.PI/2]){
+   const rail=spaceMesh(probe,new T.TorusGeometry(1.45,.065,6,32),spaceGlow);
+   rail.rotation.y=a;
+ }
+ glowSprite(probe,0x80bfff,0,0,0,4,.72);
+
  const burningSun=spaceBall(spaceRoot,67,new T.MeshBasicMaterial({color:0xffbd7c,toneMapped:false}),-650,350,-1760,30);
  const sunGlow=glowSprite(spaceRoot,0xffae68,-650,350,-1760,490,.92);
  const sunFlare=glowSprite(spaceRoot,0xfce7ad,-650,350,-1760,760,.27);
@@ -2456,6 +2489,14 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.position.lerp(wanted,1-Math.exp(-dt*5.6));
    const focus=shipLocation.clone().addScaledVector(forward,46);
    camera.lookAt(focus);
+   nixAurora.uniforms.time.value=t;
+   for(const [i,moon] of aeonMoons.entries()){
+     const angle=t*moon.speed+moon.phase;
+     moon.mesh.position.set(90+Math.cos(angle)*moon.radius,Math.sin(angle*1.1)*95,-1140+Math.sin(angle)*moon.radius*.48);
+     moon.mesh.rotation.y=t*.03;
+   }
+   probe.position.set(11,3.4+Math.sin(t*1.4)*1.2,-1.2);
+   probe.rotation.y=t*.82;
    for(const p of spacePlanets){
      p.sphere.rotation.y+=dt*.018;
      p.material.uniforms.time.value=t;
@@ -2752,7 +2793,7 @@ directorPanel.addEventListener('click',e=>{
  q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=directorState.lowGravity?8.6:6.8;grounded=false}};
  q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
- q('vxReset').onclick=()=>{if(riding)endFlight();if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);else loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
+ q('vxReset').onclick=()=>{if(spaceMode){spaceCraftState.pos.set(-70,42,-525);spaceCraftState.speed=0;spaceNotify('ASTRAEUS · RETURNED TO ARRIVAL SECTOR');return}if(riding)endFlight();if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);else loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
  q('vxWeather').insertAdjacentHTML('beforeend','<option value="sunset">🌇 Golden hour</option>');
  q('vxWeather').onchange=e=>{
   weather=e.target.value;
@@ -2918,5 +2959,11 @@ directorPanel.addEventListener('click',e=>{
  return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
-        warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+        warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();
+        const sg=new Set(),sm=new Set();
+        spaceRoot.traverse(o=>{if(o.geometry)sg.add(o.geometry);
+          if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>sm.add(m));else sm.add(o.material)}});
+        sg.forEach(g=>g.dispose?.());sm.forEach(m=>m.dispose?.());
+        for(const n of [spaceStatus,spaceControls,starNav,universeToast])n.remove();
+        portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
