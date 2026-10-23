@@ -759,6 +759,9 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
   setTimeout(function(){if(!window.shiftlineReady)showBootIssue('Startup did not finish within 20 seconds.');},20000);
 })();
 </script><script>(() => {
+  // public/touch-policy.js
+  document.addEventListener("dblclick", (event) => event.preventDefault(), { capture: true, passive: false });
+
   // public/ship-handling-v177.js?v=177
   var HANDLING = Object.freeze([
     { name: "BALANCED", spring: 70, damping: 14, response: 3, grip: 3, description: "Even response and predictable glide. The all-rounder." },
