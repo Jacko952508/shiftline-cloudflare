@@ -161,7 +161,13 @@ export async function mount(root,resume=null){
  const opaqueMat=new T.MeshStandardMaterial({map:tex,vertexColors:true,roughness:.88,metalness:0});
  const glassMat=new T.MeshPhysicalMaterial({color:0xa0d9e9,transparent:true,opacity:.38,metalness:.2,roughness:.12,side:T.DoubleSide,depthWrite:false});
  const waterMat=new T.MeshStandardMaterial({color:0x3f96c1,transparent:true,opacity:.7,metalness:.12,roughness:.3,side:T.DoubleSide,depthWrite:false});
- const distantWater=new T.Mesh(new T.PlaneGeometry(2000,2000,1,1),new T.MeshStandardMaterial({color:0x357f9d,transparent:true,opacity:.81,metalness:.35,roughness:.22,depthWrite:false}));distantWater.rotation.x=-Math.PI/2;distantWater.position.set(32,SEA+.86,32);scene.add(distantWater);
+ const oceanMat=new T.ShaderMaterial({
+ transparent:true,depthWrite:false,side:T.DoubleSide,
+ uniforms:{time:{value:0},deep:{value:new T.Color('#125373')},shallow:{value:new T.Color('#4fb4b8')}},
+ vertexShader:'varying vec3 wp;void main(){vec4 p=modelMatrix*vec4(position,1.);wp=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}',
+ fragmentShader:'uniform vec3 deep,shallow;uniform float time;varying vec3 wp;void main(){float a=sin(wp.x*.14+time*.8+sin(wp.z*.05))*sin(wp.z*.12-time*.52);float b=sin(wp.z*.29+wp.x*.16+time*.62);float fres=.35+.25*sin(wp.x*.018+wp.z*.027);vec3 col=mix(deep,shallow,.32+.17*a+.1*b+fres*.2);float sparkle=pow(max(0.,a*.65+b*.3+.08),11.);col+=vec3(.5,.83,1.)*sparkle*.5;gl_FragColor=vec4(col,.93);}'
+});
+ const distantWater=new T.Mesh(new T.PlaneGeometry(2000,2000,1,1),oceanMat);distantWater.rotation.x=-Math.PI/2;distantWater.position.set(32,SEA+.86,32);scene.add(distantWater);
  const glowMat=new T.MeshStandardMaterial({color:0xffeac0,emissive:0xffb561,emissiveIntensity:1.7,roughness:.45});
  const geoGroups=new Map();
  const faces=[
@@ -245,7 +251,7 @@ export async function mount(root,resume=null){
    }
  }
  requestChunks(32.5,32.5);
- streamChunks(5);
+ streamChunks(mobile?2:5);
 
  function updateAt(x,z){
   const pairs=[[Math.floor(x/CHUNK),Math.floor(z/CHUNK)]];
@@ -541,7 +547,7 @@ export async function mount(root,resume=null){
   hoverbike:{name:'HOVERBIKE',speed:48,lift:2},
   boat:{name:'HYDROFOIL',speed:29,lift:0}
  };
- let vehicleType=vehicleData[directorState.vehicleType]?directorState.vehicleType:'skyrider';
+ let vehicleType=vehicleData[directorState.vehicleType]?directorState.vehicleType:'skyrider',hopTime=0;
  function selectVehicle(type){
   if(!vehicleData[type])return;
   vehicleType=type;directorState.vehicleType=type;
@@ -588,7 +594,10 @@ export async function mount(root,resume=null){
   if(!blocked){craftState.x=nx;craftState.z=nz}else craftState.speed*=.32;
   if(land){
     const expected=vessel?SEA+1.3:ground(craftState.x,craftState.z)+(vehicleType==='buggy'?1.45:2.2);
-    craftState.y=T.MathUtils.damp(craftState.y,expected+(vehicleType==='hoverbike'?Math.sin(t*3)*.14:0),4,dt);
+    if(vehicleType!=='boat'&&flightLift>0&&hopTime<=0)hopTime=1.1;
+    hopTime=Math.max(0,hopTime-dt);
+    const jump=hopTime>0?Math.sin((1.1-hopTime)/1.1*Math.PI)*(vehicleType==='buggy'?2.3:.9):0;
+    craftState.y=T.MathUtils.damp(craftState.y,expected+jump+(vehicleType==='hoverbike'?Math.sin(t*3)*.14:0),7,dt);
     if(vessel){const depth=ground(craftState.x,craftState.z);if(depth>SEA+2)craftState.speed*=.88}
   }else{
     craftState.y+=craftState.climb*dt;
@@ -955,7 +964,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);
   for(const a of animals){
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
     a.g.position.set(xx,ground(Math.round(xx),Math.round(zz))+1,zz);
@@ -977,7 +986,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
     text('vxFps',rate+' FPS · '+quality.toUpperCase());
     text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z)+' · CH '+geoGroups.size);
     text('vxTarget',riding?'SKYRIDER · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
-    if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.75){renderer.setPixelRatio(Math.max(.75,renderer.getPixelRatio()-.1));resize();adaptAt=now}
+    if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.72){renderer.setPixelRatio(Math.max(.72,renderer.getPixelRatio()-.1));if(chunkRadius.value>2)chunkRadius.value--;resize();adaptAt=now}
   }
   if(now-lastCivilWork>7500){lastCivilWork=now;buildersProgress();updateDirectorStats()}
   if(now-saveAt>5000){saveAt=now;persist()}
