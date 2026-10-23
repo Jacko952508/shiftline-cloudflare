@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V13 · COSMIC ASCENT · LIVING NEBULA · REAL BLOOM';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V14 · ASTRAEUS · BLACK SCREEN RECOVERY';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -2734,8 +2734,20 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  // Space exploration UI is touch-first and separate from terrestrial builder controls.
  const spaceStatus=document.createElement('div');
  spaceStatus.style.cssText='position:absolute;z-index:5;top:65px;left:9px;right:9px;pointer-events:none;color:#e4f8ff;display:none;font:11px/1.5 ui-monospace,monospace;text-shadow:0 1px 8px #001420';
- spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V13 COSMIC ASCENT</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
+ spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V14 SPACE RECOVERY</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
  stage.appendChild(spaceStatus);
+
+ // Always-accessible emergency switch, independent of space's collapsible flight panel.
+ const safeModeButton=document.createElement('button');
+ safeModeButton.type='button';safeModeButton.textContent='🛡 SAFE SCENE';
+ safeModeButton.style.cssText='position:absolute;top:130px;right:9px;z-index:9;display:none;max-width:145px;background:#103b51e8;color:#defff3;border:1px solid #77e7cb;border-radius:7px;padding:6px 9px;font:700 10px system-ui;touch-action:manipulation';
+ stage.appendChild(safeModeButton);
+ safeModeButton.onclick=()=>{
+   const modes=['safe','direct','cinema'];
+   setSpaceRenderMode(modes[(modes.indexOf(v14RenderVariant)+1)%modes.length]);
+ };
+ updateSafeRenderLabel();
+
  const spaceControls=document.createElement('div');
  spaceControls.style.cssText='position:absolute;bottom:env(safe-area-inset-bottom,8px);right:7px;z-index:6;display:none;pointer-events:auto;width:min(168px,45vw);font:700 11px system-ui;color:#fff;touch-action:manipulation';
  spaceControls.innerHTML='<div data-flight style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px">'+
@@ -2746,7 +2758,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    '<div data-systems style="display:none;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:5px">'+
    '<button data-space="tour">🎞 FLYBY</button><button data-space="reveal">✧ V13 REVEAL</button>'+
    '<button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button>'+
-   '<button data-space="effects">◉ POST FX</button><button data-space="director">✦ DIRECTOR</button>'+
+   '<button data-space="renderer">🛡 RENDER</button><button data-space="effects">◉ POST FX</button>'+
    '<button data-space="world">🌍 WORLD</button></div>';
  for(const button of spaceControls.querySelectorAll('button')){
    button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
@@ -2855,7 +2867,49 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const glowCopy=new T.Mesh(postTriangle,safeGlowMaterial);
  beautyCopy.frustumCulled=false;glowCopy.frustumCulled=false;
  safeBeautyScene.add(beautyCopy);safeGlowScene.add(glowCopy);
+ 
  let v14RenderFailures=0,v14WorldChecked=false,v14RenderVariant=directorState.v14RenderVariant||'safe';
+ let v14OutputProbe=0,v14BlankReadings=0,spaceHUDPreserve=new Map();
+ const v14Pixel=new Uint8Array(4);
+ // Small readback only three times after the compositor starts; never a per-frame GPU stall.
+ function v14CheckBlackOutput(){
+   if(v14WorldChecked||v14RenderVariant==='direct'||++v14OutputProbe%38!==0)return;
+   try{
+     const gl=renderer.getContext();
+     const sz=renderer.getDrawingBufferSize(new T.Vector2());
+     let brightest=0;
+     for(const [x,y] of [[.5,.5],[.21,.34],[.77,.64]]){
+       gl.readPixels(Math.floor(sz.x*x),Math.floor(sz.y*y),1,1,gl.RGBA,gl.UNSIGNED_BYTE,v14Pixel);
+       brightest=Math.max(brightest,v14Pixel[0],v14Pixel[1],v14Pixel[2]);
+     }
+     if(brightest>=7){v14WorldChecked=true;return}
+     if(++v14BlankReadings>=2){
+       v14RenderVariant='direct';directorState.v14RenderVariant='direct';v14WorldChecked=true;
+       console.warn('V14 black framebuffer detected; automatically falling back to direct space renderer');
+       spaceNotify('RENDER RECOVERY · post-processing was blank; switched to direct 3D scene',7);
+       updateSafeRenderLabel();
+     }
+   }catch(e){
+     // Readback unsupported in webview; no reason to disable graphics or throw.
+     v14WorldChecked=true;console.warn('V14 output probe unavailable',e);
+   }
+ }
+ function setSpaceRenderMode(mode){
+   if(!['direct','safe','cinema'].includes(mode))return;
+   v14RenderVariant=mode;directorState.v14RenderVariant=mode;
+   v14WorldChecked=false;v14BlankReadings=0;v14OutputProbe=0;
+   if(mode==='direct')overdrive.enabled=false;
+   else{overdrive.enabled=true;overdrive.failed=false;overdrive.reportedFailure=false}
+   directorState.overdrivePost=overdrive.enabled;
+   updateSafeRenderLabel();
+   spaceNotify('SPACE RENDER · '+(mode==='direct'?'DIRECT WEBGL':mode==='safe'?'SAFE SCENE + BLOOM':'CINEMATIC COMPOSITOR'),3);
+ }
+ function updateSafeRenderLabel(){
+   if(!safeModeButton)return;
+   safeModeButton.textContent=v14RenderVariant==='direct'?'🛡 DIRECT SCENE':v14RenderVariant==='cinema'?'🛡 CINEMA FX':'🛡 SAFE SCENE';
+   safeModeButton.style.borderColor=v14RenderVariant==='direct'?'#ffd28b':'#77e7cb';
+ }
+
 
  function setupSpacePost(){
    if(overdrive.failed||!overdrive.enabled)return false;
@@ -2920,6 +2974,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
        overdrive.lastPassCount=5;
      }
      overdrive.renderPasses++;
+     v14CheckBlackOutput();
    }catch(e){
      overdrive.failed=true;
      v14RenderFailures++;
@@ -3057,6 +3112,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      directorState.spaceCamera=modes[(i+1)%modes.length];
      spaceNotify('CAMERA MODE · '+directorState.spaceCamera.toUpperCase(),2.1);
    }
+   if(action==='renderer'){
+     const modes=['safe','direct','cinema'];
+     setSpaceRenderMode(modes[(modes.indexOf(v14RenderVariant)+1)%modes.length]);
+   }
    if(action==='effects'){
      overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
      if(overdrive.enabled){
@@ -3122,6 +3181,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.position.set(spaceCraftState.pos.x,spaceCraftState.pos.y+12,spaceCraftState.pos.z+36);
    camera.lookAt(spaceCraftState.pos.x,spaceCraftState.pos.y,spaceCraftState.pos.z-50);
    spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
+   safeModeButton.style.display='block';
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='none';
    q('vxHotbar').style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
@@ -3148,6 +3208,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    yaw=spaceStates.previousYaw;pitch=spaceStates.previousPitch;velY=0;
    directorState.activeMap=directorState.spaceReturnMap||'crescent';
    starNav.style.display='none';spaceStatus.style.display='none';spaceControls.style.display='none';
+   safeModeButton.style.display='none';
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='';
    universeToast.style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='';
@@ -3743,6 +3804,6 @@ directorPanel.addEventListener('click',e=>{
         spaceRoot.traverse(o=>{if(o.geometry)sg.add(o.geometry);
           if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>sm.add(m));else sm.add(o.material)}});
         sg.forEach(g=>g.dispose?.());sm.forEach(m=>m.dispose?.());
-        for(const n of [spaceStatus,spaceControls,starNav,universeToast])n.remove();
+        for(const n of [spaceStatus,spaceControls,starNav,universeToast,safeModeButton])n.remove();
         portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
