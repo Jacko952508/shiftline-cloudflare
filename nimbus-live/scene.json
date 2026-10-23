@@ -1,8 +1,8 @@
 {
-  "version": 1,
-  "title": "NIMBUS LIVE • STORMGLASS",
-  "subtitle": "Version 1 — coastal observatory",
-  "message": "Connected to a separately updateable scene manifest. This is the original configuration.",
+  "version": 2,
+  "title": "NIMBUS LIVE • SURVEY UPDATE",
+  "subtitle": "Version 2 — ocean research vessel and moving scanning array",
+  "message": "A genuine live update: new vessel, scanning ring and coastal markers have been added without editing the in-chat widget.",
   "skyTop": "#244e71",
   "skyHorizon": "#e9bc91",
   "oceanDeep": "#0b3854",
