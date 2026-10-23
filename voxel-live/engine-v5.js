@@ -388,6 +388,7 @@ if(newMapActive){
     loc.y=Math.max(coastH(loc.x,loc.z)+2.3,loc.y);
   }else loc.set(45,coastH(45,113)+2.4,113);
 }
+directorState.activeMap=newMapActive?'crescent':'voxel';
 
  let yaw=savedPosition?.yaw??.5,pitch=.02,selected=1,lookPointer=null,lookOld=null;
  let mineCooldown=0,placeCooldown=0,runPressed=false,move={x:0,y:0},stickPointer=null;
@@ -1206,6 +1207,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    if(action==='distance'){chunkRadius.value=chunkRadius.value===2?3:chunkRadius.value===3?4:2;requestChunks(loc.x,loc.z);notify('Chunk render radius '+chunkRadius.value+' · '+(chunkRadius.value===2?'FAST':'SCENIC'))}
 
    if(action==='town'){
+     if(newMapActive)setMap('voxel');
      if(makeSettlement()){notify('Settlement constructed! Inhabitants will begin developing it.');loc.set(19.5,surfaceAt(19,40)+3,39.5)}
      else notify('Your settlement is already developing.');
    }
@@ -1216,11 +1218,13 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      select.dispatchEvent(new Event('change'));notify(action==='day'?'Daylight restored':'Atmosphere changed');
    }
    if(action==='visit'){
+     if(newMapActive)setMap('voxel');
      if(!directorState.town)makeSettlement();
      if(riding)endFlight();
      loc.set(18.5,surfaceAt(18,40)+3,39.5);yaw=-.2;notify('Transported to the settlement');
    }
    if(action==='relic'){
+     if(newMapActive)setMap('voxel');
      if(riding)endFlight();loc.set(37.5,ground(37,21)+3,21.5);yaw=0;notify('You have arrived at the ancient anomaly');
    }
    if(action==='stats')notify(citizens.length+' active inhabitants · '+directorState.structures+' buildings · '+directorState.craters+' craters');
@@ -1323,7 +1327,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);animateTraffic(dt,t);if(newMapActive)animateCoast(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
   for(const a of animals){
     a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
