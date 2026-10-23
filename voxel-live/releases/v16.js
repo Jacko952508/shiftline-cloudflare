@@ -1,0 +1,1 @@
+export const release={version:16,engineCommit:'0f1aafcded90a024f3bd349d4c68de748367f9a6',engineFile:'engine-v16.js',message:'LIVING LAB: persistent autonomous civilisation with residents, 8 settlements, social trust, procedural economy, research, interactive map, experiments, simulation speed and GitHub event stream; V15 WebGL core preserved'};
