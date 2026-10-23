@@ -474,12 +474,75 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const vistaLight=new T.PointLight(0x83dce9,weather==='night'?7:2,27,2);
  vistaLight.position.set(55,12,113);vistaGroup.add(vistaLight);
  function animateVista(t){
+  fallsShader.uniforms.time.value=t;
+  spray.rotation.y=Math.sin(t*.12)*.025;
   lighthouse.target.position.set(Math.cos(t*.48)*32,13,Math.sin(t*.48)*32);
   lighthouse.beacon.intensity=weather==='night'?65:weather==='sunset'?31:14;
   vistaLight.intensity=weather==='night'?10:weather==='sunset'?4:1;
   const skyEmissive=weather==='night'?1:.68;
   innerArch.material.transparent=true;innerArch.material.opacity=skyEmissive;
  }
+
+
+ // Continuous animated cascade running down the headland.
+ const waterfallGroup=new T.Group();vistaGroup.add(waterfallGroup);
+ const fallsShader=new T.ShaderMaterial({
+   transparent:true,depthWrite:false,side:T.DoubleSide,
+   uniforms:{time:{value:0}},
+   vertexShader:`varying vec2 vUv;varying vec3 world;void main(){vUv=uv;world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`,
+   fragmentShader:`varying vec2 vUv;varying vec3 world;uniform float time;
+   void main(){float strip=sin(vUv.x*23.+sin(vUv.y*13.+time)*1.4)*.12;
+    float waves=sin(vUv.y*65.-time*8.+vUv.x*6.)*.1;
+    float froth=pow(max(0.,sin(vUv.y*39.-time*5.+vUv.x*25.)),7.)*.28;
+    vec3 col=mix(vec3(.05,.34,.51),vec3(.63,.94,1.),.46+strip+waves+froth);
+    float alpha=.85+.12*sin(vUv.x*15.);
+    gl_FragColor=vec4(col,alpha);
+   }`
+ });
+ const waterfallVertices=[],waterfallUVs=[],waterfallIndices=[];
+ const fallX=74,zTop=79,zBottom=47,waterSteps=50;
+ for(let i=0;i<=waterSteps;i++){
+  const t=i/waterSteps,z=zTop+(zBottom-zTop)*t;
+  const h=coastH(fallX,z),topH=coastH(fallX,zTop)+.75;
+  const y=T.MathUtils.lerp(topH,SEA+.85,T.MathUtils.smoothstep(t,.02,.92))+.25*Math.sin(t*24);
+  const yy=Math.max(h+.17,y);
+  const width=2.2+Math.sin(t*7)*.24;
+  for(const side of [-1,1]){
+   waterfallVertices.push(fallX+width*side,yy,z);
+   waterfallUVs.push(side<0?0:1,t*5);
+  }
+  if(i<waterSteps){let a=i*2;waterfallIndices.push(a,a+1,a+2,a+1,a+3,a+2)}
+ }
+ const fallsGeo=new T.BufferGeometry();
+ fallsGeo.setAttribute('position',new T.Float32BufferAttribute(waterfallVertices,3));
+ fallsGeo.setAttribute('uv',new T.Float32BufferAttribute(waterfallUVs,2));
+ fallsGeo.setIndex(waterfallIndices);fallsGeo.computeVertexNormals();
+ waterfallGroup.add(new T.Mesh(fallsGeo,fallsShader));
+ const sprayGeo=new T.BufferGeometry();
+ const sprayN=mobile?56:110,sprayPts=new Float32Array(sprayN*3);
+ for(let i=0;i<sprayN;i++){
+   sprayPts[3*i]=fallX+(hash(i,42)-.5)*9;
+   sprayPts[3*i+1]=SEA+1+hash(i,53)*7;
+   sprayPts[3*i+2]=zBottom+(hash(i,81)-.5)*9;
+ }
+ sprayGeo.setAttribute('position',new T.Float32BufferAttribute(sprayPts,3));
+ const sprayMat=new T.PointsMaterial({color:0xd2f7ff,size:.42,transparent:true,opacity:.7,depthWrite:false,blending:T.AdditiveBlending});
+ const spray=new T.Points(sprayGeo,sprayMat);waterfallGroup.add(spray);
+ // Central contemporary waterfront observatory, providing a recognisable city skyline.
+ const observatory=new T.Group();observatory.position.set(166,coastH(166,164),164);vistaGroup.add(observatory);
+ const obsFrame=new T.MeshPhysicalMaterial({color:0xbac9cc,metalness:.78,roughness:.25,clearcoat:1});
+ const obsGlass=new T.MeshPhysicalMaterial({color:0x2d607a,metalness:.52,roughness:.16,transparent:true,opacity:.83,depthWrite:false,clearcoat:1,envMapIntensity:1.9});
+ scenicGeometry(new T.CylinderGeometry(6,8,36,24),obsGlass,0,18,0,observatory);
+ for(let i=0;i<=12;i++){
+  const y=i*3;
+  const ring=scenicGeometry(new T.TorusGeometry(7.1-i*.075,.16,8,26),obsFrame,0,y,0,observatory);ring.rotation.x=Math.PI/2;
+ }
+ for(let i=0;i<8;i++){
+  const angle=i*Math.PI/4,beam=scenicGeometry(new T.CylinderGeometry(.16,.2,35,8),obsFrame,Math.cos(angle)*7.1,18,Math.sin(angle)*7.1,observatory);
+ }
+ scenicGeometry(new T.CylinderGeometry(9.5,9.5,1.1,26),vistaMetal,0,37,0,observatory);
+ scenicGeometry(new T.SphereGeometry(6,24,14),obsGlass,0,41,0,observatory);
+ const obsCap=scenicGeometry(new T.TorusGeometry(6.4,.24,8,32),vistaCool,0,42,0,observatory);obsCap.rotation.x=Math.PI/2;
 
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
 const glassFront=new T.MeshPhysicalMaterial({color:0xa2c7db,roughness:.09,metalness:.15,transparent:true,opacity:.75,depthWrite:false,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.8});
@@ -1517,7 +1580,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  showcaseButton.onclick=()=>{
    if(!newMapActive)setMap('crescent');
    if(riding)endFlight();
-   loc.set(52,coastH(52,116)+2.35,116);
+   loc.set(53,coastH(53,132)+2.35,132);
    yaw=.13;pitch=-.05;velY=0;
    q('vxWeather').value='sunset';q('vxWeather').dispatchEvent(new Event('change'));
    notify('Crescent Coast V7 showcase loaded');
@@ -1530,7 +1593,7 @@ directorPanel.addEventListener('click',e=>{
    if(action==='vista'){
      if(!newMapActive)setMap('crescent');
      if(riding)endFlight();
-     loc.set(52,coastH(52,116)+2.35,116);
+     loc.set(53,coastH(53,132)+2.35,132);
      yaw=.13;pitch=-.055;velY=0;
      directorPanel.style.display='none';
      q('vxWeather').value='sunset';q('vxWeather').dispatchEvent(new Event('change'));
