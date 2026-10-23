@@ -19,6 +19,7 @@ export async function mount(root,resume=null){
     throw new Error('V17 3D Living World failed to mount: '+String(error?.stack||error));
   }
   return {
+    getRenderedFrames(){return world?.renderedFrames||0},
     snapshot(){
       const result=core.snapshot?.()||{};
       result.livingLab=sim.snapshot();
