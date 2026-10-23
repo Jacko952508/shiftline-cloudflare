@@ -1332,6 +1332,94 @@ void main(){
  }
  for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;
 
+
+ // V8 physics: Rapier WASM bodies in a fixed 30Hz simulation, optional fallback for embedded browsers.
+ let physicsBackend='INITIALIZING',RAPIER=null,physicsWorld=null,vehicleKin=null,physicsAccum=0;
+ const physicsProps=[],physicsGroup=new T.Group();smoothWorld.add(physicsGroup);
+ const crateGeo=new T.BoxGeometry(1.25,1.25,1.25),crateMat=new T.MeshStandardMaterial({color:0xbe8651,roughness:.75});
+ const tankGeo=new T.CylinderGeometry(.55,.55,1.4,12),tankMat=new T.MeshStandardMaterial({color:0x7898a5,roughness:.32,metalness:.75});
+ function createPhysicsProp(x,z,index,y){
+   if(physicsProps.length>=26){const old=physicsProps.shift();physicsGroup.remove(old.mesh);if(physicsWorld&&old.body)physicsWorld.removeRigidBody(old.body)}
+   const barrel=index%3===0;
+   const mesh=new T.Mesh(barrel?tankGeo:crateGeo,barrel?tankMat:crateMat);
+   const p={mesh,x,z,y:y??coastH(x,z)+5,vy:0,spin:0,body:null,barrel};
+   mesh.position.set(p.x,p.y,p.z);physicsGroup.add(mesh);
+   if(physicsWorld&&RAPIER)attachRapier(p);
+   physicsProps.push(p);return p;
+ }
+ function attachRapier(p){
+   try{
+     const R=RAPIER;
+     const body=physicsWorld.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(p.x,p.y,p.z).setLinearDamping(.18));
+     const shape=p.barrel?R.ColliderDesc.cylinder(.7,.54):R.ColliderDesc.cuboid(.62,.62,.62);
+     physicsWorld.createCollider(shape.setRestitution(.15).setFriction(.82),body);
+     physicsWorld.createCollider(R.ColliderDesc.cuboid(2.1,.18,2.1).setTranslation(p.x,coastH(p.x,p.z)-.12,p.z));
+     p.body=body;
+   }catch(e){console.warn('Rigid body fallback',e)}
+ }
+ for(let i=0;i<9;i++)createPhysicsProp(62+(i%3)*2,120+Math.floor(i/3)*2,i,coastH(65,123)+4+i*.18);
+ async function loadPhysics(){
+   try{
+     const mod=await import('https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/+esm');
+     const R=mod.default||mod;if(typeof R.init==='function')await R.init();
+     if(!alive)return;
+     RAPIER=R;physicsWorld=new R.World({x:0,y:-9.81,z:0});physicsWorld.timestep=1/30;
+     for(const p of physicsProps)attachRapier(p);
+     vehicleKin=physicsWorld.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(craftState.x,craftState.y,craftState.z));
+     physicsWorld.createCollider(R.ColliderDesc.cuboid(1.12,.7,1.9),vehicleKin);
+     physicsBackend='RAPIER 3D';
+   }catch(e){physicsBackend='FALLBACK 30HZ';console.warn('Rapier unavailable in embedded mode',e)}
+ }
+ loadPhysics();
+ function advancePhysics(dt){
+   physicsAccum=Math.min(.14,physicsAccum+dt);
+   let iter=0;
+   while(physicsAccum>=1/30&&iter++<4){
+     physicsAccum-=1/30;
+     if(physicsWorld){
+       try{
+         if(vehicleKin)vehicleKin.setNextKinematicTranslation({x:craftState.x,y:craftState.y,z:craftState.z});
+         physicsWorld.step();
+         for(const p of physicsProps)if(p.body){
+           const q=p.body.translation(),r=p.body.rotation();
+           p.mesh.position.set(q.x,q.y,q.z);p.mesh.quaternion.set(r.x,r.y,r.z,r.w);
+         }
+       }catch(e){console.warn(e);physicsWorld=null;physicsBackend='FALLBACK 30HZ'}
+     }else for(const p of physicsProps){
+       p.vy-=9.81/30;p.y+=p.vy/30;
+       const floor=coastH(p.x,p.z)+(p.barrel?.7:.63);
+       if(p.y<floor){p.y=floor;p.vy=Math.abs(p.vy)>.35?-p.vy*.18:0}
+       p.mesh.position.set(p.x,p.y,p.z);p.mesh.rotation.z+=p.spin/30;p.spin*=.98;
+     }
+   }
+   physicsGroup.visible=newMapActive;
+ }
+ function physicsImpulse(x,z,power){
+   for(const p of physicsProps){
+     const xx=p.mesh.position.x-x,zz=p.mesh.position.z-z,rad=Math.hypot(xx,zz);
+     if(rad>=9||rad<.01)continue;
+     const impulse=power*(1-rad/9);
+     if(p.body)try{p.body.applyImpulse({x:xx/rad*impulse,y:impulse*.33,z:zz/rad*impulse},true)}catch(e){}
+     else{p.vy+=impulse*.3;p.spin+=impulse*.3}
+   }
+ }
+ function physicsDrop(){
+   if(!newMapActive)setMap('crescent');
+   const x=T.MathUtils.clamp(loc.x+Math.sin(yaw)*7,9,245);
+   const z=T.MathUtils.clamp(loc.z-Math.cos(yaw)*7,9,245);
+   for(let i=0;i<6;i++)createPhysicsProp(x+(i%3-1)*1.5,z+(i%2)*2,physicsProps.length+i,coastH(x,z)+4+i*.7);
+   notify('Interactive rigid-body props · '+physicsBackend);
+ }
+ const chassis={slip:0,pitch:0,roll:0};
+ function suspensionStep(dt,steer,land){
+   if(!land||!newMapActive)return;
+   const d=1.6,h1=coastH(T.MathUtils.clamp(craftState.x-Math.sin(craftState.heading)*d,1,254),T.MathUtils.clamp(craftState.z-Math.cos(craftState.heading)*d,1,254));
+   const h2=coastH(T.MathUtils.clamp(craftState.x+Math.sin(craftState.heading)*d,1,254),T.MathUtils.clamp(craftState.z+Math.cos(craftState.heading)*d,1,254));
+   chassis.pitch=T.MathUtils.damp(chassis.pitch,T.MathUtils.clamp(Math.atan2(h1-h2,d*2),-.28,.28),3.5,dt);
+   chassis.slip=T.MathUtils.damp(chassis.slip,steer*craftState.speed*.008,3.2,dt);
+   chassis.roll=T.MathUtils.damp(chassis.roll,-chassis.slip,3.8,dt);
+ }
+
  function flightButtons(){
    const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):newMapActive?['🗺 MAP','🏎 DRIVE','↑ JUMP','» RUN']:['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
    for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
@@ -1380,6 +1468,8 @@ void main(){
     craftState.y=T.MathUtils.clamp(craftState.y,Math.min(61,(newMapActive?coastH(craftState.x,craftState.z):surfaceAt(craftState.x,craftState.z))+5),150);
   }
   craftState.bank=T.MathUtils.damp(craftState.bank,inputX*(jetMode?.27:land?.13:.2),4,dt);
+  suspensionStep(dt,inputX,land);
+  if(newMapActive&&land&&Math.abs(craftState.speed)>4)physicsImpulse(craftState.x,craftState.z,Math.min(7,Math.abs(craftState.speed)*.12));
   craftGroup.position.set(craftState.x,craftState.y+(land?.02:Math.sin(t*4)*.09),craftState.z);
   const floorY=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);
   const floorGap=Math.max(0,craftState.y-floorY);
@@ -1390,7 +1480,7 @@ void main(){
   contactShadowMaterial.opacity=Math.max(.045,.41-floorGap*.005);
   craftGroup.rotation.y=craftState.heading;
   const model=vehicleModels[vehicleType];
-  model.rotation.z=craftState.bank;
+  model.rotation.z=land?chassis.roll:craftState.bank;
   model.rotation.x=T.MathUtils.damp(model.rotation.x,-inputF*(land?.05:.13),4,dt);
   if(vehicleType==='helicopter'){vehicleParts.mainRotor.rotation.y+=dt*33;vehicleParts.tailRotor.rotation.x+=dt*38}
   if(vehicleType==='seaplane')propeller.rotation.z+=dt*44;
@@ -1548,7 +1638,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1702,6 +1792,8 @@ directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='physicsdrop'){physicsDrop();directorPanel.style.display='none'}
+   if(action==='impulse'){physicsImpulse(loc.x,loc.z,26);notify('Rigid-body impulse activated')}
    if(action==='vista'){
      if(!newMapActive)setMap('crescent');
      if(riding)endFlight();
@@ -1871,7 +1963,7 @@ directorPanel.addEventListener('click',e=>{
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;advancePhysics(dt);
   wetness=T.MathUtils.damp(wetness,weather==='rain'?1:0,weather==='rain'?.7:.045,dt);
   asphalt.roughness=.8-wetness*.51;asphalt.envMapIntensity=.64+wetness*.63;
   puddles.visible=newMapActive&&wetness>.025;puddleMat.opacity=wetness*.78;
