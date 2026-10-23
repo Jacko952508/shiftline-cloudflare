@@ -2602,10 +2602,13 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    overdrive.beauty?.dispose();overdrive.blur?.dispose();
    overdrive.w=w;overdrive.h=h;
    try{
-     overdrive.beauty=new T.WebGLRenderTarget(w,h,{depthBuffer:true,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:T.UnsignedByteType});
+     const supportFloat=renderer.capabilities.isWebGL2&&renderer.extensions.has('EXT_color_buffer_float');
+     const outputType=supportFloat&&overdrive.mode==='cinema'?T.HalfFloatType:T.UnsignedByteType;
+     overdrive.beauty=new T.WebGLRenderTarget(w,h,{depthBuffer:true,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:outputType});
+     overdrive.beauty.texture.colorSpace=outputType===T.UnsignedByteType?T.SRGBColorSpace:T.LinearSRGBColorSpace;
      const glowW=Math.max(36,Math.round(w*overdrive.bloomScale));
      const glowH=Math.max(36,Math.round(h*overdrive.bloomScale));
-     overdrive.blur=new T.WebGLRenderTarget(glowW,glowH,{depthBuffer:false,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:T.UnsignedByteType});
+     overdrive.blur=new T.WebGLRenderTarget(glowW,glowH,{depthBuffer:false,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:outputType});
      bloomExtract.uniforms.source.value=overdrive.beauty.texture;
      bloomExtract.uniforms.texel.value.set(1/w,1/h);
      spaceFinalMat.uniforms.beauty.value=overdrive.beauty.texture;
@@ -2919,6 +2922,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      text('vxFps',rate+' FPS · SPACE · '+renderer.getPixelRatio().toFixed(2)+'x');
      if(quality==='auto'&&performance.now()>adaptive.nextCheck){
        const ratio=renderer.getPixelRatio(),fps=1000/Math.max(1,adaptive.frameMs);
+       if(overdrive.mode==='adaptive'&&!overdrive.failed){
+         const previous=overdrive.bloomScale;
+         if(fps<28)overdrive.bloomScale=Math.max(.12,previous-.035);
+         else if(fps>48)overdrive.bloomScale=Math.min(mobile?.27:.4,previous+.018);
+         if(Math.abs(previous-overdrive.bloomScale)>.001)overdrive.w=0;
+       }
        if(fps<28&&ratio>.68)renderer.setPixelRatio(Math.max(.68,ratio-.075));
        else if(fps>49&&ratio<Math.min(devicePixelRatio||2,mobile?1.25:1.8))renderer.setPixelRatio(Math.min(mobile?1.25:1.8,ratio+.045));
        adaptive.nextCheck=performance.now()+8500;
