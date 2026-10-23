@@ -1,0 +1,51 @@
+name: Reality Engine V7 browser smoke test
+on:
+  push:
+    branches: [voxel-chat-live]
+    paths: ['voxel-live/engine-v7.js', '.github/workflows/reality-v7-smoke.yml']
+permissions:
+  contents: write
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: voxel-chat-live
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Chromium browser and playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Browser boot test
+        run: |
+          cat > /tmp/reality-test.mjs <<'NODE'
+          import { chromium } from 'playwright';
+          import { writeFileSync } from 'node:fs';
+          const browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+          const page = await browser.newPage({viewport:{width:430,height:780}});
+          const logs=[];
+          page.on('pageerror',e=>logs.push('PAGE ERROR: '+e.stack));
+          page.on('console',m=>{if(m.type()==='error')logs.push('CONSOLE ERROR: '+m.text())});
+          page.on('requestfailed',r=>logs.push('REQUEST FAILED: '+r.url()+' '+r.failure()?.errorText));
+          await page.goto('http://127.0.0.1:9988/voxel-live/test-v7.html');
+          await page.waitForTimeout(16000);
+          const result=await page.evaluate(()=>window.__result||{error:'No result from V7 startup',page:document.body.innerText.slice(0,220)});
+          writeFileSync('voxel-live/v7-smoke-result.txt',JSON.stringify({result,logs},null,2)+'\n');
+          await browser.close();
+          NODE
+          python3 -m http.server 9988 >/tmp/reality-http.log 2>&1 &
+          node /tmp/reality-test.mjs
+      - name: Commit smoke-test result
+        if: always()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if [ -e voxel-live/v7-smoke-result.txt ]; then
+            git add voxel-live/v7-smoke-result.txt
+            git commit -m 'test: V7 runtime startup result' || true
+            git push || true
+          fi
