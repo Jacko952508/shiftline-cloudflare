@@ -169,6 +169,208 @@ export async function mount(root,resume=null){
  }
 
 
+
+// CRESCENT COAST: a separately rendered curved terrain world (not a grid of voxel blocks).
+const smoothWorld=new T.Group();scene.add(smoothWorld);
+let newMapActive=directorState.activeMap!=='voxel';
+const legacyPos=new T.Vector3().copy(loc);
+const coastH=(x,z)=>{
+ const seaSlope=T.MathUtils.smoothstep(z,43,112);
+ const hills=6.5*Math.sin(x*.025+.7)*Math.cos(z*.031)
+            +3.6*Math.sin(x*.075+z*.043)
+            +2.9*Math.cos(z*.093-x*.052);
+ const plateau=11+Math.sin(x*.013+z*.018)*3.6+Math.sin(z*.029)*2.2;
+ const residential=Math.max(0,1-Math.max(Math.abs(x-170)/59,Math.abs(z-164)/51));
+ const flatten=T.MathUtils.smoothstep(residential,.05,.7);
+ const result=3.1+seaSlope*(plateau+hills);
+ return T.MathUtils.lerp(result,17.5,flatten*.83);
+};
+const coastMaterial=(base,roughness=.86,metalness=0)=>new T.MeshStandardMaterial({color:base,roughness,metalness});
+const soilCanvas=document.createElement('canvas');soilCanvas.width=soilCanvas.height=256;
+const soilCtx=soilCanvas.getContext('2d');
+const soilImg=soilCtx.createImageData(256,256);
+for(let yy=0;yy<256;yy++)for(let xx=0;xx<256;xx++){
+ const rand=hash(xx*1.89+39,yy*3.29+51),grain=hash(xx*.28+7,yy*.28+9);
+ const i=(yy*256+xx)*4,shade=.66+.31*grain+.14*rand;
+ soilImg.data[i]=Math.round(116*shade);
+ soilImg.data[i+1]=Math.round(132*shade);
+ soilImg.data[i+2]=Math.round(88*shade);
+ soilImg.data[i+3]=255;
+}
+soilCtx.putImageData(soilImg,0,0);
+const soilTex=new T.CanvasTexture(soilCanvas);
+soilTex.colorSpace=T.SRGBColorSpace;soilTex.wrapS=soilTex.wrapT=T.RepeatWrapping;soilTex.repeat.set(36,36);
+soilTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const landscapeMat=new T.MeshStandardMaterial({map:soilTex,vertexColors:true,roughness:1,metalness:0});
+const terrainGeom=new T.PlaneGeometry(256,256,128,128);
+terrainGeom.rotateX(-Math.PI/2);terrainGeom.translate(128,0,128);
+const coords=terrainGeom.attributes.position,terrainColors=[];
+const grass=new T.Color(0x8cac79),dirt=new T.Color(0xb4a48a),cliff=new T.Color(0x979a90),beach=new T.Color(0xe2d0a5);
+for(let i=0;i<coords.count;i++){
+ const x=coords.getX(i),z=coords.getZ(i),h=coastH(x,z);
+ coords.setY(i,h);
+ const du=coastH(Math.min(255,x+1.1),z)-coastH(Math.max(0,x-1.1),z);
+ const dv=coastH(x,Math.min(255,z+1.1))-coastH(x,Math.max(0,z-1.1));
+ const slope=Math.hypot(du,dv);
+ const base= h<8?beach:h>26||slope>2.5?cliff:h<11?dirt:grass;
+ const alt=.91+hash(x*3.3,z*3.7)*.2;
+ terrainColors.push(base.r*alt,base.g*alt,base.b*alt);
+}
+terrainGeom.setAttribute('color',new T.Float32BufferAttribute(terrainColors,3));
+terrainGeom.computeVertexNormals();
+const terra=new T.Mesh(terrainGeom,landscapeMat);terra.receiveShadow=true;smoothWorld.add(terra);
+const asphaltCanvas=document.createElement('canvas');asphaltCanvas.width=asphaltCanvas.height=128;
+const actx=asphaltCanvas.getContext('2d');
+actx.fillStyle='#33373d';actx.fillRect(0,0,128,128);
+for(let i=0;i<8000;i++){
+ const k=hash(i,22),x=(hash(i*11,4)*128)|0,y=(hash(i*4,7)*128)|0;
+ actx.fillStyle=k>.68?'#64676b':k>.34?'#383e43':'#242b31';
+ actx.fillRect(x,y,1+k*2,1+k*2);
+}
+const asphaltTex=new T.CanvasTexture(asphaltCanvas);asphaltTex.colorSpace=T.SRGBColorSpace;
+asphaltTex.wrapS=asphaltTex.wrapT=T.RepeatWrapping;asphaltTex.repeat.set(1,14);
+const asphalt=new T.MeshStandardMaterial({map:asphaltTex,color:0xd3d5d9,roughness:.88,metalness:.08,side:T.DoubleSide});
+const marking=new T.MeshBasicMaterial({color:0xffe8aa,side:T.DoubleSide});
+const curb=coastMaterial(0xd1c7b4,.83,.05);
+const pathLines=[
+ [[8,98],[34,104],[59,116],[86,127],[119,133],[145,139],[173,143],[203,151],[234,168],[250,176]],
+ [[32,225],[47,194],[69,172],[96,161],[123,147],[148,133],[175,108],[201,87],[231,83]],
+ [[28,76],[52,81],[76,88],[99,96],[118,109],[143,119],[172,123],[202,115],[238,117]],
+ [[110,234],[122,210],[137,189],[155,167],[177,150],[198,144],[223,137]]
+];
+const mainRoads=[];
+function roadMesh(nodes,width=7){
+ const points=nodes.map(([x,z])=>new T.Vector3(x,coastH(x,z)+.22,z));
+ const curve=new T.CatmullRomCurve3(points,false,'centripetal');
+ const count=nodes.length*22,vertices=[],uv=[],indices=[],lineV=[],lineUV=[],lineI=[];
+ for(let i=0;i<=count;i++){
+  const t=i/count,p=curve.getPoint(t),v=curve.getTangent(t);
+  const normal=new T.Vector3(-v.z,0,v.x).normalize();
+  const y=coastH(p.x,p.z)+.36;
+  for(const sign of [-1,1]){
+    vertices.push(p.x+normal.x*width*.5*sign,y,p.z+normal.z*width*.5*sign);
+    uv.push(sign<0?0:1,t*nodes.length*4);
+  }
+  const markWidth=.09;
+  for(const sign of [-1,1]){
+    lineV.push(p.x+normal.x*markWidth*sign,y+.015,p.z+normal.z*markWidth*sign);
+    lineUV.push(sign<0?0:1,t);
+  }
+  if(i<count){const a=i*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);if(i%16<10)lineI.push(a,a+2,a+1,a+1,a+2,a+3)}
+ }
+ const makeMesh=(p,tex,ix,m)=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('uv',new T.Float32BufferAttribute(tex,2));g.setIndex(ix);g.computeVertexNormals();const o=new T.Mesh(g,m);smoothWorld.add(o);return o};
+ makeMesh(vertices,uv,indices,asphalt);
+ makeMesh(lineV,lineUV,lineI,marking);
+ mainRoads.push({curve,width,count});
+}
+for(const path of pathLines)roadMesh(path,path===pathLines[1]?8:7);
+const roadFurnitureMat=coastMaterial(0x33404b,.38,.74),warmLamp=new T.MeshBasicMaterial({color:0xffdda0,toneMapped:false});
+const baseBox=new T.BoxGeometry(1,1,1);
+const placeBox=(group,w,h,d,mat,x,y,z)=>{
+ const m=new T.Mesh(baseBox,mat);m.position.set(x,y,z);m.scale.set(w,h,d);group.add(m);return m;
+};
+// Premium coastal village, glass-front apartments, architecture and covered terraces.
+const glassFront=new T.MeshPhysicalMaterial({color:0x9fd5e5,roughness:.07,metalness:.16,transparent:true,opacity:.66,depthWrite:false});
+const whiteWalls=coastMaterial(0xece6da,.71),warmWalls=coastMaterial(0xb09d89,.84),roofMat=coastMaterial(0x42474f,.52,.2);
+const promenadeBuildings=[];
+for(let i=0;i<32;i++){
+ const a=i%16,row=Math.floor(i/16);
+ const px=106+(a%8)*17+(row?4:0),pz=row?197:177;
+ const py=coastH(px,pz),height=7+Math.floor(hash(i*13,99)*22);
+ const g=new T.Group();g.position.set(px,py,pz);smoothWorld.add(g);
+ const width=9+hash(i,12)*3,depth=10+hash(i,11)*4;
+ placeBox(g,width,height,depth,i%3===0?warmWalls:whiteWalls,0,height/2,0);
+ placeBox(g,width+1,.65,depth+1,roofMat,0,height+.15,0);
+ for(let floor=2;floor<height-1;floor+=2.8)for(const side of [-1,1]){
+  for(let wx=-3.5;wx<=3.5;wx+=2.3){
+   const win=placeBox(g,1.18,1.65,.08,glassFront,wx,floor,side*(depth/2+.065));
+   if(i%5===0)placeBox(g,1.28,.08,.22,roofMat,wx,floor-1,side*(depth/2+.17))
+  }
+ }
+ if(i%4===0)placeBox(g,width*.74,.4,2,roofMat,0,height*.58,depth/2+1);
+ promenadeBuildings.push(g);
+}
+// Instanced vegetation uses just a few draw calls and natural height/slope tests.
+const treeCount=mobile?240:420;
+const trunkMat=coastMaterial(0x6b5643,.99),leavesMat=coastMaterial(0x527d58,.99);
+const trunkGeo=new T.CylinderGeometry(.15,.3,3.2,6);
+const crownGeo=new T.IcosahedronGeometry(1.8,1);
+const trunks=new T.InstancedMesh(trunkGeo,trunkMat,treeCount),crowns=new T.InstancedMesh(crownGeo,leavesMat,treeCount);
+const dummy=new T.Object3D();
+for(let i=0;i<treeCount;i++){
+ let x=3+hash(i*7,23)*250,z=14+hash(i*13,89)*237;
+ if(z<98)z+=68;
+ if(x>104&&x<231&&z>169&&z<214)z=70+hash(i,2)*20;
+ const h=coastH(x,z),alt=.7+hash(i,51)*.75;
+ dummy.position.set(x,h+1.8*alt,z);dummy.scale.set(alt,alt,alt);dummy.rotation.y=i*.39;dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);
+ dummy.position.y=h+4.15*alt;dummy.scale.set(alt,alt*.86,alt);dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix);
+}
+trunks.instanceMatrix.needsUpdate=true;crowns.instanceMatrix.needsUpdate=true;smoothWorld.add(trunks,crowns);
+// Pier and marina: smooth decks, reflective roof, boats and spotlights.
+const marina=new T.Group();smoothWorld.add(marina);
+for(let j=0;j<7;j++){
+ const z=47+j*7;placeBox(marina,36,.55,3.6,curb,170,9.35,z);
+ for(const x of [153,169,187]){
+  placeBox(marina,.42,7,.42,roadFurnitureMat,x,5.8,z);
+ }
+}
+for(let j=0;j<9;j++){
+ const g=new T.Group();g.position.set(156+(j%3)*13,9.4,49+Math.floor(j/3)*16);marina.add(g);
+ const hull=new T.Mesh(new T.SphereGeometry(1,12,8),j%2?whiteWalls:roofMat);hull.scale.set(1.35,.53,3.8);g.add(hull);
+ placeBox(g,1.5,.9,1.4,glassFront,0,.75,-.4);
+ placeBox(g,.09,2,.09,roadFurnitureMat,.1,1.8,.6);
+}
+// Standalone curved suspension bridge over inlet, with slender posts and cable arcs.
+const bridgeMat=coastMaterial(0x455864,.5,.65);
+const bridge=new T.Group();smoothWorld.add(bridge);
+const bridgeCurve=new T.CatmullRomCurve3([new T.Vector3(70,14,86),new T.Vector3(86,14.2,73),new T.Vector3(104,14.8,62),new T.Vector3(123,15.5,53)],false,'centripetal');
+const bridgePath=[];
+for(let i=0;i<45;i++){
+ const p=bridgeCurve.getPoint(i/44);bridgePath.push(p);
+ placeBox(bridge,5.7,.48,1.45,bridgeMat,p.x,p.y,p.z);
+ if(i%7===0){placeBox(bridge,.17,6,.17,roadFurnitureMat,p.x,p.y+3,p.z);placeBox(bridge,.35,.3,.35,warmLamp,p.x,p.y+6,p.z)}
+}
+const coastTraffic=[];
+for(let i=0;i<11;i++){
+ const g=new T.Group();smoothWorld.add(g);
+ const bodyMat=coastMaterial([0x314e61,0x9b4546,0xe8e3d7,0x3f8287,0xc9a16e][i%5],.26,.62);
+ placeBox(g,1.55,.38,3.3,bodyMat,0,.53,0);
+ placeBox(g,1.28,.57,1.57,glassFront,0,1.02,-.31);
+ for(const xx of [-.83,.83])for(const zz of [-1.05,1.13]){
+  const wheel=new T.Mesh(new T.CylinderGeometry(.32,.32,.2,12),roadFurnitureMat);wheel.rotation.z=Math.PI/2;wheel.position.set(xx,.37,zz);g.add(wheel)
+ }
+ coastTraffic.push({g,path:mainRoads[i%mainRoads.length],phase:i*.17,speed:4.3+i*.3});
+}
+const coastHeadlight=new T.PointLight(0xffdaa3,4,36);coastHeadlight.position.set(163,24,173);smoothWorld.add(coastHeadlight);
+const coastMeshes=smoothWorld.children.length;
+function animateCoast(dt,t){
+ for(const c of coastTraffic){
+  const time=(t*c.speed/c.path.curve.getLength()+c.phase)%1;
+  const p=c.path.curve.getPoint(time),dir=c.path.curve.getTangent(time);
+  c.g.position.set(p.x,coastH(p.x,p.z)+.38,p.z);
+  c.g.rotation.y=Math.atan2(-dir.x,-dir.z);
+ }
+ coastHeadlight.intensity=weather==='night'?18:3;
+}
+function setMap(mode,initial=false){
+ const coast=mode!=='voxel';newMapActive=coast;directorState.activeMap=coast?'crescent':'voxel';
+ smoothWorld.visible=coast;
+ if(typeof trafficRoot!=='undefined')trafficRoot.visible=!coast;
+ if(typeof geoGroups!=='undefined'){
+  for(const old of geoGroups.values())old.visible=!coast;
+ }
+ if(!initial){
+  if(riding)endFlight();
+  if(coast){legacyPos.copy(loc);loc.set(45,coastH(45,113)+2.4,113)}
+  else loc.copy(legacyPos);
+  velY=0;requestChunks(loc.x,loc.z);streamChunks(coast?0:3);
+  notify(coast?'CRESCENT COAST · smooth terrain & scenic roads':'VOXEL LEGACY · mining restored');
+ }else if(coast){loc.set(45,coastH(45,113)+2.4,113)}
+ const name=root.querySelector('.vxSub');if(name)name.textContent=coast?'CRESCENT COAST · PHOTOREAL MATERIALS · TOURING':'LEGACY VOXEL WORLD · MINING · BUILDING';
+}
+smoothWorld.visible=newMapActive;
+if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
+
  let yaw=savedPosition?.yaw??.5,pitch=.02,selected=1,lookPointer=null,lookOld=null;
  let mineCooldown=0,placeCooldown=0,runPressed=false,move={x:0,y:0},stickPointer=null;
  const atlas=document.createElement('canvas');atlas.width=atlas.height=512;
