@@ -1,17 +1,17 @@
 {
-  "version": 2,
-  "title": "NIMBUS LIVE • SURVEY UPDATE",
-  "subtitle": "Version 2 — ocean research vessel and moving scanning array",
-  "message": "A genuine live update: new vessel, scanning ring and coastal markers have been added without editing the in-chat widget.",
-  "skyTop": "#244e71",
+  "version": 3,
+  "title": "NIMBUS LIVE • DIRECT RENDERER",
+  "subtitle": "Version 3 — live plugin architecture",
+  "message": "Direct WebGL scene with independent hot-loadable, version-pinned graphics extensions. No nested iframe.",
+  "skyTop": "#2b6082",
   "skyHorizon": "#e9bc91",
-  "oceanDeep": "#0b3854",
+  "oceanDeep": "#103d58",
   "oceanLight": "#61a4b4",
   "fog": "#91afb7",
-  "sunshine": 2.8,
-  "ambient": 1.65,
-  "waveStrength": 0.85,
-  "weather": "clear",
+  "sunshine": 2.9,
+  "ambient": 1.85,
+  "waveStrength": 0.9,
+  "weather": "sunset",
   "timeOfDay": "sunset",
   "accent": "#65e9ee",
   "structures": [
@@ -51,5 +51,6 @@
       "scale": 1.4,
       "color": "#91eef3"
     }
-  ]
+  ],
+  "runtimeCommit": "8c03cfdedc29da4f36ab088044f246f268e9dcd7"
 }
