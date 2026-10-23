@@ -2563,27 +2563,33 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    depthTest:false,depthWrite:false,toneMapped:false,
    uniforms:{
      beauty:{value:null},glow:{value:null},time:{value:0},
-     intensity:{value:mobile?.94:1.25},viewport:{value:new T.Vector2(1,1)}
+     intensity:{value:mobile?.94:1.25},viewport:{value:new T.Vector2(1,1)},
+     singularityUV:{value:new T.Vector2(-10,-10)},singularityStrength:{value:0},warpAmount:{value:0}
    },
    vertexShader:postUvVertex,
    fragmentShader:`varying vec2 uv;
     uniform sampler2D beauty,glow;
-    uniform float time,intensity;
-    uniform vec2 viewport;
+    uniform float time,intensity,singularityStrength,warpAmount;
+    uniform vec2 viewport,singularityUV;
     void main(){
+      vec2 lensVec=uv-singularityUV;
+      float lensR=max(.001,length(lensVec));
+      float lensFalloff=1.-smoothstep(.035,.24,lensR);
+      float bend=singularityStrength*lensFalloff*lensFalloff/(.1+lensR*6.);
+      vec2 warpedUV=clamp(uv+normalize(lensVec)*bend,vec2(.001),vec2(.999));
       vec2 p=uv-.5;
       float r2=dot(p,p);
       vec2 shift=p*.0021*(.38+r2*2.);
-      float R=texture2D(beauty,uv+shift).r;
-      float G=texture2D(beauty,uv).g;
-      float B=texture2D(beauty,uv-shift).b;
+      float R=texture2D(beauty,warpedUV+shift).r;
+      float G=texture2D(beauty,warpedUV).g;
+      float B=texture2D(beauty,warpedUV-shift).b;
       vec3 color=vec3(R,G,B);
-      vec3 halo=texture2D(glow,uv).rgb*intensity;
+      vec3 halo=texture2D(glow,warpedUV).rgb*intensity;
       color+=halo*vec3(1.03,.98,1.12);
       // Filmic shoulder + shadow lift, preserving saturation in high energy areas.
       color=color*(1.12+.11*color)/(1.+.15*color);
       color+=vec3(.004,.007,.017);
-      float vignette=1.-smoothstep(.11,.81,r2)*.32;
+      float vignette=1.-smoothstep(.11,.81,r2)*(.32+warpAmount*.13);
       color*=vignette;
       float grain=fract(sin(dot(gl_FragCoord.xy+time*32.,vec2(12.9898,78.233)))*43758.5453);
       color+=(grain-.5)*.008;
@@ -2864,6 +2870,13 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.position.lerp(wanted,1-Math.exp(-dt*5.6));
    const focus=shipLocation.clone().addScaledVector(forward,46);
    camera.lookAt(focus);
+   // Project the gravity well into image space; only distort the visible close-range region.
+   const holeProjected=singularity.position.clone().project(camera);
+   const holeDist=shipLocation.distanceTo(singularity.position);
+   const insideView=holeProjected.z>-1&&holeProjected.z<1&&Math.abs(holeProjected.x)<1.5&&Math.abs(holeProjected.y)<1.5;
+   spaceFinalMat.uniforms.singularityUV.value.set(holeProjected.x*.5+.5,holeProjected.y*.5+.5);
+   spaceFinalMat.uniforms.singularityStrength.value=insideView?T.MathUtils.clamp((2900-holeDist)/2300,0,.09):0;
+   spaceFinalMat.uniforms.warpAmount.value=st.warp?1:0;
    // Distinctive flight camera shake is tiny and speed dependent, preserving readability.
    const flightVelocity=Math.abs(st.speed);
    camera.fov=T.MathUtils.damp(camera.fov,(directorState.spaceCamera==='cinema'?53:directorState.spaceCamera==='cockpit'?75:70)+(st.boost?flightVelocity*.013:0),2.6,dt);
