@@ -2293,6 +2293,72 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  filamentGroup([120,75,-1220],mobile?850:1900,0x624ae6,7);
  filamentGroup([-230,180,-1500],mobile?680:1420,0xc038b1,119);
  filamentGroup([490,-150,-2050],mobile?530:1120,0x2c9df2,402);
+
+ // V13: local raymarched interstellar clouds, not a static wallpaper.
+ // Bounded sphere intersections ensure pixels outside the cloud cost no volume samples.
+ // 8 low-frequency integration samples keep this feasible on iPhone WebGL.
+ const volumetricClouds=[];
+ function createVolumetricNebula(center,radius,cold,hot,density=.76){
+   const shader=new T.ShaderMaterial({
+     transparent:true,depthWrite:false,depthTest:true,side:T.BackSide,
+     blending:T.AdditiveBlending,
+     uniforms:{
+       time:{value:0},center:{value:new T.Vector3(...center)},radius:{value:radius},
+       density:{value:density},cold:{value:new T.Color(cold)},hot:{value:new T.Color(hot)}
+     },
+     vertexShader:`varying vec3 vWorld;
+       void main(){vec4 p=modelMatrix*vec4(position,1.);
+         vWorld=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
+     fragmentShader:`varying vec3 vWorld;uniform float time,radius,density;
+       uniform vec3 center,cold,hot;
+       float hs(vec3 x){return fract(sin(dot(x,vec3(12.9898,78.233,45.164)))*43758.5453);}
+       float n3(vec3 p){
+         vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+         return mix(mix(mix(hs(i),hs(i+vec3(1.,0.,0.)),f.x),
+                        mix(hs(i+vec3(0.,1.,0.)),hs(i+vec3(1.,1.,0.)),f.x),f.y),
+                    mix(mix(hs(i+vec3(0.,0.,1.)),hs(i+vec3(1.,0.,1.)),f.x),
+                        mix(hs(i+vec3(0.,1.,1.)),hs(i+vec3(1.,1.,1.)),f.x),f.y),f.z);
+       }
+       float field(vec3 p){
+         float a=n3(p*3.9+vec3(time*.012,-time*.004,0.));
+         float b=n3(p*9.2+a*.36);
+         return a*.72+b*.28;
+       }
+       void main(){
+         vec3 dir=normalize(vWorld-cameraPosition),ro=cameraPosition-center;
+         float b=dot(ro,dir),c=dot(ro,ro)-radius*radius;
+         float disc=b*b-c;
+         if(disc<=0.)discard;
+         float root=sqrt(disc);
+         float nearT=max(0.,-b-root),farT=-b+root;
+         if(farT<=nearT)discard;
+         float stepLen=(farT-nearT)/8.;
+         float jitter=fract(sin(dot(gl_FragCoord.xy,vec2(12.98,78.23)))*46758.53);
+         vec3 sum=vec3(0.);float trans=1.;
+         for(int j=0;j<8;j++){
+           float t=nearT+(float(j)+jitter)*stepLen;
+           vec3 pos=(ro+dir*t)/radius;
+           float body=1.-smoothstep(.38,1.,length(pos));
+           float filament=field(pos);
+           float wisp=smoothstep(.47,.74,filament)*body*density;
+           float signal=wisp*stepLen/max(1.,radius)*.88;
+           vec3 radiance=mix(cold,hot,smoothstep(.45,.8,filament));
+           sum+=trans*radiance*signal*1.65;
+           trans*=1.-clamp(signal*.54,0.,.42);
+         }
+         float alpha=clamp(length(sum)*.8,0.,.63);
+         gl_FragColor=vec4(sum,alpha);
+       }`
+   });
+   const sphere=spaceMesh(spaceRoot,new T.SphereGeometry(radius,30,20),shader,...center);
+   sphere.renderOrder=-8;
+   sphere.frustumCulled=true;
+   volumetricClouds.push({sphere,shader,center:new T.Vector3(...center),radius});
+   return sphere;
+ }
+ createVolumetricNebula([-190,70,-1100],420,0x2439a4,0xa343ce,mobile?.62:.88);
+ createVolumetricNebula([450,-130,-1960],380,0x166991,0xae4aa4,mobile?.52:.79);
+
  // A moon-sized derelict station, the ruined star cathedral.
  const cathedral=new T.Group();cathedral.position.set(-170,55,-890);spaceRoot.add(cathedral);
  const cathedralSteel=spaceMat(0x4a6386,.23,.84),cathedralGold=spaceMat(0xa58e81,.32,.7);
@@ -2916,6 +2982,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      if(p.ringMat)p.ringMat.uniforms.time.value=t;
    }
    for(const n of nebulaPopulations)n.material.uniforms.time.value=t;
+   for(const n of volumetricClouds){
+     n.shader.uniforms.time.value=t;
+     const dist=shipLocation.distanceTo(n.center);
+     n.sphere.visible=dist<n.radius+1300&&overdrive.mode!=='battery';
+   }
    for(const n of cathedralRings)n.ring.rotation.z+=dt*n.spin;
    cathedral.rotation.y=Math.sin(t*.006)*.05;
    animateIonTrails(t,st.boost);
@@ -3388,6 +3459,7 @@ directorPanel.addEventListener('click',e=>{
         overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
         ionGeometry.dispose();ionShader.dispose();
         for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
+        for(const n of volumetricClouds){n.sphere.geometry.dispose();n.shader.dispose()}
         warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();
         const sg=new Set(),sm=new Set();
         spaceRoot.traverse(o=>{if(o.geometry)sg.add(o.geometry);
