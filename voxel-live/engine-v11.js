@@ -2094,14 +2094,6 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    const moon=spaceBall(spaceRoot,[20,13,25][i],moonMat,0,0,0,20);
    aeonMoons.push({mesh:moon,radius:430+i*112,speed:.011+(3-i)*.006,phase:i*2.39});
  }
- // An orbiting micro-probe records weak signals and gives the craft a personal companion.
- const probe=new T.Group();explorer.add(probe);
- spaceBall(probe,.66,spaceMetal);
- for(const a of [0,Math.PI/2]){
-   const rail=spaceMesh(probe,new T.TorusGeometry(1.45,.065,6,32),spaceGlow);
-   rail.rotation.y=a;
- }
- glowSprite(probe,0x80bfff,0,0,0,4,.72);
 
  const burningSun=spaceBall(spaceRoot,67,new T.MeshBasicMaterial({color:0xffbd7c,toneMapped:false}),-650,350,-1760,30);
  const sunGlow=glowSprite(spaceRoot,0xffae68,-650,350,-1760,490,.92);
@@ -2188,6 +2180,15 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    const fin=spaceBox(explorerBody,.17,2.1,2.4,spaceTrim,side*2.1,1.03,3.55);fin.rotation.z=side*.27;
    for(let i=0;i<5;i++)spaceBox(explorerBody,.35,.08,.45,spaceGold,side*.75,.92,-3.4+i*.64);
  }
+ // An orbiting micro-probe records weak signals and gives the craft a personal companion.
+ const probe=new T.Group();explorer.add(probe);
+ spaceBall(probe,.66,spaceMetal);
+ for(const a of [0,Math.PI/2]){
+   const rail=spaceMesh(probe,new T.TorusGeometry(1.45,.065,6,32),spaceGlow);
+   rail.rotation.y=a;
+ }
+ glowSprite(probe,0x80bfff,0,0,0,4,.72);
+
  const scannerDome=spaceBall(explorerBody,.64,spaceGlow,0,1.48,.6,14);
  const scannerRing=spaceMesh(explorerBody,new T.TorusGeometry(1.45,.07,8,48),spaceGlow,0,1.2,-3.1);
  scannerRing.rotation.x=Math.PI/2;
