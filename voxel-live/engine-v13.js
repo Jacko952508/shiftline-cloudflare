@@ -2693,8 +2693,17 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V12 OVERDRIVE</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
  stage.appendChild(spaceStatus);
  const spaceControls=document.createElement('div');
- spaceControls.style.cssText='position:absolute;bottom:8px;right:7px;z-index:6;display:none;pointer-events:auto;width:163px;font:700 11px system-ui;color:#fff;touch-action:manipulation';
- spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="reveal">✧ V12 REVEAL</button><button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button><button data-space="effects">◉ POST FX</button><button data-space="director">✦ DIRECTOR</button><button data-space="world">🌍 WORLD</button><button data-space="nav">🪐 SIGHTS</button></div>';
+ spaceControls.style.cssText='position:absolute;bottom:env(safe-area-inset-bottom,8px);right:7px;z-index:6;display:none;pointer-events:auto;width:min(168px,45vw);font:700 11px system-ui;color:#fff;touch-action:manipulation';
+ spaceControls.innerHTML='<div data-flight style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px">'+
+   '<button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button>'+
+   '<button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button>'+
+   '<button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button></div>'+
+   '<button data-space="systems" style="width:100%;margin:5px 0 0">✦ SYSTEMS ▴</button>'+
+   '<div data-systems style="display:none;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:5px">'+
+   '<button data-space="tour">🎞 FLYBY</button><button data-space="reveal">✧ V13 REVEAL</button>'+
+   '<button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button>'+
+   '<button data-space="effects">◉ POST FX</button><button data-space="director">✦ DIRECTOR</button>'+
+   '<button data-space="world">🌍 WORLD</button></div>';
  for(const button of spaceControls.querySelectorAll('button')){
    button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
  }
@@ -2848,7 +2857,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
    overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
    spaceFinalMat.uniforms.intensity.value=mode==='cinema'?1.32:mode==='battery'?.76:1.02;
-   spaceNotify('V12 RENDERER · '+mode.toUpperCase()+' · BLOOM + FILMIC TONING',3);
+   spaceNotify('V13 GAUSSIAN BLOOM · '+mode.toUpperCase()+' · COLOR PIPELINE',3);
  }
 
  const starNav=document.createElement('div');
@@ -2918,6 +2927,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  spaceControls.addEventListener('click',e=>{
    const b=e.target.closest('button[data-space]');if(!b||!spaceMode)return;
    const action=b.dataset.space;
+   if(action==='systems'){
+     const drawer=spaceControls.querySelector('[data-systems]');
+     const opening=drawer.style.display==='none';
+     drawer.style.display=opening?'grid':'none';
+     b.textContent=opening?'✦ SYSTEMS ▾':'✦ SYSTEMS ▴';
+   }
    if(action==='nav'){updateNavigation();starNav.style.display=starNav.style.display==='none'?'block':'none'}
    if(action==='scan')scanUniverse();
    if(action==='warp'){
@@ -2928,7 +2943,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      spaceCraftState.warp=null;spaceCraftState.speed=0;
      spaceCraftState.pos.set(-60,48,-645);
      yaw=-.06;pitch=-.035;
-     spaceNotify('✦ OVERDRIVE V12 · ORBITAL CATHEDRAL · AEON · DUST NEBULAE',5);
+     spaceNotify('✦ V13 COSMIC ASCENT · volumetric nebula · celestial ray · true bloom',5);
    }
    if(action==='camera'){
      const modes=['chase','cinema','cockpit'];
