@@ -1,0 +1,28 @@
+name: Package SHIFT LINE for Chat
+on:
+  workflow_dispatch:
+  push:
+    branches: [shiftline-chat-isolated]
+    paths:
+      - 'chat-shiftline/build-original.mjs'
+      - '.github/workflows/chat-shiftline-package.yml'
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: shiftline-chat-isolated
+          persist-credentials: true
+      - name: Install bundler
+        run: npm install --no-save --no-package-lock esbuild
+      - name: Package original production source without editing it
+        run: node chat-shiftline/build-original.mjs
+      - name: Commit package to isolated branch only
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add chat-shiftline/dist/index.html
+          git diff --cached --quiet || (git commit -m "Build isolated original SHIFT LINE chat package" && git push origin HEAD:shiftline-chat-isolated)
