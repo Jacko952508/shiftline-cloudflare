@@ -2746,7 +2746,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    const modes=['safe','direct','cinema'];
    setSpaceRenderMode(modes[(modes.indexOf(v14RenderVariant)+1)%modes.length]);
  };
- updateSafeRenderLabel();
+ // Initial label is static. Sync it only on space entry, after render state exists.
 
  const spaceControls=document.createElement('div');
  spaceControls.style.cssText='position:absolute;bottom:env(safe-area-inset-bottom,8px);right:7px;z-index:6;display:none;pointer-events:auto;width:min(168px,45vw);font:700 11px system-ui;color:#fff;touch-action:manipulation';
