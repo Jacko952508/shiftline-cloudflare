@@ -358,6 +358,129 @@ const baseBox=new T.BoxGeometry(1,1,1);
 const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const m=new T.Mesh(baseBox,mat);m.position.set(x,y,z);m.scale.set(w,h,d);group.add(m);return m;
 };
+
+ // V7 VISTA REMASTER: skyline, lighthouse, sculpted cliff coast and roadside furniture.
+ const vistaGroup=new T.Group();smoothWorld.add(vistaGroup);
+ const vistaStone=new T.MeshStandardMaterial({color:0xa4a49a,roughness:.95,metalness:.04}),
+       vistaRock=new T.MeshStandardMaterial({color:0x626b6d,roughness:.98}),
+       vistaMetal=new T.MeshStandardMaterial({color:0x263b49,metalness:.74,roughness:.32}),
+       vistaAccent=new T.MeshPhysicalMaterial({color:0xda6952,metalness:.48,roughness:.29,clearcoat:.94}),
+       vistaLamp=new T.MeshBasicMaterial({color:0xffdf9d,toneMapped:false}),
+       vistaCool=new T.MeshBasicMaterial({color:0x92e7ed,toneMapped:false});
+ const scenicGeometry=(geometry,material,x,y,z,root=vistaGroup)=>{
+   const mesh=new T.Mesh(geometry,material);mesh.position.set(x,y,z);root.add(mesh);return mesh;
+ };
+ function mountLighthouse(x,z){
+  const y=coastH(x,z),g=new T.Group();g.position.set(x,y,z);vistaGroup.add(g);
+  const white=new T.MeshStandardMaterial({color:0xe9e7dc,metalness:.03,roughness:.65});
+  const stripe=new T.MeshStandardMaterial({color:0xb84d47,metalness:.12,roughness:.52});
+  scenicGeometry(new T.CylinderGeometry(3.1,4.5,16,18),white,0,8,0,g);
+  scenicGeometry(new T.CylinderGeometry(3.38,3.65,2.35,18),stripe,0,9,0,g);
+  scenicGeometry(new T.CylinderGeometry(3.0,3.34,2.1,18),stripe,0,13.4,0,g);
+  scenicGeometry(new T.CylinderGeometry(3.9,3.7,.6,18),vistaMetal,0,16.3,0,g);
+  const glass=new T.MeshPhysicalMaterial({color:0xc6eaff,metalness:.27,roughness:.08,transparent:true,opacity:.54,depthWrite:false,clearcoat:1});
+  scenicGeometry(new T.CylinderGeometry(2.7,2.7,3.4,20),glass,0,18.25,0,g);
+  const light=scenicGeometry(new T.CylinderGeometry(1.4,1.4,1.4,20),vistaLamp,0,18.3,0,g);
+  scenicGeometry(new T.ConeGeometry(3.7,2.5,20),vistaAccent,0,21.1,0,g);
+  scenicGeometry(new T.CylinderGeometry(.12,.12,4,8),vistaMetal,0,24.05,0,g);
+  const ring=scenicGeometry(new T.TorusGeometry(4,.075,6,36),vistaMetal,0,16.25,0,g);
+  ring.rotation.x=Math.PI/2;
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6;
+    const post=scenicGeometry(new T.CylinderGeometry(.075,.075,2.1,7),vistaMetal,Math.cos(a)*3.8,17.05,Math.sin(a)*3.8,g);
+  }
+  const beacon=new T.SpotLight(0xffe5a5,45,175,Math.PI/10,.78,1.35);
+  beacon.position.set(0,18.4,0);
+  const target=new T.Object3D();target.position.set(24,13,0);g.add(target,beacon);beacon.target=target;
+  return {g,target,beacon};
+ }
+ const lighthouse=mountLighthouse(44,80);
+ // Low-poly geometry is deliberately layered and shaded as limestone strata.
+ // Instanced rock needles are visible from the starting overlook without one mesh per stone.
+ const formations=mobile?44:70;
+ const cliffs=new T.InstancedMesh(new T.ConeGeometry(1,1,6),vistaRock,formations);
+ const strata=new T.InstancedMesh(new T.CylinderGeometry(.97,1,.13,6),vistaStone,formations);
+ const cliffDummy=new T.Object3D();
+ for(let i=0;i<formations;i++){
+   let x=15+hash(i*37,12)*90,z=43+hash(i*17,32)*54;
+   if(Math.hypot(x-44,z-80)<9)x+=10;
+   const h=coastH(x,z),height=3+hash(i*4,71)*12,rad=1.1+hash(i,39)*3.1;
+   cliffDummy.position.set(x,h+height*.48,z);
+   cliffDummy.rotation.set(0,hash(i,12)*Math.PI*2,0);
+   cliffDummy.scale.set(rad,height,rad*.9);cliffDummy.updateMatrix();cliffs.setMatrixAt(i,cliffDummy.matrix);
+   cliffDummy.position.y=h+height*.35;cliffDummy.scale.set(rad*.98,.22,rad*.89);
+   cliffDummy.updateMatrix();strata.setMatrixAt(i,cliffDummy.matrix);
+ }
+ cliffs.instanceMatrix.needsUpdate=true;strata.instanceMatrix.needsUpdate=true;vistaGroup.add(cliffs,strata);
+ // Winding roadside crash barriers and reflective roadway markers.
+ const railTransforms=[],lampTransforms=[],lampGlobes=[],signTransforms=[];
+ for(let ri=0;ri<mainRoads.length;ri++){
+  const road=mainRoads[ri];const sections=ri===0?36:ri===1?27:22;
+  for(let i=0;i<sections;i++){
+    const t=(i+.5)/sections,p=road.curve.getPoint(t),tan=road.curve.getTangent(t);
+    const a=Math.atan2(tan.x,tan.z),edge=road.width*.5+.72;
+    for(const side of [-1,1]){
+     const x=p.x-tan.z*edge*side,z=p.z+tan.x*edge*side;
+     const hy=coastH(x,z);
+     railTransforms.push([x,hy+.8,z,a,sections,road.curve.getLength()/sections*.89]);
+     if(i%5===0){
+       lampTransforms.push([x,hy+2.4,z]);
+       lampGlobes.push([x,hy+4.75,z]);
+     }
+    }
+   }
+ }
+ const railPart=new T.InstancedMesh(new T.BoxGeometry(1,.19,1),vistaMetal,railTransforms.length);
+ const railMarker=new T.InstancedMesh(new T.BoxGeometry(1,.2,.18),vistaAccent,railTransforms.length);
+ for(let i=0;i<railTransforms.length;i++){
+   const [x,y,z,a,,segment]=railTransforms[i];
+   cliffDummy.position.set(x,y,z);cliffDummy.rotation.set(0,a,0);cliffDummy.scale.set(.14,.9,segment);
+   cliffDummy.updateMatrix();railPart.setMatrixAt(i,cliffDummy.matrix);
+   cliffDummy.position.y=y+.45;cliffDummy.scale.set(.13,.12,segment*.95);cliffDummy.updateMatrix();railMarker.setMatrixAt(i,cliffDummy.matrix);
+ }
+ railPart.instanceMatrix.needsUpdate=true;railMarker.instanceMatrix.needsUpdate=true;
+ vistaGroup.add(railPart,railMarker);
+ const lampStem=new T.InstancedMesh(new T.CylinderGeometry(.08,.11,4.7,6),vistaMetal,lampTransforms.length);
+ const lampCap=new T.InstancedMesh(new T.SphereGeometry(.32,8,6),vistaLamp,lampTransforms.length);
+ for(let i=0;i<lampTransforms.length;i++){
+   cliffDummy.position.set(...lampTransforms[i]);cliffDummy.rotation.set(0,0,0);cliffDummy.scale.set(1,1,1);cliffDummy.updateMatrix();lampStem.setMatrixAt(i,cliffDummy.matrix);
+   cliffDummy.position.set(...lampGlobes[i]);cliffDummy.updateMatrix();lampCap.setMatrixAt(i,cliffDummy.matrix);
+ }
+ lampStem.instanceMatrix.needsUpdate=true;lampCap.instanceMatrix.needsUpdate=true;vistaGroup.add(lampStem,lampCap);
+ // A striking blue-glass observation arch near the existing coast spawn.
+ const archGroup=new T.Group();archGroup.position.set(55,coastH(55,113),113);vistaGroup.add(archGroup);
+ const archMaterial=new T.MeshPhysicalMaterial({color:0x65a8c5,metalness:.56,roughness:.16,clearcoat:1,envMapIntensity:1.8});
+ const archGlow=new T.MeshBasicMaterial({color:0x9ef4f8,toneMapped:false});
+ const arch=new T.Mesh(new T.TorusGeometry(9,.48,10,44,Math.PI),archMaterial);
+ arch.rotation.y=Math.PI/2;arch.rotation.z=Math.PI;arch.position.y=3.9;archGroup.add(arch);
+ const innerArch=new T.Mesh(new T.TorusGeometry(8.43,.12,8,44,Math.PI),archGlow);
+ innerArch.rotation.copy(arch.rotation);innerArch.position.copy(arch.position);archGroup.add(innerArch);
+ // Bold branded information billboard at the viewpoint: actual canvas glyphs, not floating placeholders.
+ const billboard=document.createElement('canvas');billboard.width=768;billboard.height=240;
+ const bctx=billboard.getContext('2d'),bgrad=bctx.createLinearGradient(0,0,768,240);
+ bgrad.addColorStop(0,'#10374a');bgrad.addColorStop(1,'#1a5862');
+ bctx.fillStyle=bgrad;bctx.fillRect(0,0,768,240);
+ bctx.strokeStyle='#92efe4';bctx.lineWidth=7;bctx.strokeRect(11,11,746,218);
+ bctx.fillStyle='#d4fffa';bctx.font='bold 71px system-ui';bctx.fillText('CRESCENT COAST',41,105);
+ bctx.fillStyle='#ffd7a6';bctx.font='bold 33px system-ui';bctx.fillText('REALITY ENGINE V7  ·  SCENIC REMASTER',44,164);
+ bctx.fillStyle='#8ddcda';bctx.font='23px system-ui';bctx.fillText('LIGHTHOUSE ROAD  •  MARINA  •  COASTAL DRIVE',44,206);
+ const boardTexture=new T.CanvasTexture(billboard);boardTexture.colorSpace=T.SRGBColorSpace;
+ const boardMat=new T.MeshBasicMaterial({map:boardTexture,side:T.DoubleSide});
+ const board=scenicGeometry(new T.PlaneGeometry(12,3.75),boardMat,0,8.7,0,archGroup);
+ board.rotation.y=.13;
+ const pillarA=scenicGeometry(new T.CylinderGeometry(.21,.21,7,8),vistaMetal,-5.2,3.5,.2,archGroup);
+ const pillarB=scenicGeometry(new T.CylinderGeometry(.21,.21,7,8),vistaMetal,5.2,3.5,.2,archGroup);
+ // Scenic rim lighting makes the lookout readable at night, without costly multiple large lights.
+ const vistaLight=new T.PointLight(0x83dce9,weather==='night'?7:2,27,2);
+ vistaLight.position.set(55,12,113);vistaGroup.add(vistaLight);
+ function animateVista(t){
+  lighthouse.target.position.set(Math.cos(t*.48)*32,13,Math.sin(t*.48)*32);
+  lighthouse.beacon.intensity=weather==='night'?65:weather==='sunset'?31:14;
+  vistaLight.intensity=weather==='night'?10:weather==='sunset'?4:1;
+  const skyEmissive=weather==='night'?1:.68;
+  innerArch.material.opacity=skyEmissive;
+ }
+
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
 const glassFront=new T.MeshPhysicalMaterial({color:0xa2c7db,roughness:.09,metalness:.15,transparent:true,opacity:.75,depthWrite:false,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.8});
 const whiteWalls=coastMaterial(0xece6da,.71),warmWalls=coastMaterial(0xb09d89,.84),roofMat=coastMaterial(0x42474f,.52,.2);
@@ -464,7 +587,7 @@ function setMap(mode,initial=false){
   velY=0;requestChunks(loc.x,loc.z);streamChunks(coast?0:3);
   notify(coast?'CRESCENT COAST · smooth terrain & scenic roads':'VOXEL LEGACY · mining restored');
  }else if(coast){loc.set(45,coastH(45,113)+2.4,113)}
- const name=root.querySelector('.vxSub');if(name)name.textContent=coast?'CRESCENT COAST · CURVED ROADS · REALISTIC MATERIALS':'LEGACY VOXEL WORLD · MINING · BUILDING';
+ const name=root.querySelector('.vxSub');if(name)name.textContent=coast?'V7 · CRESCENT COAST · SCENIC REMASTER':'LEGACY VOXEL WORLD · MINING · BUILDING';
  if(typeof flightButtons==='function')flightButtons();
 }
 smoothWorld.visible=newMapActive;
@@ -1550,7 +1673,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   wetness=T.MathUtils.damp(wetness,weather==='rain'?1:0,weather==='rain'?.7:.045,dt);
   asphalt.roughness=.8-wetness*.51;asphalt.envMapIntensity=.64+wetness*.63;
   puddles.visible=newMapActive&&wetness>.025;puddleMat.opacity=wetness*.78;
-  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;sunDisk.visible=!newMapActive&&weather!=='night'&&weather!=='rain';advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
+  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;sunDisk.visible=!newMapActive&&weather!=='night'&&weather!=='rain';advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive){animateCoast(dt,t);animateVista(t)}else animateTraffic(dt,t);
   for(const a of animals){
     a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
