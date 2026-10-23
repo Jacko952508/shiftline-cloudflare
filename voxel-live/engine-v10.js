@@ -738,7 +738,7 @@ for(let i=0;i<11;i++){
 
 
  // V10 REALITY EXPERIMENTS: low-cost portal camera, weather front and a fractureable pavilion.
- let portalCooldown=0,portalFrames=0,insideFront=false;
+ let portalCooldown=0,portalFrames=0,insideFront=false,portalFailed=false;
  const portalRT=new T.WebGLRenderTarget(mobile?192:320,mobile?256:420,{depthBuffer:true});
  portalRT.texture.colorSpace=T.SRGBColorSpace;
  const portalCamera=new T.PerspectiveCamera(57,(mobile?192:320)/(mobile?256:420),.2,250);
@@ -774,7 +774,7 @@ for(let i=0;i<11;i++){
    notify('SPACE FOLDED · destination '+Math.round(dest.x)+' / '+Math.round(dest.z));
  }
  function renderPortalView(){
-   if(!newMapActive||!alive)return;
+   if(!newMapActive||!alive||portalFailed)return;
    const d=Math.hypot(loc.x-portalA.x,loc.z-portalA.z);
    if(d>75||++portalFrames%11!==0)return;
    portalCamera.position.set(portalTarget.x,coastH(portalTarget.x,portalTarget.z)+8,portalTarget.z);
@@ -784,6 +784,12 @@ for(let i=0;i<11;i++){
    try{
      renderer.setRenderTarget(portalRT);
      renderer.clear();renderer.render(scene,portalCamera);
+   }catch(error){
+     console.warn('Portal secondary renderer disabled',error);
+     portalFailed=true;
+     portalA.pane.material.map=null;
+     portalA.pane.material.color.set(0x235d72);
+     portalA.pane.material.needsUpdate=true;
    }finally{
      renderer.setRenderTarget(previousTarget);
      portalA.gate.visible=portalB.gate.visible=true;
@@ -858,7 +864,7 @@ for(let i=0;i<11;i++){
    }
    insideFront=newMapActive&&stormFrontEnabled&&Math.hypot(loc.x-frontX,loc.z-frontZ)<45;
    if(insideFront){rain.visible=true;rainMat.opacity=.9;oceanMat.uniforms.storm.value=1}
-   else if(weather!=='rain')oceanMat.uniforms.storm.value=0;
+   else{rainMat.opacity=.65;if(weather!=='rain')oceanMat.uniforms.storm.value=0}
    if(pavilion.pieces.length){
      pavilion.age+=dt;
      for(const p of pavilion.pieces){
@@ -2285,5 +2291,5 @@ directorPanel.addEventListener('click',e=>{
  requestAnimationFrame(frame);
  mutationTimer=setInterval(pollWorldMutations,30000);
  pollWorldMutations();
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;try{physicsWorld?.free?.()}catch(e){}portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
