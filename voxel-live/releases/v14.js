@@ -1,0 +1,1 @@
+export const release={version:14,engineCommit:'e8597256949a5261c3e6b53b6292cdf3e7fd2cba',engineFile:'engine-v14.js',message:'ASTRAEUS SPACE DISPLAY FIX: iPhone-safe scene compositor, auto black-frame detector, instant direct-WebGL rescue, and hidden terrestrial HUD in space mode'};
