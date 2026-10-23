@@ -75,6 +75,46 @@ export async function mount(root,resume=null){
    if(xp===6&&zp===6)for(let dy=1;dy<=Math.min(level,Y-h-4);dy++)put(x,h+dy,z,9);
    if(level<Y-h-3)put(x,h+level+1,z,3);
  }
+
+ // Lightweight autonomous traffic: 14 moving vehicles on city street loops.
+ const traffic=[],trafficRoot=new T.Group();scene.add(trafficRoot);
+ const trafficColors=[0x8fdad5,0xe7a46b,0xb3b8d3,0xeadfbd,0x9879a9];
+ const trafficMat=trafficColors.map(color=>new T.MeshStandardMaterial({color,metalness:.68,roughness:.26}));
+ const trafficGlass=new T.MeshPhysicalMaterial({color:0x719cae,roughness:.14,metalness:.3,transparent:true,opacity:.78,depthWrite:false});
+ const trafficRubber=new T.MeshStandardMaterial({color:0x1b2830,roughness:.88});
+ const trafficLamp=new T.MeshBasicMaterial({color:0xd7fff6,toneMapped:false});
+ for(let i=0;i<14;i++){
+   const g=new T.Group();trafficRoot.add(g);
+   const chassis=new T.Mesh(new T.BoxGeometry(1.55,.42,3.1),trafficMat[i%trafficMat.length]);chassis.position.y=.57;g.add(chassis);
+   const cab=new T.Mesh(new T.BoxGeometry(1.24,.7,1.4),trafficGlass);cab.position.set(0,1.07,-.18);g.add(cab);
+   for(const side of [-1,1])for(const z of [-.92,.97]){
+     const wheel=new T.Mesh(new T.CylinderGeometry(.32,.32,.22,10),trafficRubber);
+     wheel.position.set(side*.79,.35,z);wheel.rotation.z=Math.PI/2;g.add(wheel)
+   }
+   for(const side of [-.54,.54]){const lamp=new T.Mesh(new T.BoxGeometry(.28,.1,.035),trafficLamp);lamp.position.set(side,.65,-1.6);g.add(lamp)}
+   traffic.push({g,offset:i/14,speed:3.4+(i%4)*.74,ring:i%3});
+ }
+ function animateTraffic(dt,t){
+   const paths=[
+     [[114,114],[207,114],[207,206],[114,206]],
+     [[130,130],[192,130],[192,192],[130,192]],
+     [[146,146],[177,146],[177,177],[146,177]]
+   ];
+   for(const a of traffic){
+     const nodes=paths[a.ring],size=nodes.length,total=nodes.reduce((p,b,i)=>p+Math.hypot(b[0]-nodes[(i+1)%size][0],b[1]-nodes[(i+1)%size][1]),0);
+     let d=(a.offset*total+t*a.speed)%total,px=nodes[0][0],pz=nodes[0][1],heading=0;
+     for(let i=0;i<size;i++){
+       const p=nodes[i],b=nodes[(i+1)%size],segment=Math.hypot(b[0]-p[0],b[1]-p[1]);
+       if(d<=segment){const f=d/segment;px=p[0]+(b[0]-p[0])*f;pz=p[1]+(b[1]-p[1])*f;heading=Math.atan2(-(b[0]-p[0]),-(b[1]-p[1]));break}
+       d-=segment;
+     }
+     a.g.position.set(px,ground(Math.round(px),Math.round(pz))+.3,pz);
+     a.g.rotation.y=heading;
+     // No need to draw tiny traffic objects when player is on another continent.
+     a.g.visible=(loc.x-px)**2+(loc.z-pz)**2<130**2;
+   }
+ }
+
  // City plazas with trees, benches and street lights.
  for(let x=117;x<210;x+=16)for(let z=117;z<210;z+=16){
    const h=ground(x,z);
@@ -964,7 +1004,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);animateTraffic(dt,t);
   for(const a of animals){
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
     a.g.position.set(xx,ground(Math.round(xx),Math.round(zz))+1,zz);
