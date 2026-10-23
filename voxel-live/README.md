@@ -46,3 +46,48 @@ Therefore **create each version's release pointer on `nimbus-chat-live`**, even 
 **Current immutable V5 engine commit**: `b8f1e23b85fa47ade7a293dcf57d95bcff3db6ad`.
 
 **No Hatchable deployment.** Only GitHub source and the existing in-chat widget. Do not claim user-device runtime testing; only GitHub source and static JS checked. CDN branch caches may need a purge if still stale.
+
+
+## REALITY ENGINE V8 / V9 / V10 (2026-10-23)
+
+### V8 — Physics + Living City
+- Optional Rapier 3D WASM through \`https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/+esm\`, fixed 30 Hz simulation for interactive crates/barrels with impulses and kinematic vehicle contacts.
+- Collision/physics fallback when CDN/WASM fails, avoiding a fatal game startup.
+- Terrain-sampled vehicle suspension and body lean (approximate, NOT a complete real-car tyre/constraint model).
+- Instanced pedestrian NPCs, changing destinations and work schedules, six simulated businesses with stocks and earnings, resource economy and animated delivery trucks; aggregate state lives in \`directorState\`.
+
+### V9 — World Mutation Engine
+- Safe protocol string: \`reality.world/1\`. JSON only, not executable JavaScript.
+- Editor: Director > WORLD MUTATIONS. Parsed commands checked for whitelisted operations, bounds and unique \`id\`. Replays are skipped. Every successful mutation is saved into the persistent event history.
+- Operations: \`terrain.deform\` ({x,z,radius,depth}), \`city.supply\` ({resource,amount}), \`city.business\` ({index,stock}), \`physics.spawn\` ({x,z,count}), \`vehicle.spawn\` ({type}), \`climate.set\` ({weather}), \`traffic.control\` ({paused}).
+- Public JSON feed: \`nimbus-chat-live/voxel-live/world-mutations/live.json\` (GitHub Raw). The running game polls every 30 seconds. Keep at most 15 fresh events in its \`events\` array, use never-repeated IDs and preserve \`protocol:"reality.world/1"\`. An engine version upgrade remains a separate sequential release via \`releases/vN.js\`.
+- Example publishable JSON payload:
+
+\`\`\`json
+{
+  "protocol": "reality.world/1",
+  "revision": 2,
+  "events": [
+    {
+      "protocol": "reality.world/1",
+      "id": "coastal-supply-002",
+      "op": "city.supply",
+      "args": {"resource": "food", "amount": 150}
+    }
+  ]
+}
+\`\`\`
+
+### V10 — Reality Experiments
+- Nearby portal uses an offscreen render target at reduced resolution and only refreshes once every 11 frames; shader fallback if render errors. Walk through the A and B gates to teleport.
+- Fractureable prebuilt pavilion with local debris and a Director rebuild tool; damage state persists (whole-city structural physics is NOT implemented).
+- Moving visible cloud/rain fronts; low-gravity player movement mode. Limited to Crescent Coast.
+- Additional mutation operations: \`portal.travel\` ({destination:"marina"|"lighthouse"}), \`gravity.set\` ({low}), \`structure.fracture\` ({state:"collapse"|"rebuild"}), \`storm.front\` ({enabled}), \`physics.impulse\` ({x,z,power}).
+
+### Releases and QA
+- V8 engine pinned to \`7ecd100df77ad0b0eb009bcbe78a9cd517e87a1f\`.
+- V9 engine pinned to \`3b26f27c8ad82c06cd58d98ca4fa00914375358c\`.
+- V10 engine pinned to \`ad0443cdc81ea4b0023d35e34c5c5584c50b282c\`.
+- Release pointers on \`nimbus-chat-live\`; game code on \`voxel-chat-live\`. Do not modify live SHIFT LINE main.
+- Each engine passed source compilation checks (\`new Function(...)\`), version manifest checks and static scene-initialization order checks. Not yet validated in the iPhone ChatGPT WebGL runtime.
+- User selected GitHub-only distribution: do NOT deploy to Hatchable.
