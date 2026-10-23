@@ -294,13 +294,13 @@ export async function mount(root,resume=null){
    const limbs=[];
    for(const x of [-.19,.19])limbs.push(npcCube(g,uniform,.18,.68,.2,x,.31,0));
    for(const x of [-.42,.42])limbs.push(npcCube(g,skin,.17,.73,.18,x,.94,0));
-   const originX=17+i*2.2,originZ=35+(i%3)*2;
+   const originX=i<8?17+i*2.2:128+(i%6)*10,originZ=i<8?35+(i%3)*2:134+Math.floor((i-8)/6)*15;
    const a={id:i,g,limbs,x:originX,z:originZ,v:0,goalX:originX+2,goalZ:originZ-3,role:npcRoles[i%npcRoles.length],
      wood:0,stone:0,work:0,panic:0,think:0,bob:0};
    citizens.push(a);
  }
- for(let i=0;i<(mobile?6:8);i++)makeCitizen(i);
- const citySite={x:18,z:39};
+ for(let i=0;i<(mobile?16:22);i++)makeCitizen(i);
+ const citySite={x:18,z:39}; // Existing founding town; metropolis is at 160,160.
  function buildHouse(cx,cz,wide=5){
    cx=Math.round(cx);cz=Math.round(cz);
    const sy=Math.min(Y-8,Math.max(SEA+2,surfaceAt(cx,cz)+1)),half=Math.floor(wide/2);
@@ -709,17 +709,137 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
    const stats=directorPanel.querySelector('#realityStats');
    if(stats)stats.textContent='POPULATION '+citizens.length+' • DISTRICTS '+Number(directorState.town)+' • BUILDINGS '+directorState.structures+' • CRATERS '+directorState.craters+' • WORLD EVENTS '+directorState.events;
  }
+
+ // More developer tools: world atlas, runtime information, terrain brush and GPU-friendly effects.
+ let showMap=false,debugHudOn=false,fireworksAge=-1,thunderAge=-1;
+ const mapCanvas=document.createElement('canvas');mapCanvas.width=mapCanvas.height=256;
+ mapCanvas.style.cssText='position:absolute;left:9px;top:104px;width:187px;height:187px;z-index:3;display:none;border:2px solid #8fffffb8;background:#142c32;border-radius:8px;box-shadow:0 4px 18px #001b;image-rendering:pixelated;touch-action:manipulation';
+ stage.appendChild(mapCanvas);
+ const mapctx=mapCanvas.getContext('2d');
+ const mapImg=mapctx.createImageData(256,256);
+ for(let z=0;z<256;z++)for(let x=0;x<256;x++){
+   const id=get(x,ground(x,z),z),h=ground(x,z),k=(z*256+x)*4;
+   const col=(x>=111&&x<=209&&z>=111&&z<=209)?(id===3?[59,68,79]:id===8?[180,163,145]:[120,140,164]):h<=SEA?[43,117,155]:h>27?[147,150,148]:h>17?[74,123,79]:[86,146,93];
+   for(let c=0;c<3;c++)mapImg.data[k+c]=col[c];mapImg.data[k+3]=255;
+ }
+ mapctx.putImageData(mapImg,0,0);
+ mapCanvas.addEventListener('click',e=>{
+   const r=mapCanvas.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*256),z=Math.floor((e.clientY-r.top)/r.height*256);
+   if(riding)endFlight();
+   loc.set(T.MathUtils.clamp(x+.5,3,253),ground(x,z)+3,T.MathUtils.clamp(z+.5,3,253));
+   velY=0;showMap=false;mapCanvas.style.display='none';notify('Developer teleport · '+x+' / '+z);
+   requestChunks(loc.x,loc.z);streamChunks(3);
+ });
+ const debugHud=document.createElement('div');
+ debugHud.style.cssText='position:absolute;right:8px;top:130px;z-index:3;pointer-events:none;display:none;font:10px/1.6 ui-monospace,monospace;padding:7px;background:#061c2bce;color:#a4ffcf;border:1px solid #84f8d788;border-radius:7px;white-space:pre';
+ stage.appendChild(debugHud);
+ const sparkN=mobile?140:280,sparkGeo=new T.BufferGeometry(),sparkPositions=new Float32Array(sparkN*3),sparkVel=new Float32Array(sparkN*3);
+ sparkGeo.setAttribute('position',new T.BufferAttribute(sparkPositions,3));
+ const sparkMat=new T.PointsMaterial({color:0xffc783,size:.48,transparent:true,opacity:.96,depthWrite:false,blending:T.AdditiveBlending});
+ const sparks=new T.Points(sparkGeo,sparkMat);scene.add(sparks);sparks.visible=false;
+ const thunder=new T.PointLight(0xc6edff,0,130,2);thunder.position.set(160,45,160);scene.add(thunder);
+ const lightningGroup=new T.Group();scene.add(lightningGroup);lightningGroup.visible=false;
+ const lightningMat=new T.LineBasicMaterial({color:0xd6f4ff,transparent:true,opacity:1});
+ const lightningPoints=[];
+ for(let i=0;i<13;i++)lightningPoints.push(new T.Vector3(Math.sin(i*1.3)*1.5,37-i*2.8,Math.cos(i*1.7)*1.5));
+ const boltGeo=new T.BufferGeometry().setFromPoints(lightningPoints);
+ const bolt=new T.Line(boltGeo,lightningMat);lightningGroup.add(bolt);
+ function makeFireworks(){
+   fireworksAge=0;sparks.visible=true;
+   const px=loc.x+Math.sin(yaw)*20,pz=loc.z-Math.cos(yaw)*20,py=Math.max(ground(px,pz)+17,loc.y+6);
+   for(let i=0;i<sparkN;i++){
+     const u=Math.random()*2-1,a=Math.random()*Math.PI*2,b=Math.sqrt(1-u*u);
+     const v=(5+Math.random()*12);
+     sparkPositions[i*3]=px;sparkPositions[i*3+1]=py;sparkPositions[i*3+2]=pz;
+     sparkVel[i*3]=Math.cos(a)*b*v;sparkVel[i*3+1]=u*v;sparkVel[i*3+2]=Math.sin(a)*b*v;
+   }
+   sparkGeo.attributes.position.needsUpdate=true;directorState.events++;
+ }
+ function lightningStrike(){
+   thunderAge=0;thunder.position.set(loc.x+8,loc.y+18,loc.z-11);
+   lightningGroup.position.set(thunder.position.x,8,thunder.position.z);
+   lightningGroup.visible=true;
+   directorState.events++;
+ }
+ function terraformBrush(){
+   const tx=Math.round(loc.x+Math.sin(yaw)*7),tz=Math.round(loc.z-Math.cos(yaw)*7);
+   if(tx<3||tz<3||tx>=SIZE-3||tz>=SIZE-3)return;
+   const sy=surfaceAt(tx,tz);
+   for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++){
+     if(dx*dx+dz*dz>16)continue;
+     const x=tx+dx,z=tz+dz;if(x<1||z<1||x>=SIZE-1||z>=SIZE-1)continue;
+     const level=surfaceAt(x,z);
+     for(let y=sy+1;y<=Math.min(Y-2,level+1);y++)editWorld(x,y,z,0);
+     for(let y=level+1;y<=sy;y++)editWorld(x,y,z,2);
+     editWorld(x,sy,z,1);
+   }
+   flushWorld();notify('Flattened a 9×9 terrain brush near you');directorState.events++;
+ }
+ function customTower(){
+   const x=Math.floor(loc.x+Math.sin(yaw)*11),z=Math.floor(loc.z-Math.cos(yaw)*11);
+   if(x<5||z<5||x>SIZE-6||z>SIZE-6)return;
+   const y=Math.max(SEA+2,Math.min(Y-30,ground(x,z)+1));
+   for(let dx=-3;dx<=3;dx++)for(let dz=-3;dz<=3;dz++){
+     editWorld(x+dx,y,z+dz,8);
+     for(let dy=1;dy<=24;dy++){
+       const edge=Math.abs(dx)===3||Math.abs(dz)===3,door=dz===3&&dx===0&&dy<4;
+       if(dy%7===0)editWorld(x+dx,y+dy,z+dz,8);
+       else if(edge&&!door)editWorld(x+dx,y+dy,z+dz,dy%3?7:3);
+       else editWorld(x+dx,y+dy,z+dz,0);
+     }
+     editWorld(x+dx,y+25,z+dz,8);
+   }
+   editWorld(x,y+26,z,9);flushWorld();directorState.events++;
+   notify('Built a 26-block developer observation tower');
+ }
+ function updateVfx(dt,t){
+   if(fireworksAge>=0){
+     fireworksAge+=dt;sparkMat.opacity=Math.max(0,1-fireworksAge/3);
+     for(let i=0;i<sparkN;i++){
+       sparkPositions[i*3]+=sparkVel[i*3]*dt;
+       sparkPositions[i*3+1]+=sparkVel[i*3+1]*dt-.5*dt;
+       sparkPositions[i*3+2]+=sparkVel[i*3+2]*dt;
+       sparkVel[i*3+1]-=dt*4.2;
+     }
+     sparkGeo.attributes.position.needsUpdate=true;
+     if(fireworksAge>3){fireworksAge=-1;sparks.visible=false}
+   }
+   if(thunderAge>=0){
+     thunderAge+=dt;thunder.intensity=thunderAge<.14?85:thunderAge<.37?13:0;
+     lightningGroup.visible=thunderAge<.18;
+     if(thunderAge>.5){thunderAge=-1;lightningGroup.visible=false}
+   }
+   if(showMap){
+     mapctx.putImageData(mapImg,0,0);
+     mapctx.fillStyle='#ff5e48';mapctx.fillRect(Math.floor(loc.x)-2,Math.floor(loc.z)-2,5,5);
+     mapctx.strokeStyle='#fff';mapctx.strokeRect(Math.floor(loc.x)-5,Math.floor(loc.z)-5,11,11);
+   }
+   if(debugHudOn)debugHud.textContent='REALITY ENGINE V4\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
+ }
+
  directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+
+   if(action==='city'){if(riding)endFlight();loc.set(160.5,ground(160,160)+3,160.5);yaw=0;velY=0;directorPanel.style.display='none';requestChunks(loc.x,loc.z);streamChunks(4);notify('Arrived in METROPOLIS DISTRICT · 256×256 world')}
+   if(['heli','jet','buggy','hoverbike','boat'].includes(action)){directorPanel.style.display='none';selectVehicle(action)}
+   if(action==='worldmap'){showMap=!showMap;mapCanvas.style.display=showMap?'block':'none';directorPanel.style.display='none';notify('Tap a location on the atlas to teleport')}
+   if(action==='night'){const el=q('vxWeather');el.value='night';el.dispatchEvent(new Event('change'))}
+   if(action==='fireworks'){makeFireworks();directorPanel.style.display='none';notify('Fireworks display deployed')}
+   if(action==='terraform'){terraformBrush()}
+   if(action==='tower'){customTower()}
+   if(action==='lightning'){lightningStrike();directorPanel.style.display='none';notify('Lightning strike incoming')}
+   if(action==='devhud'){debugHudOn=!debugHudOn;debugHud.style.display=debugHudOn?'block':'none'}
+   if(action==='distance'){chunkRadius.value=chunkRadius.value===2?3:chunkRadius.value===3?4:2;requestChunks(loc.x,loc.z);notify('Chunk render radius '+chunkRadius.value+' · '+(chunkRadius.value===2?'FAST':'SCENIC'))}
+
    if(action==='town'){
      if(makeSettlement()){notify('Settlement constructed! Inhabitants will begin developing it.');loc.set(19.5,surfaceAt(19,40)+3,39.5)}
      else notify('Your settlement is already developing.');
@@ -835,7 +955,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;advanceDirector(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);
   for(const a of animals){
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
     a.g.position.set(xx,ground(Math.round(xx),Math.round(zz))+1,zz);
