@@ -129,6 +129,7 @@ export async function mount(root,resume=null){
  let period='day',weather='clear',quality='auto',maxDpr=mobile?1.1:1.5,loc,velY=0,grounded=false;
  const savedPosition=resume?.player??(()=>{try{return JSON.parse(localStorage.getItem(saveKey)||'{}').player}catch(e){return null}})();
  loc=new T.Vector3(savedPosition?.x??32.5,savedPosition?.y??ground(32,32)+2.6,savedPosition?.z??32.5);
+ let newMapActive=directorState.activeMap!=='voxel';
  // Lightweight autonomous traffic: 14 moving vehicles on city street loops.
  const traffic=[],trafficRoot=new T.Group();trafficRoot.visible=!newMapActive;scene.add(trafficRoot);
  const trafficColors=[0x8fdad5,0xe7a46b,0xb3b8d3,0xeadfbd,0x9879a9];
@@ -172,7 +173,6 @@ export async function mount(root,resume=null){
 
 // CRESCENT COAST: a separately rendered curved terrain world (not a grid of voxel blocks).
 const smoothWorld=new T.Group();scene.add(smoothWorld);
-let newMapActive=directorState.activeMap!=='voxel';
 const legacyPos=new T.Vector3().copy(loc);
 if(directorState.legacyPosition){const p=directorState.legacyPosition;if([p.x,p.y,p.z].every(Number.isFinite))legacyPos.set(p.x,p.y,p.z)}
 const coastCraters=Array.isArray(directorState.coastCraters)?directorState.coastCraters:[];
