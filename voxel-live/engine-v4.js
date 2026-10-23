@@ -460,49 +460,157 @@ export async function mount(root,resume=null){
  if(directorState.flight&&riding){const f=directorState.flight;for(const k of ['x','y','z','heading','speed'])if(Number.isFinite(f[k]))craftState[k]=f[k]}
  craftGroup.visible=!!directorState.hasVehicle||riding;
  craftGroup.position.set(craftState.x,craftState.y,craftState.z);
+
+ // V4 vehicle garage — 5 distinct, flyable/drivable models in a shared controller.
+ const vehicleModels={skyrider:craftBody};
+ const vMats={
+  blue:new T.MeshPhysicalMaterial({color:0x196986,metalness:.79,roughness:.21,clearcoat:1}),
+  orange:new T.MeshPhysicalMaterial({color:0xf28d44,metalness:.56,roughness:.31,clearcoat:1}),
+  red:new T.MeshPhysicalMaterial({color:0xa52b48,metalness:.7,roughness:.2,clearcoat:1}),
+  black:new T.MeshStandardMaterial({color:0x17272f,metalness:.45,roughness:.36}),
+  glass:new T.MeshPhysicalMaterial({color:0x65cee5,metalness:.21,roughness:.09,transparent:true,opacity:.64,depthWrite:false,clearcoat:1}),
+  glow:new T.MeshBasicMaterial({color:0x6dfff3,toneMapped:false})
+ };
+ const meshV=(g,m,x,y,z,p)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);p.add(o);return o};
+ const bx=(w,h,d,m,x,y,z,p)=>meshV(new T.BoxGeometry(w,h,d),m,x,y,z,p);
+ const sp=(a,b,c,m,x,y,z,p)=>{const o=meshV(new T.SphereGeometry(1,20,12),m,x,y,z,p);o.scale.set(a,b,c);return o};
+ const cy=(r,h,m,x,y,z,p)=>meshV(new T.CylinderGeometry(r,r,h,14),m,x,y,z,p);
+ const vehicleParts={wheels:[],mainRotor:null,tailRotor:null,jetThrusters:[]};
+ // Helicopter HAWK H-21: aerodynamic fuselage, enclosed cockpit and landing skids.
+ const heli=new T.Group();craftGroup.add(heli);vehicleModels.helicopter=heli;
+ sp(1.02,.73,2.65,vMats.blue,0,.1,0,heli);
+ sp(.93,.64,1.25,vMats.glass,0,.35,-1.21,heli);
+ bx(.35,.36,5.9,vMats.blue,0,.26,3.76,heli);
+ bx(2.6,.09,1.0,vMats.orange,0,.42,5.7,heli);
+ bx(.15,1.22,.75,vMats.orange,0,.91,6.25,heli);
+ for(const x of [-.86,.86]){
+  bx(.11,.12,4.4,vMats.black,x,-1.03,-.18,heli);
+  bx(.095,.78,.15,vMats.black,x,-.66,-1.3,heli);
+  bx(.095,.78,.15,vMats.black,x,-.66,.95,heli);
+  cy(.22,.9,vMats.black,x*.72,.64,.77,heli).rotation.x=Math.PI/2;
+ }
+ bx(1.3,.2,1.1,vMats.black,0,.94,.05,heli);
+ const rotor=new T.Group();rotor.position.y=1.52;heli.add(rotor);
+ for(let i=0;i<5;i++){
+  const a=i*Math.PI*2/5;const o=bx(.34,.048,4.9,vMats.black,-2.43*Math.sin(a),0,-2.43*Math.cos(a),rotor);o.rotation.y=a;
+ }
+ vehicleParts.mainRotor=rotor;
+ const rearRotor=new T.Group();rearRotor.position.set(-.2,1.05,6.15);heli.add(rearRotor);
+ for(let i=0;i<4;i++){
+  const a=i*Math.PI/2;const o=bx(.08,1.45,.11,vMats.black,0,.72*Math.cos(a),.72*Math.sin(a),rearRotor);o.rotation.x=a;
+ }vehicleParts.tailRotor=rearRotor;
+ // Interceptor jet: narrow fuselage, swept wings, twin illuminated engines.
+ const jet=new T.Group();craftGroup.add(jet);vehicleModels.jet=jet;
+ sp(.83,.52,3.1,vMats.red,0,.07,-.15,jet);
+ sp(.59,.37,1.25,vMats.glass,0,.43,-1.28,jet);
+ for(const sign of [-1,1]){
+  const wing=bx(3.7,.12,1.8,vMats.red,sign*2.15,-.12,.65,jet);wing.rotation.y=sign*.27;
+  const stab=bx(1.55,.11,.79,vMats.orange,sign*1,.09,2.22,jet);stab.rotation.y=sign*.2;
+  const ex=cy(.36,1.2,vMats.black,sign*.57,-.18,2.15,jet);ex.rotation.x=Math.PI/2;
+  const flame=sp(.28,.28,.7,vMats.glow,sign*.57,-.18,2.99,jet);vehicleParts.jetThrusters.push(flame);
+ }
+ bx(.17,1.28,.83,vMats.red,0,.65,2.29,jet);
+ // Dune buggy: roll cage, real rotating wheels, headlamps.
+ const buggy=new T.Group();craftGroup.add(buggy);vehicleModels.buggy=buggy;
+ bx(1.55,.44,3.0,vMats.orange,0,.34,0,buggy);
+ bx(1.15,.46,.94,vMats.black,0,.69,-.16,buggy);
+ bx(1.44,.18,1.3,vMats.orange,0,1.22,-.25,buggy);
+ for(const x of [-1,1])for(const z of [-1.1,1.1]){
+  const wheel=cy(.51,.31,vMats.black,x*.96,.27,z,buggy);wheel.rotation.z=Math.PI/2;
+  vehicleParts.wheels.push(wheel);
+ }
+ for(const x of [-.5,.5])sp(.14,.13,.13,vMats.glow,x,.46,-1.56,buggy);
+ // Hoverbike: floating magnetic chassis and glowing anti-grav skids.
+ const bike=new T.Group();craftGroup.add(bike);vehicleModels.hoverbike=bike;
+ sp(.48,.36,2.26,vMats.blue,0,.33,0,bike);
+ bx(1.25,.18,1.3,vMats.orange,0,.45,.28,bike);
+ sp(.55,.28,.73,vMats.glass,0,.71,-.75,bike);
+ for(const x of [-.8,.8]){bx(.29,.13,1.9,vMats.black,x,-.1,.45,bike);sp(.25,.14,.75,vMats.glow,x,-.18,.55,bike)}
+ // Hydrofoil boat: pointed hull with cabin and engine, suitable for ocean/coast travel.
+ const boat=new T.Group();craftGroup.add(boat);vehicleModels.boat=boat;
+ sp(1.32,.45,3.4,vMats.blue,0,-.2,0,boat);
+ bx(1.7,.36,2.6,vMats.orange,0,.15,.25,boat);
+ bx(1.6,1.05,1.35,vMats.glass,0,.8,-.3,boat);
+ bx(1.95,.16,1.75,vMats.black,0,1.34,-.3,boat);
+ sp(.44,.33,.9,vMats.black,0,-.04,2.75,boat);
+ const vehicleData={
+  skyrider:{name:'SKYRIDER VTOL',speed:33,lift:9},
+  helicopter:{name:'HAWK H-21',speed:27,lift:10},
+  jet:{name:'STRIKE JET',speed:68,lift:16},
+  buggy:{name:'DUNE BUGGY',speed:32,lift:0},
+  hoverbike:{name:'HOVERBIKE',speed:48,lift:2},
+  boat:{name:'HYDROFOIL',speed:29,lift:0}
+ };
+ let vehicleType=vehicleData[directorState.vehicleType]?directorState.vehicleType:'skyrider';
+ function selectVehicle(type){
+  if(!vehicleData[type])return;
+  vehicleType=type;directorState.vehicleType=type;
+  for(const [key,model] of Object.entries(vehicleModels))model.visible=key===type;
+  beginFlight();
+ }
+ for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;
+
  function flightButtons(){
-   const labels=riding?['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']:['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
+   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
    for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
    q('vxInventory').style.opacity=riding?'.45':'1';
  }
  function beginFlight(){
    directorState.hasVehicle=true;directorState.riding=true;riding=true;
-   craftState.x=T.MathUtils.clamp(loc.x,3,61);craftState.z=T.MathUtils.clamp(loc.z,3,61);
-   craftState.y=Math.max(loc.y+6,surfaceAt(craftState.x,craftState.z)+9);
+   craftState.x=T.MathUtils.clamp(loc.x,3,SIZE-4);craftState.z=T.MathUtils.clamp(loc.z,3,SIZE-4);
+   craftState.y=vehicleType==='buggy'?ground(craftState.x,craftState.z)+1.7:vehicleType==='hoverbike'?ground(craftState.x,craftState.z)+2.3:vehicleType==='boat'?SEA+1.0:Math.max(loc.y+6,surfaceAt(craftState.x,craftState.z)+9);
    craftState.heading=yaw;craftState.speed=0;
    craftGroup.visible=true;
    flightOrbit=0;flightPitch=.17;flightButtons();
-   notify('SKYRIDER online · joystick to steer · UP/DOWN to fly');
+   notify(vehicleData[vehicleType].name+' online · steer with joystick');
  }
  function endFlight(){
    riding=false;directorState.riding=false;flightLift=0;
    loc.set(craftState.x,Math.max(ground(Math.floor(craftState.x),Math.floor(craftState.z))+3,SEA+3),craftState.z);
    yaw=craftState.heading;pitch=.04;velY=0;
-   flightButtons();notify('Exited SKYRIDER · craft remains in the world');
+   flightButtons();notify('Exited '+vehicleData[vehicleType].name+' · craft remains in the world');
  }
+
  function flightTick(dt,t){
-   if(!riding)return;
-   const inputF=T.MathUtils.clamp(move.y,-1,1),inputX=T.MathUtils.clamp(move.x,-1,1);
-   craftState.heading+=inputX*dt*1.6;
-   const desired=inputF*(runPressed?28:17);
-   craftState.speed=T.MathUtils.damp(craftState.speed,desired,1.7,dt);
-   craftState.climb=T.MathUtils.damp(craftState.climb,flightLift*9,2.1,dt);
-   craftState.x=T.MathUtils.clamp(craftState.x-Math.sin(craftState.heading)*craftState.speed*dt,2,62);
-   craftState.z=T.MathUtils.clamp(craftState.z-Math.cos(craftState.heading)*craftState.speed*dt,2,62);
-   craftState.y+=craftState.climb*dt;
-   const floor=surfaceAt(craftState.x,craftState.z)+3.5;
-   craftState.y=T.MathUtils.clamp(craftState.y,floor,64);
-   craftState.bank=T.MathUtils.damp(craftState.bank,inputX*.22,4,dt);
-   craftGroup.position.set(craftState.x,craftState.y+Math.sin(t*4)*.09,craftState.z);
-   craftGroup.rotation.y=craftState.heading;
-   craftBody.rotation.z=craftState.bank;craftBody.rotation.x=T.MathUtils.damp(craftBody.rotation.x,-inputF*.13,4,dt);
-   thruster.intensity=2+Math.abs(craftState.speed)*.15;
-   loc.set(craftState.x,craftState.y+1.8,craftState.z);velY=0;
-   const eyeYaw=craftState.heading+flightOrbit;
-   const wanted=new T.Vector3(craftState.x+Math.sin(eyeYaw)*10,craftState.y+3.3+Math.sin(flightPitch)*6,craftState.z+Math.cos(eyeYaw)*10);
-   camera.position.lerp(wanted,1-Math.exp(-dt*6));
-   camera.lookAt(craftState.x,craftState.y+.4,craftState.z);
+  if(!riding)return;
+  const inputF=T.MathUtils.clamp(move.y,-1,1),inputX=T.MathUtils.clamp(move.x,-1,1);
+  const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat';
+  const vessel=vehicleType==='boat',jetMode=vehicleType==='jet';
+  const vehicle=vehicleData[vehicleType];
+  craftState.heading+=inputX*dt*(jetMode?1.1:land?1.8:1.48);
+  const speedTarget=(jetMode?Math.max(8,inputF*vehicle.speed):(inputF*(runPressed?vehicle.speed*1.4:vehicle.speed)))*(flightLift<0&&land?.35:1);
+  craftState.speed=T.MathUtils.damp(craftState.speed,speedTarget,land?2.5:1.45,dt);
+  craftState.climb=T.MathUtils.damp(craftState.climb,flightLift*vehicle.lift+(jetMode?inputF*3:0),2.3,dt);
+  const nx=T.MathUtils.clamp(craftState.x-Math.sin(craftState.heading)*craftState.speed*dt,2,SIZE-3);
+  const nz=T.MathUtils.clamp(craftState.z-Math.cos(craftState.heading)*craftState.speed*dt,2,SIZE-3);
+  const blockAtFront=get(Math.floor(nx),Math.floor(ground(nx,nz)+2),Math.floor(nz));
+  const blocked=land&&!vessel&&blockAtFront!==0&&blockAtFront!==10&&blockAtFront!==9;
+  if(!blocked){craftState.x=nx;craftState.z=nz}else craftState.speed*=.32;
+  if(land){
+    const expected=vessel?SEA+1.3:ground(craftState.x,craftState.z)+(vehicleType==='buggy'?1.45:2.2);
+    craftState.y=T.MathUtils.damp(craftState.y,expected+(vehicleType==='hoverbike'?Math.sin(t*3)*.14:0),4,dt);
+    if(vessel){const depth=ground(craftState.x,craftState.z);if(depth>SEA+2)craftState.speed*=.88}
+  }else{
+    craftState.y+=craftState.climb*dt;
+    craftState.y=T.MathUtils.clamp(craftState.y,Math.min(61,surfaceAt(craftState.x,craftState.z)+5),150);
+  }
+  craftState.bank=T.MathUtils.damp(craftState.bank,inputX*(jetMode?.27:land?.13:.2),4,dt);
+  craftGroup.position.set(craftState.x,craftState.y+(land?.02:Math.sin(t*4)*.09),craftState.z);
+  craftGroup.rotation.y=craftState.heading;
+  const model=vehicleModels[vehicleType];
+  model.rotation.z=craftState.bank;
+  model.rotation.x=T.MathUtils.damp(model.rotation.x,-inputF*(land?.05:.13),4,dt);
+  if(vehicleType==='helicopter'){vehicleParts.mainRotor.rotation.y+=dt*33;vehicleParts.tailRotor.rotation.x+=dt*38}
+  if(vehicleType==='buggy')for(const w of vehicleParts.wheels)w.rotation.x+=craftState.speed*dt*.7;
+  for(const flame of vehicleParts.jetThrusters)flame.scale.z=.62+Math.sin(t*21)*.22;
+  thruster.intensity=vehicleType==='skyrider'?2+Math.abs(craftState.speed)*.15:0;
+  loc.set(craftState.x,craftState.y+1.8,craftState.z);velY=0;
+  const eyeYaw=craftState.heading+flightOrbit,dist=land?9:jetMode?19:13;
+  const wanted=new T.Vector3(craftState.x+Math.sin(eyeYaw)*dist,craftState.y+3.8+Math.sin(flightPitch)*dist*.58,craftState.z+Math.cos(eyeYaw)*dist);
+  camera.position.lerp(wanted,1-Math.exp(-dt*6));
+  camera.lookAt(craftState.x,craftState.y+(land?1:0),craftState.z);
  }
+
  // Hold down the mining/placement buttons in flight to control collective lift.
  function flightHold(id,v){
    const b=q(id);
@@ -634,7 +742,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    updateDirectorStats();persist();
  });
  flightButtons();
- if(riding){craftGroup.visible=true;loc.set(craftState.x,craftState.y+1.8,craftState.z)}
+ if(riding){craftGroup.visible=true;for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;loc.set(craftState.x,craftState.y+1.8,craftState.z)}
  
  function editBlock(place){
   if(riding)return;
