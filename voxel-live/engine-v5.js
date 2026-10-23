@@ -121,7 +121,7 @@ export async function mount(root,resume=null){
  renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
  renderer.shadowMap.enabled=false;
- const scene=new T.Scene();scene.background=new T.Color(0x82b6d4);scene.fog=new T.FogExp2(0x9abbd1,.009);
+ const scene=new T.Scene();scene.background=new T.Color(0x82b6d4);scene.fog=new T.FogExp2(0x9abbd1,.0065);
  const camera=new T.PerspectiveCamera(73,1,.07,420);
  const hemi=new T.HemisphereLight(0xe5f5ff,0x566858,2.0);scene.add(hemi);
  const sun=new T.DirectionalLight(0xffe2b0,2.6);sun.position.set(-38,70,26);scene.add(sun);
@@ -130,7 +130,7 @@ export async function mount(root,resume=null){
  const savedPosition=resume?.player??(()=>{try{return JSON.parse(localStorage.getItem(saveKey)||'{}').player}catch(e){return null}})();
  loc=new T.Vector3(savedPosition?.x??32.5,savedPosition?.y??ground(32,32)+2.6,savedPosition?.z??32.5);
  // Lightweight autonomous traffic: 14 moving vehicles on city street loops.
- const traffic=[],trafficRoot=new T.Group();scene.add(trafficRoot);
+ const traffic=[],trafficRoot=new T.Group();trafficRoot.visible=!newMapActive;scene.add(trafficRoot);
  const trafficColors=[0x8fdad5,0xe7a46b,0xb3b8d3,0xeadfbd,0x9879a9];
  const trafficMat=trafficColors.map(color=>new T.MeshStandardMaterial({color,metalness:.68,roughness:.26}));
  const trafficGlass=new T.MeshPhysicalMaterial({color:0x719cae,roughness:.14,metalness:.3,transparent:true,opacity:.78,depthWrite:false});
@@ -469,6 +469,11 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  
  const chunkRadius={value:3},chunkQueue=[],chunkPending=new Set();
  function requestChunks(px,pz){
+   if(newMapActive){
+     chunkQueue.length=0;chunkPending.clear();
+     for(const [key,old] of geoGroups){scene.remove(old);old.traverse(o=>o.geometry?.dispose());geoGroups.delete(key)}
+     return;
+   }
    const cx=Math.max(0,Math.min(SIZE/CHUNK-1,Math.floor(px/CHUNK)));
    const cz=Math.max(0,Math.min(SIZE/CHUNK-1,Math.floor(pz/CHUNK)));
    const wanted=new Set(),tasks=[];
@@ -488,6 +493,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
    for(let i=chunkQueue.length-1;i>=0;i--)if(!wanted.has(chunkQueue[i].key)){chunkPending.delete(chunkQueue[i].key);chunkQueue.splice(i,1)}
  }
  function streamChunks(max=2){
+   if(newMapActive)return;
    for(let n=0;n<max&&chunkQueue.length;n++){
      const t=chunkQueue.shift();chunkPending.delete(t.key);
      if(!geoGroups.has(t.key))chunkMesh(t.x,t.z);
@@ -639,6 +645,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  }
  function advancePopulation(dt,t){
    for(const a of citizens){
+     a.g.visible=!newMapActive;
      a.think-=dt;a.bob+=dt;
      if(a.think<=0){
        a.think=1.8+hash(a.id+Math.floor(t),a.id*33)*3;
@@ -807,7 +814,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  function beginFlight(){
    directorState.hasVehicle=true;directorState.riding=true;riding=true;
    craftState.x=T.MathUtils.clamp(loc.x,3,SIZE-4);craftState.z=T.MathUtils.clamp(loc.z,3,SIZE-4);
-   craftState.y=vehicleType==='buggy'?ground(craftState.x,craftState.z)+1.7:vehicleType==='hoverbike'?ground(craftState.x,craftState.z)+2.3:vehicleType==='boat'?SEA+1.0:Math.max(loc.y+6,surfaceAt(craftState.x,craftState.z)+9);
+   const surface=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);craftState.y=vehicleType==='buggy'?surface+1.7:vehicleType==='hoverbike'?surface+2.3:vehicleType==='boat'?SEA+1.0:Math.max(loc.y+6,surface+9);
    craftState.heading=yaw;craftState.speed=0;
    craftGroup.visible=true;
    flightOrbit=0;flightPitch=.17;flightButtons();
@@ -815,7 +822,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  }
  function endFlight(){
    riding=false;directorState.riding=false;flightLift=0;
-   loc.set(craftState.x,Math.max(ground(Math.floor(craftState.x),Math.floor(craftState.z))+3,SEA+3),craftState.z);
+   loc.set(craftState.x,(newMapActive?coastH(craftState.x,craftState.z):Math.max(ground(Math.floor(craftState.x),Math.floor(craftState.z)),SEA))+2.3,craftState.z);
    yaw=craftState.heading;pitch=.04;velY=0;
    flightButtons();notify('Exited '+vehicleData[vehicleType].name+' · craft remains in the world');
  }
@@ -832,19 +839,19 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
   craftState.climb=T.MathUtils.damp(craftState.climb,flightLift*vehicle.lift+(jetMode?inputF*3:0),2.3,dt);
   const nx=T.MathUtils.clamp(craftState.x-Math.sin(craftState.heading)*craftState.speed*dt,2,SIZE-3);
   const nz=T.MathUtils.clamp(craftState.z-Math.cos(craftState.heading)*craftState.speed*dt,2,SIZE-3);
-  const blockAtFront=get(Math.floor(nx),Math.floor(ground(nx,nz)+2),Math.floor(nz));
+  const blockAtFront=newMapActive?0:get(Math.floor(nx),Math.floor(ground(nx,nz)+2),Math.floor(nz));
   const blocked=land&&!vessel&&blockAtFront!==0&&blockAtFront!==10&&blockAtFront!==9;
   if(!blocked){craftState.x=nx;craftState.z=nz}else craftState.speed*=.32;
   if(land){
-    const expected=vessel?SEA+1.3:ground(craftState.x,craftState.z)+(vehicleType==='buggy'?1.45:2.2);
+    const expected=vessel?SEA+1.3:(newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z))+(vehicleType==='buggy'?1.45:2.2);
     if(vehicleType!=='boat'&&flightLift>0&&hopTime<=0)hopTime=1.1;
     hopTime=Math.max(0,hopTime-dt);
     const jump=hopTime>0?Math.sin((1.1-hopTime)/1.1*Math.PI)*(vehicleType==='buggy'?2.3:.9):0;
     craftState.y=T.MathUtils.damp(craftState.y,expected+jump+(vehicleType==='hoverbike'?Math.sin(t*3)*.14:0),7,dt);
-    if(vessel){const depth=ground(craftState.x,craftState.z);if(depth>SEA+2)craftState.speed*=.88}
+    if(vessel){const depth=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);if(depth>SEA+2)craftState.speed*=.88}
   }else{
     craftState.y+=craftState.climb*dt;
-    craftState.y=T.MathUtils.clamp(craftState.y,Math.min(61,surfaceAt(craftState.x,craftState.z)+5),150);
+    craftState.y=T.MathUtils.clamp(craftState.y,Math.min(61,(newMapActive?coastH(craftState.x,craftState.z):surfaceAt(craftState.x,craftState.z))+5),150);
   }
   craftState.bank=T.MathUtils.damp(craftState.bank,inputX*(jetMode?.27:land?.13:.2),4,dt);
   craftGroup.position.set(craftState.x,craftState.y+(land?.02:Math.sin(t*4)*.09),craftState.z);
@@ -944,6 +951,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  }
  refreshHotbar();
  function canOccupy(x,y,z){
+  if(newMapActive)return x>.7&&x<SIZE-.7&&z>.7&&z<SIZE-.7;
   for(const ox of [-.27,.27])for(const oz of [-.27,.27]){
     const bx=Math.floor(x+ox),bz=Math.floor(z+oz);
     for(const dy of [-1.46,-.46]){const by=Math.floor(y+dy);if(solid(get(bx,by,bz)))return false}
@@ -1117,7 +1125,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  if(riding){craftGroup.visible=true;for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;loc.set(craftState.x,craftState.y+1.8,craftState.z)}
  
  function editBlock(place){
-  if(riding)return;
+  if(riding||newMapActive){if(newMapActive)notify('Switch to VOXEL LEGACY to mine and build blocks');return;}
   const target=castBlock();if(!target){notify('Aim at a block within 7 metres');return}
   const [x,y,z]=place?(target.adj||[]):target.pos;
   if(x===undefined||!inb(x,y,z)){notify('Cannot place here');return}
@@ -1136,7 +1144,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=6.8;grounded=false}};
  q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
- q('vxReset').onclick=()=>{if(riding)endFlight();loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
+ q('vxReset').onclick=()=>{if(riding)endFlight();if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);else loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
  q('vxWeather').onchange=e=>{
   weather=e.target.value;const storm=weather==='rain',night=weather==='night';
   sun.intensity=night?.12:storm?.85:2.6;hemi.intensity=night?.7:storm?1.3:2;
@@ -1201,14 +1209,18 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   velY=Math.max(-24,velY-18.8*dt);
   if(canOccupy(loc.x,loc.y+velY*dt,loc.z)){loc.y+=velY*dt;grounded=false}
   else{if(velY<=0)grounded=true;velY=0}
-  if(loc.y<2){loc.set(32.5,ground(32,32)+3,32.5);velY=0}
+  if(newMapActive){
+    const footY=coastH(loc.x,loc.z)+1.84;
+    if(loc.y<footY){loc.y=footY;velY=0;grounded=true}
+   }else if(loc.y<2){loc.set(32.5,ground(32,32)+3,32.5);velY=0}
   camera.position.copy(loc);camera.rotation.order='YXZ';camera.rotation.y=-yaw;camera.rotation.x=pitch;
 
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);animateTraffic(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);animateTraffic(dt,t);if(newMapActive)animateCoast(dt,t);
   for(const a of animals){
+    a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
     a.g.position.set(xx,ground(Math.round(xx),Math.round(zz))+1,zz);
     a.g.rotation.y=t*.24+a.phase;
@@ -1219,7 +1231,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   for(const cloud of clouds)if(cloud.position.x>285)cloud.position.x=-40;
   rain.visible=weather==='rain';rain.position.set(loc.x,loc.y+1,loc.z);
   if(weather==='rain'){const a=rainGeo.attributes.position;for(let i=0;i<rainCount;i++){let y=a.array[3*i+1]-dt*25;if(y<0)y+=30;a.array[3*i+1]=y}a.needsUpdate=true}
-  currentTarget=riding?null:castBlock();
+  currentTarget=riding||newMapActive?null:castBlock();
   reticle.visible=!!currentTarget;
   if(currentTarget)reticle.position.set(currentTarget.pos[0]+.5,currentTarget.pos[1]+.5,currentTarget.pos[2]+.5);
   renderer.render(scene,camera);
@@ -1228,12 +1240,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
     const rate=Math.round(frames*1000/(now-fpsAt));frames=0;fpsAt=now;
     text('vxFps',rate+' FPS · '+quality.toUpperCase());
     text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z)+' · CH '+geoGroups.size);
-    text('vxTarget',riding?'SKYRIDER · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
+    text('vxTarget',riding?vehicleData[vehicleType].name+' · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':newMapActive?'CRESCENT COAST · Scenic roads · Open Director for vehicles':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
     if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.72){renderer.setPixelRatio(Math.max(.72,renderer.getPixelRatio()-.1));if(chunkRadius.value>2)chunkRadius.value--;resize();adaptAt=now}
   }
   if(now-lastCivilWork>7500){lastCivilWork=now;buildersProgress();updateDirectorStats()}
   if(now-saveAt>5000){saveAt=now;persist()}
-  if(!frame.streamAt||now-frame.streamAt>400){frame.streamAt=now;requestChunks(loc.x,loc.z)}streamChunks(mobile?1:2);
+  if(!newMapActive){if(!frame.streamAt||now-frame.streamAt>400){frame.streamAt=now;requestChunks(loc.x,loc.z)}streamChunks(mobile?1:2)}
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
  requestAnimationFrame(frame);
