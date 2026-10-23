@@ -1926,6 +1926,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const spaceDiscoveries=new Set(Array.isArray(directorState.spaceDiscoveries)?directorState.spaceDiscoveries:[]);
  const spaceWaypoints=[
    {id:'cathedral',name:'THE CHOIR OF ORBITS',p:[-155,75,-681],note:'A rotating orbital cathedral with concentric mechanical rings and relic energy pylons'},
+  {id:'voidray',name:'THE CELESTIAL RAY',p:[-270,153,-925],note:'A living bioluminescent manta whose wings ripple through vacuum, trailed by eight luminous sensory filaments'},
    {id:'monolith',name:'THE SILENT ARRAY',p:[-235,22,-380],note:'A derelict communications array broadcasting prime-number signals from an extinct civilisation'},
    {id:'crystal',name:'CRYSTAL REEF',p:[355,-55,-515],note:'Violet crystalline growths on a shattered moon fragment, vibrating in perfect synchrony'},
    {id:'giant',name:'AEON · THE RINGED GIANT',p:[100,95,-844],note:'An immense blue-violet giant with layered rings and turbulent atmosphere'},
@@ -2474,6 +2475,114 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    glowSprite(explorerBody,0x7ddfff,x,y,z+.15,1.1,.61);
  }
 
+
+ // V13 FIRST CONTACT: a living, animated bioluminescent void manta.
+ // Dynamic fin lattice (1.5k vertices) instead of static primitive shapes or costly skinned characters.
+ const livingRay=new T.Group();
+ livingRay.position.set(-310,142,-1190);spaceRoot.add(livingRay);
+ const mantaBody=spaceBall(livingRay,1,spaceDark,0,0,0,32);
+ mantaBody.scale.set(19,9,72);
+ const mantaCrest=spaceBall(livingRay,1,spaceMat(0x46668e,.3,.76),0,7,-37,22);
+ mantaCrest.scale.set(12,5,35);
+ const mantaCore=spaceBall(livingRay,9,new T.MeshBasicMaterial({color:0x79e9ff,toneMapped:false}),0,-5,7,20);
+ mantaCore.scale.set(1,.37,1.9);
+ glowSprite(livingRay,0x62c8ff,0,0,0,125,.48);
+ const mantaFinMat=new T.ShaderMaterial({
+   transparent:true,depthWrite:false,side:T.DoubleSide,
+   uniforms:{time:{value:0},glow:{value:new T.Color('#53cffa')},purple:{value:new T.Color('#bb63ef')}},
+   vertexShader:`varying vec2 vUv;varying vec3 wp;
+      void main(){vUv=uv;wp=(modelMatrix*vec4(position,1.)).xyz;
+        gl_Position=projectionMatrix*viewMatrix*vec4(wp,1.);}`,
+   fragmentShader:`varying vec2 vUv;varying vec3 wp;
+      uniform float time;uniform vec3 glow,purple;
+      void main(){
+       float span=abs(vUv.x*2.-1.);
+       float membrane=sin(vUv.y*11.+span*18.-time*.45)*.05;
+       float trailing=pow(max(0.,vUv.y-.35),2.7);
+       float veins=pow(max(0.,cos(vUv.x*47.+vUv.y*10.)),19.)*.27;
+       float inner=1.-smoothstep(.08,.88,span);
+       float edge=pow(1.-min(min(vUv.y,1.-vUv.y),.08)/.08,3.);
+       vec3 base=mix(vec3(.015,.043,.09),purple*.43,inner);
+       base=mix(base,glow,.1+.55*veins+.55*edge+.12*sin(time*1.2+span*8.));
+       base+=purple*trailing*.3+glow*membrane;
+       float alpha=.84-.25*span+.16*edge;
+       gl_FragColor=vec4(base*1.42,alpha);
+      }`
+ });
+ const mantaSegX=64,mantaSegY=20,mantaVertices=new Float32Array((mantaSegX+1)*(mantaSegY+1)*3);
+ const mantaUV=[],mantaIndices=[];
+ function mantaVert(u,v,time,out){
+   const span=u*2-1,absSpan=Math.abs(span);
+   const spread=128;
+   const x=span*spread;
+   const leading=-75+absSpan*37;
+   const rear=51+(1-absSpan)*41;
+   const z=T.MathUtils.lerp(leading,rear,v);
+   const ripple=Math.sin(time*.64+absSpan*5.9-v*1.35)*Math.pow(absSpan,1.8)*27;
+   const edgeRoll=Math.sin(time*.89+v*7.1+span*3.)*absSpan*3.3;
+   out.set(x,Math.sin(v*Math.PI)*3+ripple+edgeRoll,z);
+   return out;
+ }
+ for(let i=0;i<=mantaSegX;i++)for(let j=0;j<=mantaSegY;j++){
+   const u=i/mantaSegX,v=j/mantaSegY;
+   mantaUV.push(u,v);const n=(i*(mantaSegY+1)+j)*3,xyz=mantaVert(u,v,0,new T.Vector3());
+   mantaVertices[n]=xyz.x;mantaVertices[n+1]=xyz.y;mantaVertices[n+2]=xyz.z;
+   if(i<mantaSegX&&j<mantaSegY){
+     const a=i*(mantaSegY+1)+j,b=(i+1)*(mantaSegY+1)+j;
+     mantaIndices.push(a,a+1,b,a+1,b+1,b);
+   }
+ }
+ const mantaGeometry=new T.BufferGeometry();
+ mantaGeometry.setAttribute('position',new T.BufferAttribute(mantaVertices,3).setUsage(T.DynamicDrawUsage));
+ mantaGeometry.setAttribute('uv',new T.Float32BufferAttribute(mantaUV,2));
+ mantaGeometry.setIndex(mantaIndices);
+ const mantaWings=new T.Mesh(mantaGeometry,mantaFinMat);mantaWings.frustumCulled=false;livingRay.add(mantaWings);
+ const mantaTipGlow=[
+   glowSprite(livingRay,0x7fddff,-128,0,23,38,.83),
+   glowSprite(livingRay,0xc183ff,128,0,23,38,.83)
+ ];
+ const mantaEyeMat=new T.MeshBasicMaterial({color:0xcbe9ff,toneMapped:false});
+ for(const sign of [-1,1]){
+   const eye=spaceBall(livingRay,3.2,mantaEyeMat,sign*8,5,-58,14);
+   glowSprite(livingRay,0x7bf3ff,sign*8,5,-59,22,.62);
+   const horn=spaceMesh(livingRay,new T.ConeGeometry(3,28,9),spaceTrim,sign*12,15,-46);
+   horn.rotation.x=.22;horn.rotation.z=sign*.48;
+ }
+ const mantaTails=[];
+ for(let i=0;i<8;i++){
+   const vertices=new Float32Array(23*3),geometry=new T.BufferGeometry();
+   geometry.setAttribute('position',new T.BufferAttribute(vertices,3).setUsage(T.DynamicDrawUsage));
+   const material=new T.LineBasicMaterial({color:i%2?0x9879ff:0x72eaff,transparent:true,opacity:.46+i*.042,blending:T.AdditiveBlending,depthWrite:false});
+   const line=new T.Line(geometry,material);livingRay.add(line);
+   mantaTails.push({geometry,vertices,length:65+hash(i,48)*105,index:i});
+ }
+ const mantaP=new T.Vector3();
+ function animateLivingRay(dt,t){
+   mantaFinMat.uniforms.time.value=t;
+   livingRay.position.set(-310+Math.sin(t*.055)*38,142+Math.sin(t*.13)*17,-1190+Math.cos(t*.05)*26);
+   livingRay.rotation.y=Math.sin(t*.09)*.18;
+   livingRay.rotation.z=Math.sin(t*.22)*.036;
+   const points=mantaGeometry.attributes.position.array;
+   for(let i=0;i<=mantaSegX;i++)for(let j=0;j<=mantaSegY;j++){
+     mantaVert(i/mantaSegX,j/mantaSegY,t,mantaP);
+     const a=(i*(mantaSegY+1)+j)*3;points[a]=mantaP.x;points[a+1]=mantaP.y;points[a+2]=mantaP.z;
+   }
+   mantaGeometry.attributes.position.needsUpdate=true;
+   mantaVert(0,.65,t,mantaP);mantaTipGlow[0].position.copy(mantaP);
+   mantaVert(1,.65,t,mantaP);mantaTipGlow[1].position.copy(mantaP);
+   for(const tail of mantaTails){
+     const side=(tail.index-3.5)*2.4;
+     for(let j=0;j<23;j++){
+       const k=j/22;
+       const x=side+Math.sin(t*.34+tail.index*2.19+k*8)*k*k*12;
+       const y=-1+Math.cos(t*.52+tail.index*.7+k*11)*k*k*8;
+       const z=44+k*tail.length;
+       tail.vertices[j*3]=x;tail.vertices[j*3+1]=y;tail.vertices[j*3+2]=z;
+     }
+     tail.geometry.attributes.position.needsUpdate=true;
+   }
+ }
+
  // The Silent Array — orbiting relic and signal beams.
  const arraySite=new T.Group();arraySite.position.set(-235,15,-480);spaceRoot.add(arraySite);
  const ancientMetal=spaceMat(0x253a59,.36,.68),ancientGlow=new T.MeshBasicMaterial({color:0x9c72ff,toneMapped:false});
@@ -2990,6 +3099,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    for(const n of cathedralRings)n.ring.rotation.z+=dt*n.spin;
    cathedral.rotation.y=Math.sin(t*.006)*.05;
    animateIonTrails(t,st.boost);
+   if(shipLocation.distanceTo(livingRay.position)<2200){livingRay.visible=true;animateLivingRay(dt,t)}
+   else livingRay.visible=false;
    discMat.uniforms.time.value=t;accretion.rotation.z=t*.065;
    blackOrbit.rotation.y=t*.22;
    signalRing.rotation.z+=dt*.07;
@@ -3457,6 +3568,7 @@ directorPanel.addEventListener('click',e=>{
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
         overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
+        mantaGeometry.dispose();mantaFinMat.dispose();for(const l of mantaTails){l.geometry.dispose();l.geometry.attributes.position.array=null}
         ionGeometry.dispose();ionShader.dispose();
         for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
         for(const n of volumetricClouds){n.sphere.geometry.dispose();n.shader.dispose()}
