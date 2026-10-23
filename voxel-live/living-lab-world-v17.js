@@ -479,5 +479,5 @@ export function mountLivingWorld3D(root, sim) {
     for(const tex of textures)tex.dispose?.();
     if(root.__livingLab3D===hook)delete root.__livingLab3D;
   }
-  return {get active(){return active},setActive,dispose,focusSector,overview};
+  return {get active(){return active},get renderedFrames(){return frameCount},setActive,dispose,focusSector,overview};
 }
