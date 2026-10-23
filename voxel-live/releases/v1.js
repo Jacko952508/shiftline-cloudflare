@@ -1,1 +1,1 @@
-export const release={version:1,engineCommit:'aaa5fd002c0e30f7dee3fb656c8f63b517c1b135',engineFile:'engine-v1.js',message:'Voxel Forge 1.0: handcrafted coast, mining, placing, inventory, day/night and mobile controls'};
+export const release={version:1,engineCommit:'1e41e1bc033461c61e709c3b3839d19575198448',engineFile:'engine-v1.js',message:'Coastal sandbox, mining, creative building and mobile controls'};
