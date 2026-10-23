@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 16,
+  "latest": 17,
   "releases": [
     {
       "version": 11,
@@ -31,9 +31,14 @@
       "version": 16,
       "engineCommit": "0f1aafcded90a024f3bd349d4c68de748367f9a6",
       "engineFile": "engine-v16.js"
+    },
+    {
+      "version": 17,
+      "engineCommit": "0a5de39398dcd2f89182d196431ba0c389609fa9",
+      "engineFile": "engine-v17.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
   "sourceDir": "voxel-live",
-  "notes": "V16 Living Lab simulation integrated with V15 iPhone-safe Three.js engine. Poll CDN release index. World experiment mutation events: voxel-live/living-lab-events.json on nimbus-chat-live. Existing viewer requires V16-capable loader."
+  "notes": "V17 Living World 3D: exclusive Three.js terrain and autonomous civilisation on shared V15 WebGL renderer. Optional V16 atlas, old ASTRAEUS preserved. Existing chat widgets require V17-aware loader."
 }
