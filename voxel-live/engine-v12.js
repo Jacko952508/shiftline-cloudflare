@@ -2309,6 +2309,131 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
  }
  stage.appendChild(spaceControls);
+
+ // V12 / OVERDRIVE: actual multi-pass image-space bloom, spectral lens response and filmic display.
+ // 1 scene target + 1 low-resolution glow target + 2 full-screen passes, independent from terrestrial worlds.
+ // No addon imports, so it survives CDN or ES module dependency resolution issues inside the ChatGPT webview.
+ const overdrive={
+   enabled:directorState.overdrivePost!==false,
+   failed:false,mode:directorState.overdriveQuality||'adaptive',
+   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,renderPasses:0
+ };
+ const postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
+ const postTriangle=new T.BufferGeometry();
+ postTriangle.setAttribute('position',new T.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
+ const postUvVertex=`varying vec2 uv;void main(){uv=position.xy*.5+.5;gl_Position=vec4(position.xy,0.,1.);}`;
+ const bloomExtract=new T.ShaderMaterial({
+   depthTest:false,depthWrite:false,toneMapped:false,
+   uniforms:{source:{value:null},texel:{value:new T.Vector2(1/720,1/480)},threshold:{value:.56},spread:{value:1.9}},
+   vertexShader:postUvVertex,
+   fragmentShader:`varying vec2 uv;
+    uniform sampler2D source;uniform vec2 texel;uniform float threshold,spread;
+    vec3 pick(vec2 offset){
+      vec3 c=texture2D(source,uv+offset*texel*spread).rgb;
+      float light=max(max(c.r,c.g),c.b);
+      float mask=smoothstep(threshold-.12,threshold+.25,light);
+      return c*mask;
+    }
+    void main(){
+      vec3 sum=pick(vec2(0.,0.))*.2;
+      sum+=pick(vec2(1.,0.))*.10+pick(vec2(-1.,0.))*.10;
+      sum+=pick(vec2(0.,1.))*.10+pick(vec2(0.,-1.))*.10;
+      sum+=pick(vec2(1.,1.))*.075+pick(vec2(-1.,-1.))*.075;
+      sum+=pick(vec2(-1.,1.))*.075+pick(vec2(1.,-1.))*.075;
+      sum+=pick(vec2(2.,0.))*.025+pick(vec2(-2.,0.))*.025;
+      sum+=pick(vec2(0.,2.))*.025+pick(vec2(0.,-2.))*.025;
+      gl_FragColor=vec4(sum,1.);
+    }`
+ });
+ const spaceFinalMat=new T.ShaderMaterial({
+   depthTest:false,depthWrite:false,toneMapped:false,
+   uniforms:{
+     beauty:{value:null},glow:{value:null},time:{value:0},
+     intensity:{value:mobile?.94:1.25},viewport:{value:new T.Vector2(1,1)}
+   },
+   vertexShader:postUvVertex,
+   fragmentShader:`varying vec2 uv;
+    uniform sampler2D beauty,glow;
+    uniform float time,intensity;
+    uniform vec2 viewport;
+    void main(){
+      vec2 p=uv-.5;
+      float r2=dot(p,p);
+      vec2 shift=p*.0021*(.38+r2*2.);
+      float R=texture2D(beauty,uv+shift).r;
+      float G=texture2D(beauty,uv).g;
+      float B=texture2D(beauty,uv-shift).b;
+      vec3 color=vec3(R,G,B);
+      vec3 halo=texture2D(glow,uv).rgb*intensity;
+      color+=halo*vec3(1.03,.98,1.12);
+      // Filmic shoulder + shadow lift, preserving saturation in high energy areas.
+      color=color*(1.12+.11*color)/(1.+.15*color);
+      color+=vec3(.004,.007,.017);
+      float vignette=1.-smoothstep(.11,.81,r2)*.32;
+      color*=vignette;
+      float grain=fract(sin(dot(gl_FragCoord.xy+time*32.,vec2(12.9898,78.233)))*43758.5453);
+      color+=(grain-.5)*.008;
+      gl_FragColor=vec4(color,1.);
+      #include <colorspace_fragment>
+    }`
+ });
+ const postQuadExtract=new T.Mesh(postTriangle,bloomExtract),postQuadFinal=new T.Mesh(postTriangle,spaceFinalMat);
+ const postStage1=new T.Scene(),postStage2=new T.Scene();
+ postStage1.add(postQuadExtract);postStage2.add(postQuadFinal);
+ function setupSpacePost(){
+   if(overdrive.failed||!overdrive.enabled)return false;
+   const size=renderer.getDrawingBufferSize(new T.Vector2());
+   const w=Math.max(16,Math.min(2048,Math.floor(size.x))),h=Math.max(16,Math.min(2048,Math.floor(size.y)));
+   if(overdrive.beauty&&overdrive.w===w&&overdrive.h===h)return true;
+   overdrive.beauty?.dispose();overdrive.blur?.dispose();
+   overdrive.w=w;overdrive.h=h;
+   try{
+     overdrive.beauty=new T.WebGLRenderTarget(w,h,{depthBuffer:true,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:T.UnsignedByteType});
+     const glowW=Math.max(36,Math.round(w*overdrive.bloomScale));
+     const glowH=Math.max(36,Math.round(h*overdrive.bloomScale));
+     overdrive.blur=new T.WebGLRenderTarget(glowW,glowH,{depthBuffer:false,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:T.UnsignedByteType});
+     bloomExtract.uniforms.source.value=overdrive.beauty.texture;
+     bloomExtract.uniforms.texel.value.set(1/w,1/h);
+     spaceFinalMat.uniforms.beauty.value=overdrive.beauty.texture;
+     spaceFinalMat.uniforms.glow.value=overdrive.blur.texture;
+     spaceFinalMat.uniforms.viewport.value.set(w,h);
+     return true;
+   }catch(e){
+     console.warn('V12 bloom target allocation fallback',e);
+     overdrive.failed=true;overdrive.beauty?.dispose();overdrive.blur?.dispose();return false;
+   }
+ }
+ function spaceRenderOverdrive(t){
+   if(!setupSpacePost()){renderer.render(scene,camera);return}
+   const original=renderer.getRenderTarget();
+   try{
+     renderer.setRenderTarget(overdrive.beauty);
+     renderer.clear();renderer.render(scene,camera);
+     bloomExtract.uniforms.spread.value=2.15;
+     renderer.setRenderTarget(overdrive.blur);
+     renderer.clear();renderer.render(postStage1,postCamera);
+     renderer.setRenderTarget(original);
+     spaceFinalMat.uniforms.time.value=t;
+     renderer.render(postStage2,postCamera);
+     overdrive.renderPasses++;
+   }catch(e){
+     overdrive.failed=true;
+     console.warn('V12 post-processing disabled after render error',e);
+     renderer.setRenderTarget(original);renderer.render(scene,camera);
+   }finally{
+     renderer.setRenderTarget(original);
+   }
+ }
+ function setOverdriveQuality(mode){
+   if(!['adaptive','cinema','battery'].includes(mode))return;
+   overdrive.mode=mode;directorState.overdriveQuality=mode;
+   overdrive.bloomScale=mode==='cinema'?(mobile?.36:.5):mode==='battery'?.14:(mobile?.22:.37);
+   overdrive.beauty?.dispose();overdrive.blur?.dispose();
+   overdrive.beauty=null;overdrive.blur=null;overdrive.w=0;
+   spaceFinalMat.uniforms.intensity.value=mode==='cinema'?1.32:mode==='battery'?.76:1.02;
+   spaceNotify('V12 RENDERER · '+mode.toUpperCase()+' · BLOOM + FILMIC TONING',3);
+ }
+
  const starNav=document.createElement('div');
  starNav.style.cssText='position:absolute;z-index:8;left:9px;right:9px;top:101px;max-height:57%;overflow:auto;overscroll-behavior:contain;background:linear-gradient(155deg,#061a2df5,#18264eea);border:1px solid #8bcefaaa;border-radius:12px;color:#e9faff;display:none;padding:11px;font:11px/1.4 system-ui;box-shadow:0 10px 28px #000b';
  starNav.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><b style="letter-spacing:1.5px">✧ ASTRAEUS · EXPLORATION INDEX</b><button data-n="close">✕</button></div><p style="color:#b7cde5;margin:6px 0 9px">Select a destination to begin a guided warp. Scan interesting objects to log discoveries.</p><div data-routes style="display:grid;grid-template-columns:1fr;gap:5px"></div><div data-count style="margin-top:10px;color:#8dd5ec"></div>';
@@ -2544,7 +2669,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      }
    }
    // Render star and ship at full quality, never the distant terrestrial worlds.
-   renderer.render(scene,camera);
+   spaceRenderOverdrive(t);
  }
 
  const directorPanel=document.createElement('div');
@@ -2963,6 +3088,7 @@ directorPanel.addEventListener('click',e=>{
  return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
+        overdrive.beauty?.dispose();overdrive.blur?.dispose();postTriangle.dispose();bloomExtract.dispose();spaceFinalMat.dispose();
         warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();
         const sg=new Set(),sm=new Set();
         spaceRoot.traverse(o=>{if(o.geometry)sg.add(o.geometry);
