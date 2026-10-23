@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V11 · ASTRAEUS · SPACE EXPLORATION';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V12 · ASTRAEUS OVERDRIVE · TRUE BLOOM · NEBULA';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -2514,11 +2514,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  // Space exploration UI is touch-first and separate from terrestrial builder controls.
  const spaceStatus=document.createElement('div');
  spaceStatus.style.cssText='position:absolute;z-index:5;top:65px;left:9px;right:9px;pointer-events:none;color:#e4f8ff;display:none;font:11px/1.5 ui-monospace,monospace;text-shadow:0 1px 8px #001420';
- spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V11</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
+ spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V12 OVERDRIVE</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
  stage.appendChild(spaceStatus);
  const spaceControls=document.createElement('div');
  spaceControls.style.cssText='position:absolute;bottom:8px;right:7px;z-index:6;display:none;pointer-events:auto;width:163px;font:700 11px system-ui;color:#fff;touch-action:manipulation';
- spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="reveal">✧ V12 REVEAL</button><button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button><button data-space="director">✦ DIRECTOR</button><button data-space="world">🌍 WORLD</button><button data-space="nav">🪐 SIGHTS</button></div>';
+ spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="reveal">✧ V12 REVEAL</button><button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button><button data-space="effects">◉ POST FX</button><button data-space="director">✦ DIRECTOR</button><button data-space="world">🌍 WORLD</button><button data-space="nav">🪐 SIGHTS</button></div>';
  for(const button of spaceControls.querySelectorAll('button')){
    button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
  }
@@ -2733,6 +2733,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      directorState.spaceCamera=modes[(i+1)%modes.length];
      spaceNotify('CAMERA MODE · '+directorState.spaceCamera.toUpperCase(),2.1);
    }
+   if(action==='effects'){
+     overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
+     spaceNotify('V12 POST PROCESSING '+(overdrive.enabled?'ENABLED — multi-pass bloom':'OFF — direct renderer'),3.2);
+   }
    if(action==='graphics'){
      const modes=['adaptive','cinema','battery'];
      const i=modes.indexOf(overdrive.mode);
@@ -2778,8 +2782,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    q('vxHotbar').style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
    const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='.68';
-   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V11 · ASTRAEUS / THE CELESTIAL EXPANSE';
-   spaceNotify(auto?'ASTRAEUS V11 · NEW WORLD LOADED · left thumb to fly, SIGHTS to explore':'ASTRAEUS · WELCOME BACK TO THE EXPANSE',5.8);
+   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V12 · OVERDRIVE · ORBITAL CATHEDRAL';
+   spaceNotify(auto?'OVERDRIVE V12 · NEW LIGHTING + COSMIC EFFECTS · press V12 REVEAL':'OVERDRIVE V12 · enhanced space visuals · press V12 REVEAL',5.8);
  }
  function leaveSpaceWorld(silent=false){
    if(!spaceMode)return;
@@ -2903,10 +2907,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      lastSpaceHUD=performance.now();
      const nearest=spaceWaypoints.map(w=>({w,dist:shipLocation.distanceTo(new T.Vector3(...w.p))})).sort((a,b)=>a.dist-b.dist)[0];
      const count=spaceDiscoveries.size;
-     spaceStatus.querySelector('[data-readout]').textContent=st.warp?'HYPERSPACE · '+Math.round(st.speed)+' KM/S':Math.round(Math.abs(st.speed))+' KM/S · '+(st.boost?'BOOST':'CRUISE');
+     spaceStatus.querySelector('[data-readout]').textContent=st.warp?'HYPERSPACE · '+Math.round(st.speed)+' KM/S':Math.round(Math.abs(st.speed))+' KM/S · '+(st.boost?'BOOST':'CRUISE')+
+       ' · '+(overdrive.failed?'FX FALLBACK':overdrive.enabled?'FX '+overdrive.mode.toUpperCase():'FX OFF');
      spaceStatus.querySelector('[data-telemetry]').textContent=
         'DISCOVERIES '+count+'/8  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
-        '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM';
+        '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM'+
+        ' · '+renderer.info.render.calls+' DRAWS';
      if(universeToastUntil<performance.now())universeToast.style.display='none';
      spaceFrameCount+=1;
      const rate=Math.round(1000/Math.max(10,adaptive.frameMs));
