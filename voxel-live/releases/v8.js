@@ -1,1 +1,1 @@
-export const release={version:8,engineCommit:'7ecd100df77ad0b0eb009bcbe78a9cd517e87a1f',engineFile:'engine-v8.js',message:'PHYSICS + LIVING CITY: Rapier rigid bodies, crates, vehicle suspension, NPC routines, businesses, delivery trucks and persistent economy'};
+export const release={version:8,engineCommit:'961504747d0a3684c19962f72fbe3ae817800f90',engineFile:'engine-v8.js',message:'PHYSICS + LIVING CITY: Rapier rigid bodies, crates, vehicle suspension, NPC routines, businesses, delivery trucks and persistent economy | Boot recovery guard enabled'};
