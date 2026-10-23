@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V7 · VISTA REMASTER · LIGHTHOUSE · NEW SCENERY';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V10 · REALITY EXPERIMENTS · PORTALS · SIMULATION';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -780,10 +780,14 @@ for(let i=0;i<11;i++){
    portalCamera.position.set(portalTarget.x,coastH(portalTarget.x,portalTarget.z)+8,portalTarget.z);
    portalCamera.lookAt(172,coastH(172,160)+12,160);
    portalA.gate.visible=portalB.gate.visible=false;
-   renderer.setRenderTarget(portalRT);
-   renderer.clear();renderer.render(scene,portalCamera);
-   renderer.setRenderTarget(null);
-   portalA.gate.visible=portalB.gate.visible=true;
+   const previousTarget=renderer.getRenderTarget();
+   try{
+     renderer.setRenderTarget(portalRT);
+     renderer.clear();renderer.render(scene,portalCamera);
+   }finally{
+     renderer.setRenderTarget(previousTarget);
+     portalA.gate.visible=portalB.gate.visible=true;
+   }
  }
  const fractureRoot=new T.Group();smoothWorld.add(fractureRoot);
  const pavilion={x:117,z:145,y:coastH(117,145),pieces:[],collapsed:!!directorState.demolished,age:0};
@@ -1602,6 +1606,22 @@ void main(){
      const el=q('vxWeather');el.value=type;el.dispatchEvent(new Event('change'));
    }else if(op==='traffic.control'){
      directorState.trafficPaused=!!args.paused;
+   }else if(op==='portal.travel'){
+     const dest=String(args.destination||'');
+     if(!['marina','lighthouse'].includes(dest))throw Error('Valid portal destinations: marina, lighthouse');
+     if(!newMapActive)setMap('crescent');
+     teleportPortal(dest==='marina'?portalTarget:{x:94,z:150});
+   }else if(op==='gravity.set'){
+     directorState.lowGravity=!!args.low;
+   }else if(op==='structure.fracture'){
+     const state=String(args.state||'collapse');
+     if(!['collapse','rebuild'].includes(state))throw Error('Structure state must be collapse or rebuild');
+     if(state==='collapse')fracturePavilion();else resetPavilion();
+   }else if(op==='storm.front'){
+     stormFrontEnabled=!!args.enabled;directorState.stormFrontEnabled=stormFrontEnabled;
+   }else if(op==='physics.impulse'){
+     const x=num('x',4,251),z=num('z',4,251),power=num('power',1,40);
+     physicsImpulse(x,z,power);
    }else{
      throw Error('Unknown operation: '+op);
    }
