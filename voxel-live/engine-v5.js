@@ -276,7 +276,7 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
 const glassFront=new T.MeshPhysicalMaterial({color:0x9fd5e5,roughness:.07,metalness:.16,transparent:true,opacity:.66,depthWrite:false});
 const whiteWalls=coastMaterial(0xece6da,.71),warmWalls=coastMaterial(0xb09d89,.84),roofMat=coastMaterial(0x42474f,.52,.2);
-const promenadeBuildings=[];
+const promenadeBuildings=[],coastWindowMatrices=[];
 for(let i=0;i<32;i++){
  const a=i%16,row=Math.floor(i/16);
  const px=106+(a%8)*17+(row?4:0),pz=row?197:177;
@@ -287,13 +287,21 @@ for(let i=0;i<32;i++){
  placeBox(g,width+1,.65,depth+1,roofMat,0,height+.15,0);
  for(let floor=2;floor<height-1;floor+=2.8)for(const side of [-1,1]){
   for(let wx=-3.5;wx<=3.5;wx+=2.3){
-   const win=placeBox(g,1.18,1.65,.08,glassFront,wx,floor,side*(depth/2+.065));
+   coastWindowMatrices.push([px+wx,py+floor,pz+side*(depth/2+.065),1.18,1.65,.08]);
    if(i%5===0)placeBox(g,1.28,.08,.22,roofMat,wx,floor-1,side*(depth/2+.17))
   }
  }
  if(i%4===0)placeBox(g,width*.74,.4,2,roofMat,0,height*.58,depth/2+1);
  promenadeBuildings.push(g);
 }
+const coastWindows=new T.InstancedMesh(baseBox,glassFront,coastWindowMatrices.length);
+const windowDummy=new T.Object3D();
+for(let i=0;i<coastWindowMatrices.length;i++){
+ const [x,y,z,w,h,d]=coastWindowMatrices[i];
+ windowDummy.position.set(x,y,z);windowDummy.scale.set(w,h,d);windowDummy.rotation.set(0,0,0);windowDummy.updateMatrix();
+ coastWindows.setMatrixAt(i,windowDummy.matrix);
+}
+coastWindows.instanceMatrix.needsUpdate=true;smoothWorld.add(coastWindows);
 // Instanced vegetation uses just a few draw calls and natural height/slope tests.
 const treeCount=mobile?240:420;
 const trunkMat=coastMaterial(0x6b5643,.99),leavesMat=coastMaterial(0x527d58,.99);
@@ -1346,5 +1354,5 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
  requestAnimationFrame(frame);
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);renderer.dispose();for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();asphaltTex.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
