@@ -1915,7 +1915,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const spaceRoot=new T.Group();spaceRoot.visible=false;scene.add(spaceRoot);
  const spaceStates={restore:new Map(),previousCameraFar:camera.far,previousFog:scene.fog,
    previousBackground:scene.background,previousPosition:loc.clone(),previousYaw:yaw,previousPitch:pitch,
-   previousSun:sun.intensity,previousHemi:hemi.intensity};
+   previousSun:sun.intensity,previousHemi:hemi.intensity,
+   previousEnvironment:scene.environment,previousEnvIntensity:scene.environmentIntensity,previousExposure:renderer.toneMappingExposure};
  const spaceSave=directorState.spacePosition||{};
  const spaceCraftState={
    pos:new T.Vector3(Number.isFinite(spaceSave.x)?spaceSave.x:-70,Number.isFinite(spaceSave.y)?spaceSave.y:42,Number.isFinite(spaceSave.z)?spaceSave.z:-525),
@@ -1982,6 +1983,48 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  });
  const cosmicSky=spaceMesh(spaceRoot,new T.SphereGeometry(7800,38,24),cosmicSkyMat);
  cosmicSky.renderOrder=-30;
+
+ // A dedicated cosmic reflection environment for every PBR surface on the craft and relics.
+ // Built once with PMREM when entering space; coast reflections are restored on return.
+ const cosmicEnvCanvas=document.createElement('canvas');
+ cosmicEnvCanvas.width=768;cosmicEnvCanvas.height=384;
+ const cosmicCtx=cosmicEnvCanvas.getContext('2d');
+ const cosmicBg=cosmicCtx.createLinearGradient(0,0,0,384);
+ cosmicBg.addColorStop(0,'#121b43');cosmicBg.addColorStop(.35,'#090c27');
+ cosmicBg.addColorStop(.56,'#24143f');cosmicBg.addColorStop(1,'#060a1e');
+ cosmicCtx.fillStyle=cosmicBg;cosmicCtx.fillRect(0,0,768,384);
+ for(let i=0;i<18;i++){
+   const x=hash(i,781)*768,y=hash(i*13,241)*384,rad=32+hash(i,419)*162;
+   const g=cosmicCtx.createRadialGradient(x,y,1,x,y,rad);
+   const palette=['rgba(67,106,220,.25)','rgba(175,63,197,.2)','rgba(39,197,220,.16)','rgba(204,80,133,.13)'];
+   g.addColorStop(0,palette[i%palette.length]);g.addColorStop(1,'rgba(10,12,36,0)');
+   cosmicCtx.fillStyle=g;cosmicCtx.fillRect(x-rad,y-rad,rad*2,rad*2);
+ }
+ for(let i=0;i<770;i++){
+   const x=hash(i*29,387)*768,y=hash(i*51,638)*384,r=.25+Math.pow(hash(i,641),6)*2;
+   cosmicCtx.fillStyle=i%7===0?'#ffdaba':i%3===0?'#bbd7ff':'#fff';
+   cosmicCtx.globalAlpha=.3+hash(i,529)*.7;
+   cosmicCtx.beginPath();cosmicCtx.arc(x,y,r,0,Math.PI*2);cosmicCtx.fill();
+ }
+ cosmicCtx.globalAlpha=1;
+ const starReflect=cosmicCtx.createRadialGradient(213,102,4,213,102,94);
+ starReflect.addColorStop(0,'rgba(255,250,228,1)');starReflect.addColorStop(.13,'rgba(249,191,140,.82)');
+ starReflect.addColorStop(.4,'rgba(230,121,88,.21)');starReflect.addColorStop(1,'rgba(248,118,66,0)');
+ cosmicCtx.fillStyle=starReflect;cosmicCtx.fillRect(113,2,200,200);
+ const cosmicEnvTexture=new T.CanvasTexture(cosmicEnvCanvas);
+ cosmicEnvTexture.mapping=T.EquirectangularReflectionMapping;
+ cosmicEnvTexture.colorSpace=T.SRGBColorSpace;
+ let cosmicEnvTarget=null,cosmicEnvInitialized=false;
+ function ensureCosmicEnvironment(){
+   if(cosmicEnvInitialized)return;
+   cosmicEnvInitialized=true;
+   try{
+     const pmrem=new T.PMREMGenerator(renderer);
+     cosmicEnvTarget=pmrem.fromEquirectangular(cosmicEnvTexture);
+     pmrem.dispose();
+   }catch(error){console.warn('Cosmic reflection PMREM unavailable — retaining material fallback',error);cosmicEnvTarget=null}
+ }
+
  // High-density physical star parallax. One geometry and one draw call.
  const starCount=mobile?3600:7500,starsGeometry=new T.BufferGeometry(),
    starCoords=new Float32Array(starCount*3),starColors=new Float32Array(starCount*3);
@@ -3014,6 +3057,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    spaceStates.previousCameraFar=camera.far;
    spaceStates.previousFog=scene.fog;spaceStates.previousBackground=scene.background;
    spaceStates.previousSun=sun.intensity;spaceStates.previousHemi=hemi.intensity;
+   spaceStates.previousEnvironment=scene.environment;
+   spaceStates.previousEnvIntensity=scene.environmentIntensity;
+   spaceStates.previousExposure=renderer.toneMappingExposure;
    directorState.spaceReturnMap=directorState.activeMap==='voxel'?'voxel':'crescent';
    spaceStates.restore.clear();
    for(const child of scene.children){
@@ -3021,6 +3067,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      spaceStates.restore.set(child,child.visible);child.visible=false;
    }
    spaceRoot.visible=true;spaceMode=true;directorState.spaceWorldSeen=true;directorState.activeMap='space';
+   ensureCosmicEnvironment();
+   if(cosmicEnvTarget)scene.environment=cosmicEnvTarget.texture;
+   scene.environmentIntensity=1.25;
+   renderer.toneMappingExposure=1.15;
    camera.far=12000;camera.fov=72;camera.updateProjectionMatrix();
    scene.fog=null;scene.background=new T.Color(0x020410);
    hemi.intensity=1.9;sun.intensity=1.5;
@@ -3048,6 +3098,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.updateProjectionMatrix();
    scene.fog=spaceStates.previousFog;scene.background=spaceStates.previousBackground;
    sun.intensity=spaceStates.previousSun;hemi.intensity=spaceStates.previousHemi;
+   scene.environment=spaceStates.previousEnvironment;
+   scene.environmentIntensity=spaceStates.previousEnvIntensity;
+   renderer.toneMappingExposure=spaceStates.previousExposure;
    loc.copy(spaceStates.previousPosition);
    yaw=spaceStates.previousYaw;pitch=spaceStates.previousPitch;velY=0;
    directorState.activeMap=directorState.spaceReturnMap||'crescent';
@@ -3634,6 +3687,7 @@ directorPanel.addEventListener('click',e=>{
         try{physicsWorld?.free?.()}catch(e){}
         overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
         mantaGeometry.dispose();mantaFinMat.dispose();for(const l of mantaTails){l.geometry.dispose()}
+        cosmicEnvTarget?.dispose();cosmicEnvTexture.dispose();
         ionGeometry.dispose();ionShader.dispose();
         for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
         for(const n of volumetricClouds){n.sphere.geometry.dispose();n.shader.dispose()}
