@@ -1,8 +1,8 @@
 
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
- const branding=q('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=q('.vxSub');if(sub)sub.textContent='LIVING WORLD · DIRECTOR MODE · SEED 91245';
+ const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='LIVING WORLD · DIRECTOR MODE · SEED 91245';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
