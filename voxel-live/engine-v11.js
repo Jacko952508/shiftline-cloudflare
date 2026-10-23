@@ -2410,6 +2410,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    hemi.intensity=1.9;sun.intensity=1.5;
    yaw=spaceCraftState.heading;pitch=spaceCraftState.elevation;
    spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
+   if(typeof showcaseButton!=='undefined')showcaseButton.style.display='none';
    q('vxHotbar').style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
    const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='.68';
@@ -2431,6 +2432,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    yaw=spaceStates.previousYaw;pitch=spaceStates.previousPitch;velY=0;
    directorState.activeMap=directorState.spaceReturnMap||'crescent';
    starNav.style.display='none';spaceStatus.style.display='none';spaceControls.style.display='none';
+   if(typeof showcaseButton!=='undefined')showcaseButton.style.display='';
    universeToast.style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='';
    q('vxHotbar').style.display='';
@@ -2689,6 +2691,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  showcaseButton.style.cssText='position:absolute;top:145px;left:10px;z-index:3;background:#13445dda;color:#e2fffa;border:1px solid #88e5d5;border-radius:8px;padding:7px 10px;font:bold 10px system-ui;box-shadow:0 2px 10px #072032aa';
  stage.appendChild(showcaseButton);
  showcaseButton.onclick=()=>{
+   if(spaceMode)leaveSpaceWorld(true);
    if(!newMapActive)setMap('crescent');
    if(riding)endFlight();
    loc.set(53,coastH(53,132)+2.35,132);
