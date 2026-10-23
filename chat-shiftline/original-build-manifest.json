@@ -1,0 +1,13 @@
+{
+  "name": "SHIFT LINE — original full build in chat",
+  "sourceRepository": "Jacko952508/shiftline-cloudflare",
+  "sourceCommit": "3bf6e8d8d317eba49dec145de6091fd117205f8b",
+  "sourceRoot": "public/",
+  "entry": "index.html",
+  "delivery": "GitHub files via jsDelivr GitHub CDN, not Cloudflare",
+  "isolation": "Read-only original assets; isolated iframe; no changes to main",
+  "limitations": [
+    "Original multiplayer/network services may be unavailable inside chat",
+    "ChatGPT embedded iframe browser restrictions may prevent WebGL or modules"
+  ]
+}
