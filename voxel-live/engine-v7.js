@@ -359,6 +359,8 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const m=new T.Mesh(baseBox,mat);m.position.set(x,y,z);m.scale.set(w,h,d);group.add(m);return m;
 };
 
+ let safeVistaTick=()=>{};
+ try {
  // V7 VISTA REMASTER: skyline, lighthouse, sculpted cliff coast and roadside furniture.
  const vistaGroup=new T.Group();smoothWorld.add(vistaGroup);
  const vistaStone=new T.MeshStandardMaterial({color:0xa4a49a,roughness:.95,metalness:.04}),
@@ -474,7 +476,7 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  // Scenic rim lighting makes the lookout readable at night, without costly multiple large lights.
  const vistaLight=new T.PointLight(0x83dce9,weather==='night'?7:2,27,2);
  vistaLight.position.set(55,12,113);vistaGroup.add(vistaLight);
- function animateVista(t){
+ function animateVistaInternal(t){
   fallsShader.uniforms.time.value=t;
   spray.rotation.y=Math.sin(t*.12)*.025;
   lighthouse.target.position.set(Math.cos(t*.48)*32,13,Math.sin(t*.48)*32);
@@ -545,6 +547,13 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  scenicGeometry(new T.SphereGeometry(6,24,14),obsGlass,0,41,0,observatory);
  const obsCap=scenicGeometry(new T.TorusGeometry(6.4,.24,8,32),vistaCool,0,42,0,observatory);obsCap.rotation.x=Math.PI/2;
 
+
+ safeVistaTick=animateVistaInternal;
+ } catch(vistaError){
+   console.warn('Optional V7 vista layer failed; keeping stable map:',vistaError);
+   const hint=root.querySelector('.vxSub');if(hint)hint.textContent='CRESCENT COAST · SCENIC DETAIL FALLBACK';
+ }
+ function animateVista(t){try{safeVistaTick(t)}catch(error){safeVistaTick=()=>{};console.warn('Vista animation disabled',error)}}
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
 const glassFront=new T.MeshPhysicalMaterial({color:0xa2c7db,roughness:.09,metalness:.15,transparent:true,opacity:.75,depthWrite:false,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.8});
 const whiteWalls=coastMaterial(0xece6da,.71),warmWalls=coastMaterial(0xb09d89,.84),roofMat=coastMaterial(0x42474f,.52,.2);
