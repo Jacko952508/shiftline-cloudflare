@@ -1,1 +1,1 @@
-export const release={version:4,engineCommit:'5475275f8bd13a5ec6e0166e79fe7f2ab85e2bb4',engineFile:'engine-v4.js',message:'Reality Engine V4 hotfix: scene initialization corrected, 256x256 metropolis, six vehicles and Director tools'};
+export const release={version:4,engineCommit:'b8f1e23b85fa47ade7a293dcf57d95bcff3db6ad',engineFile:'engine-v5.js',message:'Recovery build with Crescent Coast map and nine vehicles; fixes original V4 initialization failure and lets old V3 sessions progress to V5'};
