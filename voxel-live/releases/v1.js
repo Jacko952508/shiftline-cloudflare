@@ -1,0 +1,1 @@
+export const release={version:1,engineCommit:'aaa5fd002c0e30f7dee3fb656c8f63b517c1b135',engineFile:'engine-v1.js',message:'Voxel Forge 1.0: procedural coast, mining, building, inventory, touch controls, cabin and weather'};
