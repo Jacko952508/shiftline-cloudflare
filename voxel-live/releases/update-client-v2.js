@@ -3,7 +3,7 @@
 const OWNER='Jacko952508', REPO='shiftline-cloudflare',BRANCH='nimbus-chat-live';
 const root=OWNER+'/'+REPO;
 const indexPath='voxel-live/releases/index.json';
-export const knownRelease={version:14,engineCommit:'e8597256949a5261c3e6b53b6292cdf3e7fd2cba',engineFile:'engine-v14.js'};
+export const knownRelease={version:15,engineCommit:'44824f16cf50e1e982e9a0da8e0351a7a7936a49',engineFile:'engine-v15.js'};
 const candidates=[
   'https://cdn.jsdelivr.net/gh/'+root+'@'+BRANCH+'/'+indexPath,
   'https://raw.githubusercontent.com/'+root+'/'+BRANCH+'/'+indexPath
@@ -40,8 +40,8 @@ export async function discoverRelease(currentVersion=0,onStatus=()=>{}){
       errors.push(String(error?.message||error));
     }
   }
-  // Failure to contact GitHub Raw/API must not block a known immutable V13 build.
-  onStatus('Index service unavailable; pinned V14 recovery available');
+  // Failure to contact GitHub Raw/API must not block a known immutable V15 build.
+  onStatus('Index service unavailable; pinned V15 recovery available');
   return {
     release:knownRelease,source:'pinned-recovery',online:false,
     isNew:knownRelease.version>currentVersion,diagnostic:errors.join(' | ')
