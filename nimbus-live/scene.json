@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "title": "NIMBUS LIVE • STORMGLASS",
+  "subtitle": "Version 1 — coastal observatory",
+  "message": "Connected to a separately updateable scene manifest. This is the original configuration.",
+  "skyTop": "#244e71",
+  "skyHorizon": "#e9bc91",
+  "oceanDeep": "#0b3854",
+  "oceanLight": "#61a4b4",
+  "fog": "#91afb7",
+  "sunshine": 2.8,
+  "ambient": 1.65,
+  "waveStrength": 0.85,
+  "weather": "clear",
+  "timeOfDay": "sunset",
+  "accent": "#65e9ee",
+  "structures": [
+    {
+      "id": "research-1",
+      "type": "tower",
+      "x": 40,
+      "y": 2,
+      "z": -15,
+      "scale": 1,
+      "color": "#d9e2df"
+    },
+    {
+      "id": "dish-outpost",
+      "type": "dish",
+      "x": -28,
+      "y": 8,
+      "z": -22,
+      "scale": 1.25,
+      "color": "#bdd6df"
+    },
+    {
+      "id": "seaward-marker",
+      "type": "beacon",
+      "x": 54,
+      "y": 0,
+      "z": 21,
+      "scale": 1,
+      "color": "#f4b175"
+    },
+    {
+      "id": "floating-sensor",
+      "type": "sphere",
+      "x": -15,
+      "y": 12,
+      "z": 18,
+      "scale": 1.4,
+      "color": "#91eef3"
+    }
+  ]
+}
