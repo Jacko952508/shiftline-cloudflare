@@ -3117,15 +3117,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      setSpaceRenderMode(modes[(modes.indexOf(v14RenderVariant)+1)%modes.length]);
    }
    if(action==='effects'){
-     overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
-     if(overdrive.enabled){
-       // Retry any previously failed GPU effect using newly allocated targets.
-       overdrive.failed=false;overdrive.reportedFailure=false;overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
-       overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
-     }
-     spaceNotify('V13 GAUSSIAN BLOOM '+(overdrive.enabled?'ENABLED — threshold + H/V blur':'OFF — direct renderer'),3.2);
+     setSpaceRenderMode(v14RenderVariant==='direct'?'safe':'direct');
    }
-   if(action==='graphics'){
+      if(action==='graphics'){
      const modes=['adaptive','cinema','battery'];
      const i=modes.indexOf(overdrive.mode);
      setOverdriveQuality(modes[(i+1)%modes.length]);
@@ -3182,11 +3176,19 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.lookAt(spaceCraftState.pos.x,spaceCraftState.pos.y,spaceCraftState.pos.z-50);
    spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
    safeModeButton.style.display='block';
+   spaceHUDPreserve.clear();
+   for(const id of ['vxLocation','vxTarget']){
+     const elem=q(id);
+     if(elem){spaceHUDPreserve.set(elem,elem.style.display);elem.style.display='none'}
+   }
+   const oldTop=root.querySelector('.vxTopOptions');
+   if(oldTop){spaceHUDPreserve.set(oldTop,oldTop.style.display);oldTop.style.display='none'}
+   updateSafeRenderLabel();
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='none';
    q('vxHotbar').style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
    const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='.68';
-   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V13 · COSMIC ASCENT · LIVING VOID';
+   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V14 · ASTRAEUS SPACE · RENDER RECOVERY';
    if(firstV13){beginFlyby();}
    else spaceNotify(auto?'ASTRAEUS V13 · new volumetric world · open SYSTEMS to fly cinematic tour':'V13 COSMIC ASCENT · use SYSTEMS for the flyby',5);
  }
@@ -3209,6 +3211,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    directorState.activeMap=directorState.spaceReturnMap||'crescent';
    starNav.style.display='none';spaceStatus.style.display='none';spaceControls.style.display='none';
    safeModeButton.style.display='none';
+   for(const [element,display] of spaceHUDPreserve)element.style.display=display;
+   spaceHUDPreserve.clear();
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='';
    universeToast.style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='';
@@ -3351,7 +3355,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      const nearest=spaceWaypoints.map(w=>({w,dist:shipLocation.distanceTo(new T.Vector3(...w.p))})).sort((a,b)=>a.dist-b.dist)[0];
      const count=spaceDiscoveries.size;
      spaceStatus.querySelector('[data-readout]').textContent=st.warp?'HYPERSPACE · '+Math.round(st.speed)+' KM/S':Math.round(Math.abs(st.speed))+' KM/S · '+(st.boost?'BOOST':'CRUISE')+
-       ' · '+(overdrive.failed?'FX FALLBACK':overdrive.enabled?'FX '+overdrive.mode.toUpperCase():'FX OFF');
+       ' · '+(v14RenderVariant==='direct'?'DIRECT':overdrive.failed?'FALLBACK':v14RenderVariant==='safe'?'SAFE+BLOOM':'CINEMA');
      spaceStatus.querySelector('[data-telemetry]').textContent=
         'DISCOVERIES '+count+'/'+spaceWaypoints.length+'  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
         '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM'+
