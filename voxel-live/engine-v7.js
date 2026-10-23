@@ -452,7 +452,8 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const archMaterial=new T.MeshPhysicalMaterial({color:0x65a8c5,metalness:.56,roughness:.16,clearcoat:1,envMapIntensity:1.8});
  const archGlow=new T.MeshBasicMaterial({color:0x9ef4f8,toneMapped:false});
  const arch=new T.Mesh(new T.TorusGeometry(7,.48,10,44,Math.PI),archMaterial);
- arch.rotation.y=Math.PI/2;arch.rotation.z=0;arch.position.y=2.4;archGroup.add(arch);
+ arch.rotation.y=0;arch.rotation.z=0;arch.position.y=2.4;archGroup.add(arch);
+ for(const x of [-7,7])scenicGeometry(new T.CylinderGeometry(.4,.5,2.4,10),archMaterial,x,1.2,0,archGroup);
  const innerArch=new T.Mesh(new T.TorusGeometry(6.43,.12,8,44,Math.PI),archGlow);
  innerArch.rotation.copy(arch.rotation);innerArch.position.copy(arch.position);archGroup.add(innerArch);
  // Bold branded information billboard at the viewpoint: actual canvas glyphs, not floating placeholders.
