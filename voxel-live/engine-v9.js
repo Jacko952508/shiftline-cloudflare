@@ -739,6 +739,7 @@ for(let i=0;i<11;i++){
 const coastHeadlight=new T.PointLight(0xffdaa3,4,36);coastHeadlight.position.set(163,24,173);smoothWorld.add(coastHeadlight);
 const coastMeshes=smoothWorld.children.length;
 function animateCoast(dt,t){
+ if(directorState.trafficPaused)return;
  for(const c of coastTraffic){
   const time=(t*c.speed/c.path.curve.getLength()+c.phase)%1;
   const p=c.path.curve.getPoint(time),dir=c.path.curve.getTangent(time);
@@ -1420,6 +1421,109 @@ void main(){
    chassis.roll=T.MathUtils.damp(chassis.roll,-chassis.slip,3.8,dt);
  }
 
+
+ // V9 "reality.world/1": validated, incremental and replay-safe world mutations.
+ const mutationProtocol='reality.world/1';
+ const mutationSeen=new Set(Array.isArray(directorState.receivedMutations)?directorState.receivedMutations:[]);
+ const mutationHistory=Array.isArray(directorState.mutationHistory)?directorState.mutationHistory:[];
+ let mutationStatus='LOCAL',lastPatchPoll=0,mutationTimer=null,mutationConsole=null;
+ function applyWorldMutation(packet,origin='local'){
+   if(!packet||typeof packet!=='object'||packet.protocol!==mutationProtocol)throw Error('Protocol must be reality.world/1');
+   const id=String(packet.id||'').slice(0,96);
+   if(!/^[A-Za-z0-9_.-]{4,96}$/.test(id))throw Error('Mutation needs a safe unique id');
+   if(mutationSeen.has(id))return 'Already applied: '+id;
+   const op=String(packet.op||''),args=packet.args||{};
+   const finite=(val,min,max,name)=>{const n=Number(val);if(!Number.isFinite(n)||n<min||n>max)throw Error(name+' out of bounds');return n};
+   const num=(key,min,max)=>finite(args[key],min,max,key);
+   if(op==='terrain.deform'){
+     if(!newMapActive)throw Error('Terrain deformation requires Crescent Coast');
+     const x=num('x',4,251),z=num('z',4,251),radius=num('radius',1,16),depth=num('depth',-9,9);
+     if(coastCraters.length>=30)throw Error('Maximum 30 terrain deformations');
+     coastCraters.push({x,z,radius,depth});
+     directorState.coastCraters=coastCraters;
+     for(let j=0;j<coords.count;j++){
+       const xx=coords.getX(j),zz=coords.getZ(j);
+       if(Math.hypot(xx-x,zz-z)<=radius+2)coords.setY(j,coastH(xx,zz));
+     }
+     coords.needsUpdate=true;terrainGeom.computeVertexNormals();
+   }else if(op==='city.supply'){
+     const resource=String(args.resource||'');
+     if(!['food','fuel','materials','energy'].includes(resource))throw Error('Unknown city resource');
+     const amount=num('amount',1,300);
+     citySim[resource]=Math.min(2000,citySim[resource]+amount);
+     const key='city'+resource[0].toUpperCase()+resource.slice(1);
+     directorState[key]=citySim[resource];
+   }else if(op==='city.business'){
+     const index=Math.round(num('index',0,buildingsSim.length-1));
+     const amount=num('stock',0,300);
+     buildingsSim[index].stock=Math.min(500,buildingsSim[index].stock+amount);
+   }else if(op==='physics.spawn'){
+     const x=num('x',4,251),z=num('z',4,251),count=Math.round(num('count',1,8));
+     for(let k=0;k<count;k++)createPhysicsProp(x+(k%3)*1.4,z+(k%2)*1.6,k,coastH(x,z)+4+k*.45);
+   }else if(op==='vehicle.spawn'){
+     const type=String(args.type||'');
+     if(!vehicleData[type])throw Error('Unknown vehicle');
+     if(!newMapActive)setMap('crescent');
+     selectVehicle(type);
+   }else if(op==='climate.set'){
+     const type=String(args.weather||'');
+     if(!['clear','rain','night','sunset'].includes(type))throw Error('Invalid weather');
+     const el=q('vxWeather');el.value=type;el.dispatchEvent(new Event('change'));
+   }else if(op==='traffic.control'){
+     directorState.trafficPaused=!!args.paused;
+   }else{
+     throw Error('Unknown operation: '+op);
+   }
+   mutationSeen.add(id);
+   if(mutationSeen.size>150){const oldest=mutationSeen.values().next().value;mutationSeen.delete(oldest)}
+   mutationHistory.push({id,op,origin,at:Date.now()});
+   if(mutationHistory.length>35)mutationHistory.shift();
+   directorState.receivedMutations=[...mutationSeen];
+   directorState.mutationHistory=mutationHistory;
+   directorState.events=(directorState.events||0)+1;
+   persist();
+   return 'Applied '+op+' · '+id;
+ }
+ function createMutationPanel(){
+   const node=document.createElement('div');
+   node.style.cssText='position:absolute;left:10px;right:10px;top:94px;max-height:56%;overflow-y:auto;z-index:8;border:1px solid #73e7c9;background:#071a2af2;border-radius:12px;padding:12px;color:#dcfff5;display:none;font:11px system-ui';
+   node.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>🧬 WORLD MUTATION PROTOCOL 1</b><button data-control="close">✕</button></div><p style="color:#9fcec8;margin:7px 0">Validated edits apply immediately without restarting Three.js. Use unique IDs to prevent duplicates.</p><textarea aria-label="Mutation command" style="width:100%;height:118px;background:#081c29;color:#c6fff2;font:10px/1.5 monospace;border:1px solid #387c84;border-radius:7px;padding:8px;resize:vertical"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button data-control="apply">APPLY JSON</button><button data-control="example">EXAMPLE</button><button data-control="log">EVENT LOG</button></div><div data-out style="padding-top:8px;white-space:pre-wrap;color:#b0f8d9"></div>';
+   stage.appendChild(node);
+   const ta=node.querySelector('textarea'),out=node.querySelector('[data-out]');
+   const makeExample=()=>({protocol:mutationProtocol,id:'manual-'+Date.now(),op:'city.supply',args:{resource:'materials',amount:100}});
+   ta.value=JSON.stringify(makeExample(),null,2);
+   node.addEventListener('click',e=>{
+     const b=e.target.closest('button[data-control]');if(!b)return;
+     const action=b.dataset.control;
+     if(action==='close'){node.style.display='none';return}
+     if(action==='example'){ta.value=JSON.stringify(makeExample(),null,2);return}
+     if(action==='log'){out.textContent=mutationHistory.slice(-8).map(v=>v.id+' → '+v.op).join('\n')||'No world mutations yet';return}
+     if(action==='apply'){
+       try{out.textContent=applyWorldMutation(JSON.parse(ta.value));notify('World patch accepted')}catch(err){out.textContent='Rejected: '+String(err.message||err)}
+     }
+   });
+   return node;
+ }
+ // The existing chat updater remains responsible for engine versions.
+ // This optional channel checks pure JSON commands without running external code.
+ const patchAddress='https://raw.githubusercontent.com/Jacko952508/shiftline-cloudflare/nimbus-chat-live/voxel-live/world-mutations/live.json';
+ async function pollWorldMutations(){
+   if(!alive)return;
+   try{
+     const response=await fetch(patchAddress+'?v='+Date.now(),{cache:'no-store'});
+     if(!response.ok)throw Error('HTTP '+response.status);
+     const payload=await response.json();
+     if(payload.protocol!==mutationProtocol||!Array.isArray(payload.events))throw Error('Invalid mutation feed');
+     let count=0;
+     for(const event of payload.events.slice(-15)){
+       try{
+         if(event?.id&&!mutationSeen.has(event.id)){applyWorldMutation(event,'github');count++}
+       }catch(error){console.warn('Rejected remote world patch',error)}
+     }
+     mutationStatus=count?'APPLIED '+count:'CONNECTED';
+   }catch(e){mutationStatus='OFFLINE / OPTIONAL'}
+ }
+
  function flightButtons(){
    const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):newMapActive?['🗺 MAP','🏎 DRIVE','↑ JUMP','» RUN']:['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
    for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
@@ -1638,7 +1742,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1792,6 +1896,8 @@ directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='protocol'){if(!mutationConsole)mutationConsole=createMutationPanel();mutationConsole.style.display='block';directorPanel.style.display='none'}
+   if(action==='supply'){try{notify(applyWorldMutation({protocol:mutationProtocol,id:'restock-'+Date.now(),op:'city.supply',args:{resource:'food',amount:180}}))}catch(err){notify(String(err.message||err))}}
    if(action==='physicsdrop'){physicsDrop();directorPanel.style.display='none'}
    if(action==='impulse'){physicsImpulse(loc.x,loc.z,26);notify('Rigid-body impulse activated')}
    if(action==='vista'){
@@ -2012,5 +2118,7 @@ directorPanel.addEventListener('click',e=>{
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
  requestAnimationFrame(frame);
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+ mutationTimer=setInterval(pollWorldMutations,30000);
+ pollWorldMutations();
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
