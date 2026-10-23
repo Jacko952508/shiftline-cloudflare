@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='CRESCENT COAST · SMOOTH ROADS · NEW VEHICLES';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V6 · CINEMATIC LIGHTING · REFLECTIONS · WEATHER';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -1381,7 +1381,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      mapctx.fillStyle='#ff5e48';mapctx.fillRect(Math.floor(loc.x)-2,Math.floor(loc.z)-2,5,5);
      mapctx.strokeStyle='#fff';mapctx.strokeRect(Math.floor(loc.x)-5,Math.floor(loc.z)-5,11,11);
    }
-   if(debugHudOn)debugHud.textContent='REALITY ENGINE V4\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nDRAWS: '+renderer.info.render.calls+' / '+renderer.info.render.triangles+' TRI'+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
+   if(debugHudOn)debugHud.textContent='REALITY ENGINE V6 / RENDER CORE\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nDRAWS: '+renderer.info.render.calls+' / '+renderer.info.render.triangles+' TRI'+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
  }
 
  directorPanel.addEventListener('click',e=>{
