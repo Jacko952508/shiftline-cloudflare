@@ -10,7 +10,7 @@ await fs.mkdir(out,{recursive:true});
 const html=await fs.readFile(path.join(source,'index.html'),'utf8');
 const scripts=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*><\/script>/gi)];
 const entry=path.join(os.tmpdir(),'shiftline-chat-entry-'+process.pid+'.mjs');
-const files=scripts.map(x=>x[1].split('?')[0]).filter(x=>x.endsWith('.js')&&x!=='touch-policy.js');
+const files=scripts.map(x=>x[1].split('?')[0]).filter(x=>x.endsWith('.js'));
 await fs.writeFile(entry,files.map(f=>'import '+JSON.stringify(path.resolve(source,f).replaceAll('\\','/'))+';').join('\n'));
 const result=await build({entryPoints:[entry],bundle:true,write:false,format:'iife',platform:'browser',target:'es2020',loader:{'.png':'dataurl','.jpg':'dataurl','.svg':'dataurl'},alias:{three:path.resolve(source,'vendor/three.module.js')},logLevel:'warning'});
 await fs.unlink(entry);
