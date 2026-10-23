@@ -1,0 +1,1 @@
+export const release={version:13,engineCommit:'40f26013c9aab2e14139933796ed94e3d488830d',engineFile:'engine-v13.js',message:'ASTRAEUS COSMIC ASCENT: true Gaussian bloom, bounded raymarched nebulae, animated celestial ray encounter, spline cinematic flyby, corrected warp locations, cosmic reflections and mobile systems drawer'};
