@@ -452,6 +452,7 @@ function animateCoast(dt,t){
 function setMap(mode,initial=false){
  const coast=mode!=='voxel';newMapActive=coast;directorState.activeMap=coast?'crescent':'voxel';
  smoothWorld.visible=coast;
+ if(typeof coastalWater!=='undefined')coastalWater.visible=coast;
  if(typeof trafficRoot!=='undefined')trafficRoot.visible=!coast;
  if(typeof geoGroups!=='undefined'){
   for(const old of geoGroups.values())old.visible=!coast;
@@ -560,7 +561,7 @@ void main(){
  // Fine grid only near the coast, large ocean beyond uses a single cheap quad.
  const coastalWater=new T.Mesh(new T.PlaneGeometry(355,355,84,84),oceanMat);
  coastalWater.rotation.x=-Math.PI/2;
- coastalWater.position.set(127,SEA+.955,127);scene.add(coastalWater);
+ coastalWater.position.set(127,SEA+.955,127);coastalWater.visible=newMapActive;scene.add(coastalWater);
 
  const glowMat=new T.MeshStandardMaterial({color:0xffeac0,emissive:0xffb561,emissiveIntensity:1.7,roughness:.45});
  const geoGroups=new Map();
@@ -1120,11 +1121,12 @@ void main(){
   side:T.BackSide,depthWrite:false,
   uniforms:{
    top:{value:new T.Color('#347fba')},horizon:{value:new T.Color('#bfdfea')},
+   lightDir:{value:new T.Vector3(-38,70,26).normalize()},
    night:{value:0},time:{value:0},haze:{value:.28}
   },
   vertexShader:`varying vec3 v;
 void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`uniform vec3 top,horizon;
+  fragmentShader:`uniform vec3 top,horizon,lightDir;
 uniform float night,time,haze;
 varying vec3 v;
 float rnd(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,73.7)))*43758.5453);}
@@ -1134,7 +1136,7 @@ void main(){
  vec3 col=mix(horizon,top,pow(height,.82));
  float air=exp(-abs(d.y)*9.);
  col=mix(col,horizon,.12*air+haze*.22*air);
- vec3 sunlight=normalize(vec3(-.63,.41,.64));
+ vec3 sunlight=normalize(lightDir);
  float angle=max(dot(d,sunlight),0.);
  col+=vec3(1.,.67,.36)*pow(angle,24.)*.38*(1.-night);
  col+=vec3(1.,.9,.67)*pow(angle,480.)*1.8*(1.-night);
@@ -1463,7 +1465,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   skyMat.uniforms.top.value.set(night?'#07182e':storm?'#40566f':sunset?'#315678':'#347fba');
   skyMat.uniforms.horizon.value.set(night?'#29364d':storm?'#7e919a':sunset?'#edaf8b':'#bfdfea');
   skyMat.uniforms.haze.value=sunset?.62:storm?.65:.28;
-  skyMat.uniforms.night.value=night?1:0;sunDisk.visible=!night&&!storm;
+  skyMat.uniforms.night.value=night?1:0;sunDisk.visible=!newMapActive&&!night&&!storm;
+  skyMat.uniforms.lightDir.value.copy(sun.position).normalize();
+  oceanMat.uniforms.lightDir.value.copy(sun.position).normalize();
   oceanMat.uniforms.night.value=night?1:0;oceanMat.uniforms.storm.value=storm?1:0;
   oceanMat.uniforms.deep.value.set(night?'#061d39':storm?'#123049':sunset?'#1f5b75':'#123d5e');
   oceanMat.uniforms.shallow.value.set(night?'#174969':storm?'#416578':sunset?'#679ca0':'#3ea7a4');
@@ -1546,7 +1550,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   wetness=T.MathUtils.damp(wetness,weather==='rain'?1:0,weather==='rain'?.7:.045,dt);
   asphalt.roughness=.8-wetness*.51;asphalt.envMapIntensity=.64+wetness*.63;
   puddles.visible=newMapActive&&wetness>.025;puddleMat.opacity=wetness*.78;
-  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
+  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;sunDisk.visible=!newMapActive&&weather!=='night'&&weather!=='rain';advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
   for(const a of animals){
     a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
