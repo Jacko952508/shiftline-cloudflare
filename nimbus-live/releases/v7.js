@@ -1,0 +1,1 @@
+export const release={version:7,engineCommit:'a8bc5a86cb3a229b2cfcedc346ba83ac99675668',engineFile:'engine-v7.js',message:'H-07 flyable helicopter: climb, descend, chase camera, cockpit view, flight joystick and rotor animation'};
