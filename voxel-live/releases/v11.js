@@ -1,0 +1,1 @@
+export const release={version:11,engineCommit:'40c8235c90a2bb35eb66af38f4870f4b45a38c78',engineFile:'engine-v11.js',message:'ASTRAEUS: new deep-space world, procedural nebula and starfields, ringed planet and moons, black hole, explorer Kestrel XR, eight discoveries, scanners, warp navigation, NIX auroras and Director space world switch'};
