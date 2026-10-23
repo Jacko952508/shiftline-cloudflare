@@ -1,0 +1,1 @@
+export const release = {version:3,title:"NIMBUS LIVE v3", commit:"8c03cfdedc29da4f36ab088044f246f268e9dcd7", message:"Direct-renderer extension with ocean survey vessel, scanning ring and floating markers"};
