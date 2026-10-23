@@ -1,0 +1,1 @@
+export const release={version:12,engineCommit:'b06b618984d9dc1d7be79435d65ef69711e601ee',engineFile:'engine-v12.js',message:'ASTRAEUS OVERDRIVE: cinematic multi-pass bloom, filmic lens, black hole gravitational lensing, dense GPU nebula clouds, fractal planetary storms, orbital cathedral, precision spacecraft with ion trails and V12 Reveal'};
