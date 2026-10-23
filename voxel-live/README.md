@@ -139,3 +139,20 @@ V12 is a concrete renderer/asset overhaul, not merely new labels:
 - No Hatchable deployment; do not touch SHIFT LINE production main.
 
 QA: source parses and pinned manifest verified on GitHub. CDN response could not be verified in the available web environment; actual shader compilation, device FPS and visual quality **not yet verified on iPhone**. Do not claim otherwise.
+
+
+## V13 — ASTRAEUS COSMIC ASCENT (2026-10-23)
+
+- **Pinned engine:** \`f1fd70bf54c9923d7456e9db14ae34a9253f4822\` in \`voxel-chat-live/voxel-live/engine-v13.js\`.
+- **Existing chat updater:** \`nimbus-chat-live/voxel-live/releases/v13.js\`; V12 installations can use Check Updates once.
+- **Rendering:** fixes earlier V12 narrow-pixel bloom into low-resolution threshold extraction, horizontally and vertically blurred Gaussian passes, then a filmic composite. Post FX switch allows a live comparison; the direct rendering path remains the fallback for GPU failures, with an on-screen recovery message and retry.
+- **Procedural volumetrics:** two raymarched 3D nebula regions using analytic sphere bounds and 3D animated noise. Adaptive sample count 2–8 (dependent on frame timings and mode); battery preset disables the costly 3D cloud volume.
+- **New sight:** The Celestial Ray, a deforming manta-like vacuum creature with procedurally animated wings, luminous membrane patterns, glowing tips and eight trailing light filaments.
+- **Guided presentation:** a 26-second Catmull-Rom space flyby through the cathedral, living ray and AEON. Auto-runs on first V13 entry only; SYSTEMS > FLYBY can replay or stop it.
+- **Reflections:** separate procedurally created cosmic environment PMREM for PBR metal/glass. Saves and restores the old terrestrial environment map, exposure and lighting.
+- **Flight UI:** 6 main touch actions, collapsible SYSTEMS drawer (cinematic tour, reveal, camera, graphics, Post FX, Director, World). Duplicated SIGHTS action removed.
+- **Navigation:** corrected arrival positions so world sightings are spatially near their actual 3D objects, adds Cathedral and Celestial Ray to the discovery list. Previous exploration logs are preserved.
+- **Performance:** mobile-focused culling, dynamic raymarch sampling and adaptive DPR, while retaining render effects except explicit Battery mode; GPU telemetry shows scene draw calls and 1-vs-5-pass renderer status.
+- **Test status:** exact GitHub pinned source, numbered manifest, JS parsing and dependency declaration order verified. Real GPU shader compilation, CDN availability and iPhone frame rates **not independently confirmed**. User needs to check the game widget.
+
+**GitHub only; do not use Hatchable or alter the main SHIFT LINE production branch.**
