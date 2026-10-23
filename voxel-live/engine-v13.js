@@ -1925,14 +1925,15 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  };
  const spaceDiscoveries=new Set(Array.isArray(directorState.spaceDiscoveries)?directorState.spaceDiscoveries:[]);
  const spaceWaypoints=[
-   {id:'monolith',name:'THE SILENT ARRAY',p:[-235,15,-380],note:'A derelict communications array broadcasting prime-number signals from an extinct civilisation'},
-   {id:'crystal',name:'CRYSTAL REEF',p:[355,-65,-490],note:'Violet crystalline growths on a shattered moon fragment, vibrating in perfect synchrony'},
-   {id:'giant',name:'AEON · THE RINGED GIANT',p:[-110,70,-670],note:'An immense blue-violet giant with layered rings and turbulent atmosphere'},
-   {id:'ember',name:'EMBER DRIFT',p:[-490,-70,-875],note:'A molten world of black volcanic stone and luminous thermal currents'},
-   {id:'gateway',name:'THE HORIZON GATE',p:[355,32,-1620],note:'An ancient luminous ring structure pointing into unknown interstellar space'},
-   {id:'nix',name:'NIX · ICE WORLD',p:[560,130,-1900],note:'An aurora-wrapped frozen sphere with towering icy continents'},
-   {id:'ark',name:'THE GHOST ARK',p:[-660,85,-2170],note:'A kilometre-long exploration vessel whose crew never returned'},
-   {id:'singularity',name:'GRAVITY WELL X9',p:[-780,60,-2430],note:'A gravitational singularity inside a whirling incandescent accretion disc'}
+   {id:'cathedral',name:'THE CHOIR OF ORBITS',p:[-155,75,-681],note:'A rotating orbital cathedral with concentric mechanical rings and relic energy pylons'},
+   {id:'monolith',name:'THE SILENT ARRAY',p:[-235,22,-380],note:'A derelict communications array broadcasting prime-number signals from an extinct civilisation'},
+   {id:'crystal',name:'CRYSTAL REEF',p:[355,-55,-515],note:'Violet crystalline growths on a shattered moon fragment, vibrating in perfect synchrony'},
+   {id:'giant',name:'AEON · THE RINGED GIANT',p:[100,95,-844],note:'An immense blue-violet giant with layered rings and turbulent atmosphere'},
+   {id:'ember',name:'EMBER DRIFT',p:[-520,-50,-947],note:'A molten world of black volcanic stone and luminous thermal currents'},
+   {id:'gateway',name:'THE HORIZON GATE',p:[355,45,-1700],note:'An ancient luminous ring structure pointing into unknown interstellar space'},
+   {id:'nix',name:'NIX · ICE WORLD',p:[720,176,-2008],note:'An aurora-wrapped frozen sphere with towering icy continents'},
+   {id:'ark',name:'THE GHOST ARK',p:[-650,107,-2150],note:'A kilometre-long exploration vessel whose crew never returned'},
+   {id:'singularity',name:'GRAVITY WELL X9',p:[-912,104,-2488],note:'A gravitational singularity inside a whirling incandescent accretion disc'}
  ];
  const spacePalette={
    indigo:new T.Color('#7775ff'),violet:new T.Color('#be60ff'),cyan:new T.Color('#58e7ff'),
@@ -2944,7 +2945,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      spaceStatus.querySelector('[data-readout]').textContent=st.warp?'HYPERSPACE · '+Math.round(st.speed)+' KM/S':Math.round(Math.abs(st.speed))+' KM/S · '+(st.boost?'BOOST':'CRUISE')+
        ' · '+(overdrive.failed?'FX FALLBACK':overdrive.enabled?'FX '+overdrive.mode.toUpperCase():'FX OFF');
      spaceStatus.querySelector('[data-telemetry]').textContent=
-        'DISCOVERIES '+count+'/8  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
+        'DISCOVERIES '+count+'/'+spaceWaypoints.length+'  ·  SECTOR '+Math.round(st.pos.x)+' / '+Math.round(st.pos.y)+' / '+Math.round(st.pos.z)+
         '  ·  SIGNAL '+(nearest?.w.name||'NONE')+' '+Math.round(nearest?.dist||0)+' KM'+
         ' · '+renderer.info.render.calls+' DRAWS';
      if(universeToastUntil<performance.now())universeToast.style.display='none';
