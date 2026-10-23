@@ -62,6 +62,9 @@ export async function mount(root,resume=null){
  // Save individual changes, not a huge serialized world.
  const saveKey='voxel-chat-world-91245-v1';
  const changes=new Map();
+ const directorState={town:false,craters:0,events:0,structures:0,pilots:0,day:1};
+ try{const prior=resume?.director??JSON.parse(localStorage.getItem(saveKey)||'{}').director;if(prior&&typeof prior==='object')Object.assign(directorState,prior)}catch(e){}
+
  try{
   const saved=resume?.changes?resume:JSON.parse(localStorage.getItem(saveKey)||'{}');
   for(const [k,v] of Object.entries(saved.changes||{})){
@@ -178,6 +181,184 @@ export async function mount(root,resume=null){
   if(z%CHUNK===CHUNK-1)pairs.push([Math.floor(x/CHUNK),Math.floor(z/CHUNK)+1]);
   for(const [cx,cz] of pairs)if(cx>=0&&cz>=0&&cx<SIZE/CHUNK&&cz<SIZE/CHUNK)chunkMesh(cx,cz);
  }
+
+ // REALITY ENGINE: edits are grouped by chunk for major world-changing events.
+ const dirty=new Set();
+ function editWorld(x,y,z,b){
+  x=Math.floor(x);y=Math.floor(y);z=Math.floor(z);
+  if(!inb(x,y,z)||b===get(x,y,z))return;
+  put(x,y,z,b);changes.set(x+','+y+','+z,b);
+  dirty.add(Math.floor(x/CHUNK)+':'+Math.floor(z/CHUNK));
+  if(x%CHUNK===0)dirty.add((Math.floor(x/CHUNK)-1)+':'+Math.floor(z/CHUNK));
+  if(x%CHUNK===CHUNK-1)dirty.add((Math.floor(x/CHUNK)+1)+':'+Math.floor(z/CHUNK));
+  if(z%CHUNK===0)dirty.add(Math.floor(x/CHUNK)+':'+(Math.floor(z/CHUNK)-1));
+  if(z%CHUNK===CHUNK-1)dirty.add(Math.floor(x/CHUNK)+':'+(Math.floor(z/CHUNK)+1));
+ }
+ function flushWorld(){
+  for(const item of dirty){const [cx,cz]=item.split(':').map(Number);if(cx>=0&&cz>=0&&cx<SIZE/CHUNK&&cz<SIZE/CHUNK)chunkMesh(cx,cz)}
+  dirty.clear();
+ }
+ function surfaceAt(x,z){
+  x=Math.floor(x);z=Math.floor(z);
+  for(let y=Y-2;y>=0;y--){const b=get(x,y,z);if(b&&b!==6&&b!==7&&b!==9&&b!==10)return y}
+  return SEA;
+ }
+ // Autonomous actors — decisions are repeated, not a prewritten animation route.
+ const citizens=[],creatureBody=new T.MeshStandardMaterial({color:0xb8a3cb,roughness:.84}),
+       skin=new T.MeshStandardMaterial({color:0xdab596,roughness:.93}),
+       uniform=new T.MeshStandardMaterial({color:0x447f94,roughness:.83}),
+       darkEyes=new T.MeshStandardMaterial({color:0x25313b,roughness:.84});
+ const npcRoles=['BUILDER','SCOUT','FORAGER','ENGINEER','EXPLORER','FARMER','GUARD','RESEARCHER'];
+ function npcCube(p,m,w,h,d,x,y,z){
+   const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p.add(o);return o;
+ }
+ function makeCitizen(i){
+   const g=new T.Group();scene.add(g);
+   npcCube(g,i%3?uniform:creatureBody,.58,.86,.34,0,.96,0);
+   npcCube(g,skin,.48,.47,.47,0,1.63,-.03);
+   const eyes=npcCube(g,darkEyes,.3,.065,.04,0,1.71,-.286);
+   const limbs=[];
+   for(const x of [-.19,.19])limbs.push(npcCube(g,uniform,.18,.68,.2,x,.31,0));
+   for(const x of [-.42,.42])limbs.push(npcCube(g,skin,.17,.73,.18,x,.94,0));
+   const originX=17+i*2.2,originZ=35+(i%3)*2;
+   const a={id:i,g,limbs,x:originX,z:originZ,v:0,goalX:originX+2,goalZ:originZ-3,role:npcRoles[i%npcRoles.length],
+     wood:0,stone:0,work:0,panic:0,think:0,bob:0};
+   citizens.push(a);
+ }
+ for(let i=0;i<(mobile?6:8);i++)makeCitizen(i);
+ const citySite={x:18,z:39};
+ function buildHouse(cx,cz,wide=5){
+   cx=Math.round(cx);cz=Math.round(cz);
+   const sy=Math.min(Y-8,Math.max(SEA+2,surfaceAt(cx,cz)+1)),half=Math.floor(wide/2);
+   for(let x=cx-half;x<=cx+half;x++)for(let z=cz-half;z<=cz+half;z++){
+     for(let y=sy-3;y<=sy;y++)if(get(x,y,z)===0||get(x,y,z)===10)editWorld(x,y,z,8);
+     editWorld(x,sy,z,12);
+     for(let y=sy+1;y<=sy+5;y++)editWorld(x,y,z,0);
+     for(let y=sy+1;y<=sy+4;y++){
+       const wall=x===cx-half||x===cx+half||z===cz-half||z===cz+half;
+       if(!wall)continue;
+       const door=z===cz+half&&x===cx&&y<=sy+2;
+       const window=y===sy+3&&((x===cx-half||x===cx+half)&&z===cz);
+       if(!door)editWorld(x,y,z,window?7:12);
+     }
+     editWorld(x,sy+5,z,8);
+   }
+   editWorld(cx,sy+4,cz+half,9);
+   directorState.structures++;
+ }
+ function makeSettlement(){
+   if(directorState.town){return false}
+   // Build on the western plateau, never overwrite the central spawn.
+   for(let x=9;x<=29;x++)for(let z=32;z<=52;z++){
+     const y=surfaceAt(x,z);
+     for(let yy=y+1;yy<Math.min(Y,y+9);yy++)if(get(x,yy, z)!==0)editWorld(x,yy,z,0);
+   }
+   for(let z=33;z<=52;z++)for(let x=18;x<=20;x++){const y=surfaceAt(x,z);editWorld(x,y,z,8)}
+   for(let x=9;x<=28;x++)for(let z=40;z<=42;z++){const y=surfaceAt(x,z);editWorld(x,y,z,8)}
+   for(const [x,z] of [[13,36],[25,36],[13,48],[25,48]])buildHouse(x,z,5);
+   for(let z=33;z<=52;z+=4){const h=surfaceAt(21,z);if(h+1<Y)editWorld(21,h+1,z,9)}
+   directorState.town=true;directorState.events++;flushWorld();
+   return true;
+ }
+ function buildersProgress(){
+   if(!directorState.town)return;
+   const eligible=citizens.filter(c=>c.role==='BUILDER'||c.role==='ENGINEER');
+   const sum=eligible.reduce((v,n)=>v+n.work,0);
+   if(sum>10&&directorState.structures<10){
+     const i=directorState.structures;
+     const spots=[[16,29],[28,48],[11,27],[27,29],[9,52],[29,53]];
+     const p=spots[i-4];if(p) {buildHouse(p[0],p[1],5);flushWorld()}
+     for(const n of eligible)n.work=0;
+   }
+ }
+ // A giant mysterious glowing monolith provides an immediate cinematic landmark.
+ const relic=new T.Group();scene.add(relic);relic.position.set(37,ground(37,17)+1,17);
+ const relicStone=new T.MeshStandardMaterial({color:0x1c3546,metalness:.76,roughness:.25});
+ const relicGlow=new T.MeshBasicMaterial({color:0x70f4e4,toneMapped:false});
+ const relicBody=new T.Mesh(new T.BoxGeometry(4.8,14,2),relicStone);relicBody.position.y=7;relic.add(relicBody);
+ for(const x of [-2,0,2]){const line=new T.Mesh(new T.BoxGeometry(.08,11,.15),relicGlow);line.position.set(x,7,1.06);relic.add(line)}
+ const relicHalo=new T.Mesh(new T.TorusGeometry(4.9,.085,8,85),relicGlow);relicHalo.position.y=14;relic.add(relicHalo);
+ // Falling meteor and impact visuals, with real block destruction.
+ const meteorGroup=new T.Group();scene.add(meteorGroup);meteorGroup.visible=false;
+ const meteorCore=new T.Mesh(new T.IcosahedronGeometry(2,2),new T.MeshBasicMaterial({color:0xff9a36,toneMapped:false}));meteorGroup.add(meteorCore);
+ const meteorShell=new T.Mesh(new T.IcosahedronGeometry(3,1),new T.MeshBasicMaterial({color:0xff4d13,wireframe:true,transparent:true,opacity:.7,depthWrite:false}));meteorGroup.add(meteorShell);
+ const meteorLamp=new T.PointLight(0xff7127,9,70);meteorGroup.add(meteorLamp);
+ const impactFx=new T.Group();scene.add(impactFx);impactFx.visible=false;
+ const impactRing=new T.Mesh(new T.RingGeometry(1,1.2,48),new T.MeshBasicMaterial({color:0xffb359,transparent:true,opacity:.85,side:T.DoubleSide,depthWrite:false}));
+ impactRing.rotation.x=-Math.PI/2;impactFx.add(impactRing);
+ let meteor=null,impactAge=0,panicPoint=null,quake=0,daytime=0;
+ function startMeteor(){
+   if(meteor){return false}
+   const tx=T.MathUtils.clamp(Math.floor(loc.x+Math.sin(yaw)*12),8,55);
+   const tz=T.MathUtils.clamp(Math.floor(loc.z-Math.cos(yaw)*12),8,55);
+   const ty=surfaceAt(tx,tz);
+   meteor={x:tx,z:tz,y:ty+1,age:0};
+   meteorGroup.visible=true;
+   meteorGroup.position.set(tx-24,ty+65,tz-19);directorState.events++;return true;
+ }
+ function impact(){
+   if(!meteor)return;
+   const {x:cx,z:cz,y:cy}=meteor;
+   for(let x=cx-7;x<=cx+7;x++)for(let z=cz-7;z<=cz+7;z++){
+     const rad=Math.hypot(x-cx,z-cz);
+     if(rad>7||x<1||z<1||x>=SIZE-1||z>=SIZE-1)continue;
+     const current=surfaceAt(x,z);
+     const depth=Math.max(0,Math.round((7-rad)*.95));
+     for(let y=Math.max(1,current-depth+1);y<Y;y++)if(get(x,y,z)!==0)editWorld(x,y,z,0);
+     if(rad>5&&current+1<Y&&Math.random()>.72)editWorld(x,current+1,z,11);
+     if(rad<3&&current-depth>1)editWorld(x,current-depth,z,11);
+   }
+   flushWorld();
+   meteorGroup.visible=false;meteor=null;impactAge=0;
+   impactFx.visible=true;impactFx.position.set(cx,cy+.1,cz);impactRing.scale.setScalar(.2);
+   panicPoint={x:cx,z:cz};quake=1;directorState.craters++;directorState.events++;
+   for(const c of citizens)c.panic=12;
+ }
+ function advancePopulation(dt,t){
+   for(const a of citizens){
+     a.think-=dt;a.bob+=dt;
+     if(a.think<=0){
+       a.think=1.8+hash(a.id+Math.floor(t),a.id*33)*3;
+       if(a.panic>0&&panicPoint){
+         const away=new T.Vector2(a.x-panicPoint.x,a.z-panicPoint.z).normalize();
+         a.goalX=a.x+away.x*10;a.goalZ=a.z+away.y*10;
+       }else if(directorState.town&&a.role==='BUILDER'){
+         a.goalX=citySite.x+Math.sin(t*.14+a.id)*7;a.goalZ=citySite.z+Math.cos(t*.18+a.id)*8;
+         a.work++;a.wood++;a.stone++;
+       }else{
+         a.goalX=T.MathUtils.clamp(a.x+(hash(a.id+Math.floor(t),a.id)-.5)*19,4,60);
+         a.goalZ=T.MathUtils.clamp(a.z+(hash(a.id*7,Math.floor(t))-.5)*19,4,60);
+         if(a.role==='FORAGER')a.wood++;
+         if(a.role==='ENGINEER')a.work++;
+       }
+     }
+     a.panic=Math.max(0,a.panic-dt);
+     const dx=a.goalX-a.x,dz=a.goalZ-a.z,length=Math.hypot(dx,dz);
+     if(length>.4){const speed=a.panic>0?3.9:1.4;a.x+=dx/length*speed*dt;a.z+=dz/length*speed*dt;a.g.rotation.y=-Math.atan2(dx,dz)}
+     a.x=T.MathUtils.clamp(a.x,2,SIZE-3);a.z=T.MathUtils.clamp(a.z,2,SIZE-3);
+     a.g.position.set(a.x,surfaceAt(a.x,a.z)+1+Math.sin(a.bob*6)*.05,a.z);
+     const stride=Math.min(1,length);
+     for(let i=0;i<a.limbs.length;i++)a.limbs[i].rotation.x=Math.sin(a.bob*7+i*Math.PI)*.45*stride;
+   }
+ }
+ function advanceDirector(dt,t){
+   relicHalo.rotation.z=t*.19;relicHalo.position.y=14+Math.sin(t*.8)*.25;
+   advancePopulation(dt,t);
+   if(meteor){
+     meteor.age+=dt;const p=Math.min(1,meteor.age/3.5);
+     meteorGroup.position.set(meteor.x-24*(1-p),meteor.y+65*(1-p),meteor.z-19*(1-p));
+     meteorCore.rotation.y=t*3;meteorShell.rotation.x=t*2;
+     if(p>=1)impact();
+   }
+   if(impactFx.visible){
+     impactAge+=dt;impactRing.scale.setScalar(1+impactAge*7);impactRing.material.opacity=Math.max(0,1-impactAge/2.1);
+     if(impactAge>2.1)impactFx.visible=false;
+   }
+   quake=Math.max(0,quake-dt*.75);
+   daytime+=dt;
+   if(Math.floor(daytime/100)+1!==directorState.day)directorState.day=Math.floor(daytime/100)+1;
+ }
+
  const skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,uniforms:{top:{value:new T.Color('#347fba')},horizon:{value:new T.Color('#bfdfea')},night:{value:0},time:{value:0}},
   vertexShader:'varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:'uniform vec3 top,horizon;uniform float night,time;varying vec3 v;void main(){vec3 d=normalize(v);float h=smoothstep(-.21,.82,d.y);vec3 c=mix(horizon,top,h);float s=pow(max(dot(d,normalize(vec3(-.55,.48,.55))),0.),600.);c+=vec3(1.,.8,.53)*s*1.9*(1.-night);gl_FragColor=vec4(c,1.);}'
