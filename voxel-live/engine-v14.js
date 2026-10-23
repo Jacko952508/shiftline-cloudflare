@@ -2763,7 +2763,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  };
  const postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
  const postTriangle=new T.BufferGeometry();
- postTriangle.setAttribute('position',new T.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
+ postTriangle.setAttribute('position',new T.Float32BufferAttribute([-1,-1,-.5,3,-1,-.5,-1,3,-.5],3));
+ postTriangle.setAttribute('uv',new T.Float32BufferAttribute([0,0,2,0,0,2],2));
  const postUvVertex=`varying vec2 uv;void main(){uv=position.xy*.5+.5;gl_Position=vec4(position.xy,0.,1.);}`;
 
  // One threshold/downsample pass, then two true separable Gaussian blurs.
@@ -2838,6 +2839,24 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
        postQuadFinal=new T.Mesh(postTriangle,spaceFinalMat);
  const postStage1=new T.Scene(),postStageBlur=new T.Scene(),postStage2=new T.Scene();
  postStage1.add(postQuadExtract);postStageBlur.add(postQuadBlur);postStage2.add(postQuadFinal);
+
+ // V14 FIX: use Three.js's tested MeshBasicMaterial for the full-screen beauty copy,
+ // rather than relying on a custom final shader that can silently fail compilation on iOS.
+ // Bloom is additive over a guaranteed visible scene, not the only way to show the world.
+ const safeBeautyMaterial=new T.MeshBasicMaterial({
+   color:0xffffff,map:null,side:T.DoubleSide,toneMapped:false,depthTest:false,depthWrite:false
+ });
+ const safeGlowMaterial=new T.MeshBasicMaterial({
+   color:0xe7f2ff,map:null,side:T.DoubleSide,toneMapped:false,depthTest:false,depthWrite:false,
+   transparent:true,opacity:mobile?.52:.68,blending:T.AdditiveBlending
+ });
+ const safeBeautyScene=new T.Scene(),safeGlowScene=new T.Scene();
+ const beautyCopy=new T.Mesh(postTriangle,safeBeautyMaterial);
+ const glowCopy=new T.Mesh(postTriangle,safeGlowMaterial);
+ beautyCopy.frustumCulled=false;glowCopy.frustumCulled=false;
+ safeBeautyScene.add(beautyCopy);safeGlowScene.add(glowCopy);
+ let v14RenderFailures=0,v14WorldChecked=false,v14RenderVariant=directorState.v14RenderVariant||'safe';
+
  function setupSpacePost(){
    if(overdrive.failed||!overdrive.enabled)return false;
    const size=renderer.getDrawingBufferSize(new T.Vector2());
@@ -2859,6 +2878,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      bloomGaussian.uniforms.texel.value.set(1/glowW,1/glowH);
      spaceFinalMat.uniforms.beauty.value=overdrive.beauty.texture;
      spaceFinalMat.uniforms.glow.value=overdrive.blur.texture;
+     safeBeautyMaterial.map=overdrive.beauty.texture;safeBeautyMaterial.needsUpdate=true;
+     safeGlowMaterial.map=overdrive.blur.texture;safeGlowMaterial.needsUpdate=true;
      spaceFinalMat.uniforms.viewport.value.set(w,h);
      return true;
    }catch(e){
@@ -2867,7 +2888,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
  }
  function spaceRenderOverdrive(t){
-   if(!setupSpacePost()){renderer.render(scene,camera);overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;return}
+   if(v14RenderVariant==='direct'||!setupSpacePost()){renderer.setRenderTarget(null);renderer.render(scene,camera);overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;return}
    const original=renderer.getRenderTarget();
    try{
      renderer.setRenderTarget(overdrive.beauty);
@@ -2885,12 +2906,24 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      renderer.clear();renderer.render(postStageBlur,postCamera);
      renderer.setRenderTarget(original);
      spaceFinalMat.uniforms.time.value=t;
-     renderer.render(postStage2,postCamera);
+     if(v14RenderVariant==='safe'){
+       const prevClear=renderer.autoClear;
+       renderer.autoClear=false;
+       try{
+         renderer.clear();
+         renderer.render(safeBeautyScene,postCamera);
+         renderer.render(safeGlowScene,postCamera);
+       }finally{renderer.autoClear=prevClear}
+       overdrive.lastPassCount=6;
+     }else{
+       renderer.render(postStage2,postCamera);
+       overdrive.lastPassCount=5;
+     }
      overdrive.renderPasses++;
-     overdrive.lastPassCount=5;
    }catch(e){
      overdrive.failed=true;
-     console.warn('V13 post-processing fallback after GPU render error',e);
+     v14RenderFailures++;
+     console.warn('V14 GPU compositor recovered to direct rendering',e);
      if(!overdrive.reportedFailure){overdrive.reportedFailure=true;spaceNotify('POST FX FALLBACK · Direct renderer active · try SYSTEMS → POST FX to retry',6)}
      renderer.setRenderTarget(original);renderer.render(scene,camera);
      overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;
@@ -3699,7 +3732,7 @@ directorPanel.addEventListener('click',e=>{
  return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
-        overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
+        overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();safeBeautyMaterial.dispose();safeGlowMaterial.dispose();
         mantaGeometry.dispose();mantaFinMat.dispose();for(const l of mantaTails){l.geometry.dispose()}
         cosmicEnvTarget?.dispose();cosmicEnvTexture.dispose();
         ionGeometry.dispose();ionShader.dispose();
