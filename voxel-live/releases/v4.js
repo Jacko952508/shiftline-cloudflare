@@ -1,0 +1,1 @@
+export const release={version:4,engineCommit:'f63d0714b27b3879436a80ee0e0b715202d009ab',engineFile:'engine-v4.js',message:'REALITY ENGINE EXPANDED: 256x256 world, metropolis with traffic, 6 vehicles, animated ocean, lightning, fireworks, world map and developer tools'};
