@@ -175,7 +175,7 @@ flightHud.style.cssText='position:absolute;right:10px;top:96px;z-index:2;pointer
 root.appendChild(flightHud);
 const flightBar=document.createElement('div');
 flightBar.className='controls';
-flightBar.style.cssText='position:absolute;left:auto;right:10px;bottom:104px;width:auto;display:flex;gap:5px;background:#071b2be8;padding:6px;z-index:3';
+flightBar.style.cssText='position:absolute;left:auto;right:10px;bottom:107px;width:157px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;background:#071b2be8;padding:6px;z-index:3';
 flightBar.innerHTML='<button id="heliUp">▲ CLIMB</button><button id="heliDown">▼ DESCEND</button><button id="heliHold">HOVER</button><button id="heliCamera">COCKPIT</button>';
 root.appendChild(flightBar);
 let hCollective=0,hCameraReady=false;
@@ -190,7 +190,7 @@ $('heliCamera').onclick=()=>{$('view').value=view==='heli'?'cockpit':'heli';rese
 $('view').insertAdjacentHTML('afterbegin','<option value="heli">🚁 Fly helicopter</option><option value="cockpit">🚁 Cockpit</option>');
 function hFlight(dt,t){
  const flying=view==='heli'||view==='cockpit';
- flightHud.style.display=flying?'block':'none';flightBar.style.display=flying?'flex':'none';
+ flightHud.style.display=flying?'block':'none';flightBar.style.display=flying?'grid':'none';
  hInstrument.visible=view==='cockpit';hBody.visible=hCabin.visible=hCanopy.visible=view!=='cockpit';
  hRotor.rotation.y+=dt*33;tailSpin.rotation.x+=dt*39;
  hRed.visible=Math.sin(t*7)>0;hGreen.visible=Math.sin(t*4)>0;
@@ -209,7 +209,7 @@ function hFlight(dt,t){
  helicopter.position.copy(hState.p);helicopter.rotation.y=hState.heading;
  heliTilt.rotation.z=T.MathUtils.damp(heliTilt.rotation.z,-joystick.x*.16,3.6,dt);
  heliTilt.rotation.x=T.MathUtils.damp(heliTilt.rotation.x,-joystick.y*.15,3.6,dt);
- const heading=String(Math.round((360+hState.heading*180/Math.PI)%360)).padStart(3,'0');
+ const heading=String(Math.round(((hState.heading*180/Math.PI%360)+360)%360)).padStart(3,'0');
  flightHud.textContent='H-07  •  NIMBUS AIR\nALT '+String(Math.round(hState.p.y)).padStart(3,'0')+' m  SPD '+String(Math.round(Math.abs(hState.speed)*3.6)).padStart(3,'0')+' km/h\nHDG '+heading+'°  '+(hCollective>0?'CLIMB':hCollective<0?'DESCENT':Math.abs(hState.speed)>1?'CRUISE':'HOVER');
 }
 function hCamera(dt){
