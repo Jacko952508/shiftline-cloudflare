@@ -29,3 +29,20 @@ The viewer does not independently act on arbitrary user messages; the assistant 
 ### Important deployment detail
 The previously sent in-chat widget has a hard-coded release discovery branch **nimbus-chat-live**, path `voxel-live/releases/vN.js` (first V2 pinned to a commit).
 Therefore **create each version's release pointer on `nimbus-chat-live`**, even though the source engine lives in `voxel-chat-live`. Each pointer must use the exact commit of the engine file creation/update; validate this sequence before informing the user.
+
+## REALITY ENGINE V5 — Crescent Coast (2026-10-23)
+
+- New active/default smooth landscape (non-voxel terrain) **CRESCENT COAST**, rendered inside the same in-chat widget.
+- 256×256 coastal heightmap mesh with computed normals, procedural high-frequency soil texture, slope/tone vertex colour, curved Catmull-Rom asphalt roads and markings, winding coastal boulevard, 3D suspension bridge, marina, modern coastal apartments, instanced forest and road traffic.
+- Original 256×256 editable VOXEL world remains selectable using Director Mode > VOXEL WORLD; block edits and previous player position are retained via the existing snapshot/localStorage workflow.
+- Total **nine vehicles**: SkyRider VTOL, HAWK helicopter, strike jet, dune buggy, hoverbike, hydrofoil, ASTRA GT sports coupe, ATLAS 6×6 truck, Coast Guard seaplane.
+- Director Mode includes Crescent Coast / Voxel World switches and the new vehicles. On smooth map touch buttons change to MAP and DRIVE. Smooth-mode ground/vehicle physics uses a continuous height sampler.
+- On smooth map meteor impact deforms height vertices visibly and saves crater parameters. Original voxel-building tools require switching back to the voxel world.
+- Mobile performance: building windows are batched in InstancedMesh; vegetation is instanced; voxel chunk meshing disabled when rendering the smooth world; models hidden when far/unneeded; old scene resources cleaned on update.
+- A critical initialisation-order error was caught during source review: both the Three.js scene and `newMapActive` must be initialized *before* city traffic group construction. Confirm these declaration positions on every future update.
+
+**Update compatibility:** The pre-existing ChatGPT widget requires sequential numbered releases from `nimbus-chat-live/voxel-live/releases/vN.js`. Since old sessions may remain on V3 due broken/cached V4, the V4 recovery manifest points to the exact same immutable V5 engine commit as V5 release. Those release pointers are on `nimbus-chat-live`; engine source remains `voxel-chat-live/voxel-live/engine-v5.js`.
+
+**Current immutable V5 engine commit**: `b8f1e23b85fa47ade7a293dcf57d95bcff3db6ad`.
+
+**No Hatchable deployment.** Only GitHub source and the existing in-chat widget. Do not claim user-device runtime testing; only GitHub source and static JS checked. CDN branch caches may need a purge if still stale.
