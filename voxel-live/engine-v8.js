@@ -625,6 +625,117 @@ for(let i=0;i<11;i++){
  }
  coastTraffic.push({g,path:mainRoads[i%mainRoads.length],phase:i*.17,speed:4.3+i*.3});
 }
+
+ // V8 LIVING CITY: persistent economy, autonomous foot traffic and scheduled deliveries.
+ // Resident agents use coarse simulation unless they are near the player.
+ const citySim={
+   population:124,day:0,minute:8*60,credits:directorState.cityCredits??3400,
+   fuel:directorState.cityFuel??920,food:directorState.cityFood??640,
+   materials:directorState.cityMaterials??580,energy:directorState.cityEnergy??1000,
+   mood:directorState.cityMood??.78,
+   deliveries:directorState.cityDeliveries??0,
+   activeBusiness:0,incidents:0,
+ };
+ const businessDefs=[
+   {name:'Crescent Market',x:127,z:177,stock:260,goods:'food',demand:1.1},
+   {name:'Marina Fuel',x:172,z:67,stock:200,goods:'fuel',demand:1.15},
+   {name:'Harbour Workshop',x:208,z:177,stock:140,goods:'materials',demand:1},
+   {name:'Bay Hotel',x:194,z:193,stock:220,goods:'food',demand:.95},
+   {name:'Coastal Clinic',x:147,z:195,stock:160,goods:'food',demand:.6},
+   {name:'Power Station',x:226,z:131,stock:300,goods:'energy',demand:1.25}
+ ];
+ const buildingsSim=businessDefs.map((b,i)=>({...b,open:true,workers:3+(i%5),earnings:0}));
+ const cityActors=[],uniformCoat=new T.MeshStandardMaterial({color:0x78a5b6,roughness:.87}),
+       streetFace=new T.MeshStandardMaterial({color:0xddbb9d,roughness:.88});
+ const actorGeo=new T.CapsuleGeometry(.21,.78,3,5),actorHeads=new T.SphereGeometry(.2,7,5);
+ const maxActors=mobile?48:90;
+ const cityBodies=new T.InstancedMesh(actorGeo,uniformCoat,maxActors);
+ const cityHeads=new T.InstancedMesh(actorHeads,streetFace,maxActors);
+ const adummy=new T.Object3D();smoothWorld.add(cityBodies,cityHeads);
+ const taskNames=['COMMUTE','SHOP','WORK','LEISURE','DELIVERY','RETURN HOME'];
+ for(let i=0;i<maxActors;i++){
+   const origin=businessDefs[i%businessDefs.length];
+   cityActors.push({id:i,x:origin.x+(hash(i,77)-.5)*12,z:origin.z+(hash(i,88)-.5)*12,
+     destination:(i+1)%businessDefs.length,task:i%taskNames.length,
+     speed:.58+hash(i,65)*1.15,phase:hash(i,21)*7,think:0,step:0,wealth:45+Math.floor(hash(i,41)*140),
+     shift:Math.floor(hash(i,12)*6),visible:true});
+ }
+ const deliveryLinks=[];
+ for(let i=0;i<8;i++){
+  const g=new T.Group();smoothWorld.add(g);
+  const shell=new T.Mesh(new T.BoxGeometry(1.85,.75,3.6),new T.MeshPhysicalMaterial({color:i%2?0xd5b795:0x769ba2,metalness:.5,roughness:.32}));
+  shell.position.y=.8;g.add(shell);
+  const cargo=new T.Mesh(new T.BoxGeometry(1.5,1.2,1.8),new T.MeshStandardMaterial({color:0xa38d73,roughness:.9}));
+  cargo.position.set(0,1.56,1);g.add(cargo);
+  for(const a of [-1,1])for(const z of [-1.12,1.1]){
+    const w=new T.Mesh(new T.CylinderGeometry(.37,.37,.25,9),new T.MeshStandardMaterial({color:0x242a2c,roughness:1}));
+    w.position.set(a*.98,.4,z);w.rotation.z=Math.PI/2;g.add(w);
+  }
+  deliveryLinks.push({g,phase:i/8,speed:3.2+(i%3)*1.1,target:i%businessDefs.length,route:i%mainRoads.length});
+ }
+ const activeClock={secs:0};
+ function tickEconomy(dt){
+   activeClock.secs+=dt;
+   if(activeClock.secs<3)return;
+   const loops=Math.min(8,Math.floor(activeClock.secs/3));activeClock.secs-=loops*3;
+   for(let k=0;k<loops;k++){
+     citySim.minute=(citySim.minute+7)%(24*60);
+     if(citySim.minute<7)citySim.day++;
+     const hour=citySim.minute/60;
+     let open=0;
+     for(let i=0;i<buildingsSim.length;i++){
+       const b=buildingsSim[i];
+       b.open=i===3||i===4||(hour>=7&&hour<=21);
+       if(b.open)open++;
+       const demand=b.demand*(b.open?1:.21);
+       b.stock=Math.max(0,b.stock-demand*.5);
+       if(b.open&&b.stock>5){b.earnings+=demand*2.5;citySim.credits+=demand*.68}
+       if(b.stock<28&&citySim[b.goods]>40){
+         b.stock+=65;citySim[b.goods]-=65;citySim.deliveries++;
+       }
+     }
+     citySim.activeBusiness=open;
+     citySim.food=Math.max(0,citySim.food-.24);
+     citySim.fuel=Math.max(0,citySim.fuel-.19);
+     citySim.energy=Math.max(0,citySim.energy-.3);
+     citySim.mood=T.MathUtils.clamp(citySim.mood+(citySim.food>80&&open>2?.002:-.007),.15,.97);
+   }
+   Object.assign(directorState,{cityCredits:Math.round(citySim.credits),cityFuel:Math.round(citySim.fuel),
+     cityFood:Math.round(citySim.food),cityMaterials:Math.round(citySim.materials),
+     cityEnergy:Math.round(citySim.energy),cityMood:citySim.mood,cityDeliveries:citySim.deliveries});
+ }
+ function tickLivingCity(dt,t){
+   tickEconomy(dt);
+   const hr=citySim.minute/60;
+   const active=hr>=6&&hr<22;
+   cityBodies.visible=cityHeads.visible=newMapActive;
+   for(let i=0;i<cityActors.length;i++){
+     const a=cityActors[i],goal=businessDefs[a.destination];
+     a.think-=dt;
+     if(a.think<=0){a.think=4+(hash(i+Math.floor(t),17)*7);
+       const preferred=hr>=7&&hr<17?Math.floor((i+a.shift)%businessDefs.length):Math.floor(hash(i,Math.floor(t/13))*businessDefs.length);
+       a.destination=preferred;a.task=hr>=7&&hr<17?1:i%taskNames.length;
+     }
+     const dx=goal.x-a.x,dz=goal.z-a.z,dist=Math.hypot(dx,dz);
+     const visibility=active||i%4===0;
+     a.visible=visibility;
+     if(dist>1.8&&visibility){const speed=a.speed*(hr>=20?.8:1);a.x+=dx/dist*speed*dt;a.z+=dz/dist*speed*dt;a.step+=speed*dt}
+     if(dist<2)a.destination=(a.destination+1+i%3)%businessDefs.length;
+     adummy.position.set(a.x,coastH(a.x,a.z)+.83+Math.sin(a.step*6)*.043,a.z);
+     adummy.rotation.set(0,Math.atan2(dx,dz),0);adummy.scale.set(1,visibility?1:.001,1);adummy.updateMatrix();
+     cityBodies.setMatrixAt(i,adummy.matrix);
+     adummy.position.y+=.76;adummy.updateMatrix();cityHeads.setMatrixAt(i,adummy.matrix);
+   }
+   cityBodies.instanceMatrix.needsUpdate=true;cityHeads.instanceMatrix.needsUpdate=true;
+   for(const d of deliveryLinks){
+     const curve=mainRoads[d.route].curve,total=curve.getLength();
+     const u=(d.phase+t*d.speed/total)%1,p=curve.getPoint(u),tangent=curve.getTangent(u);
+     d.g.position.set(p.x,coastH(p.x,p.z)+.12,p.z);
+     d.g.rotation.y=Math.atan2(-tangent.x,-tangent.z);
+     d.g.visible=newMapActive&&(loc.x-p.x)**2+(loc.z-p.z)**2<115*115;
+   }
+ }
+
 const coastHeadlight=new T.PointLight(0xffdaa3,4,36);coastHeadlight.position.set(163,24,173);smoothWorld.add(coastHeadlight);
 const coastMeshes=smoothWorld.children.length;
 function animateCoast(dt,t){
@@ -1442,7 +1553,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
    const stats=directorPanel.querySelector('#realityStats');
-   if(stats)stats.textContent='POPULATION '+citizens.length+' • DISTRICTS '+Number(directorState.town)+' • BUILDINGS '+directorState.structures+' • CRATERS '+directorState.craters+' • WORLD EVENTS '+directorState.events;
+   if(stats)stats.textContent='POPULATION '+(citizens.length+citySim.population)+' • BUSINESSES '+buildingsSim.filter(x=>x.open).length+' • CITY CREDITS '+Math.floor(citySim.credits)+' • DELIVERIES '+citySim.deliveries+' • CRATERS '+directorState.craters+' • EVENTS '+directorState.events;
  }
 
  // More developer tools: world atlas, runtime information, terrain brush and GPU-friendly effects.
@@ -1764,7 +1875,7 @@ directorPanel.addEventListener('click',e=>{
   wetness=T.MathUtils.damp(wetness,weather==='rain'?1:0,weather==='rain'?.7:.045,dt);
   asphalt.roughness=.8-wetness*.51;asphalt.envMapIntensity=.64+wetness*.63;
   puddles.visible=newMapActive&&wetness>.025;puddleMat.opacity=wetness*.78;
-  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;sunDisk.visible=!newMapActive&&weather!=='night'&&weather!=='rain';advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive){animateCoast(dt,t);animateVista(t)}else animateTraffic(dt,t);
+  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;sunDisk.visible=!newMapActive&&weather!=='night'&&weather!=='rain';advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive){animateCoast(dt,t);animateVista(t);tickLivingCity(dt,t)}else animateTraffic(dt,t);
   for(const a of animals){
     a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
