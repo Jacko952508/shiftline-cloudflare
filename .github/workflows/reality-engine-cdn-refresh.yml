@@ -1,0 +1,22 @@
+name: Refresh Reality Engine game update CDN
+on:
+  push:
+    branches: [nimbus-chat-live]
+    paths:
+      - 'voxel-live/releases/**'
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Refresh numbered game release files
+        shell: bash
+        run: |
+          set -e
+          for version in $(seq 3 8); do
+            url="https://purge.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@nimbus-chat-live/voxel-live/releases/v${version}.js"
+            printf "Purging version %s: " "$version"
+            curl --fail --location --silent --show-error --retry 2 --max-time 12 "$url" || true
+            echo
+          done
+          echo "Release cache refresh requested"
