@@ -2351,6 +2351,62 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    ionGeometry.attributes.position.needsUpdate=true;
  }
 
+
+ // Overdrive craft sculpting: batched armour tiles, aerodynamic sweep lights and mechanical subframes.
+ const panelColor=new T.MeshPhysicalMaterial({color:0x718cae,metalness:.93,roughness:.22,clearcoat:1,clearcoatRoughness:.11,envMapIntensity:2});
+ const panelDark=spaceMat(0x263b56,.3,.91),panelGlow=new T.MeshBasicMaterial({color:0x84e5ff,toneMapped:false});
+ const panelCount=mobile?170:310,panelGeometry=new T.BoxGeometry(1,1,1);
+ const hullPanels=new T.InstancedMesh(panelGeometry,panelColor,panelCount);
+ const panelDummy=new T.Object3D(),panelColour=new T.Color();
+ for(let i=0;i<panelCount;i++){
+   const z=-5.15+hash(i,11)*10.5,angle=hash(i,13)*Math.PI*2;
+   const ellipse=Math.sqrt(Math.max(.02,1-(z/7.3)**2));
+   const x=Math.cos(angle)*ellipse*2.4,y=Math.sin(angle)*ellipse*.85;
+   panelDummy.position.set(x,y,z);panelDummy.rotation.set(angle*.21,Math.sin(z*.35)*.13,angle);
+   panelDummy.scale.set(.18+.65*hash(i,21),.08+.24*hash(i,26),.45+.62*hash(i,28));
+   panelDummy.updateMatrix();hullPanels.setMatrixAt(i,panelDummy.matrix);
+   panelColour.setHSL(.58+hash(i,23)*.04,.14,.36+hash(i,31)*.27);
+   hullPanels.setColorAt(i,panelColour);
+ }
+ hullPanels.instanceMatrix.needsUpdate=true;hullPanels.instanceColor.needsUpdate=true;explorerBody.add(hullPanels);
+ // Procedural curves follow the spacecraft's silhouette rather than clipping through its wings.
+ const lineGeometry=(points,radius=.045,material=panelGlow)=>{
+   const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)));
+   return spaceMesh(explorerBody,new T.TubeGeometry(curve,Math.max(12,points.length*8),radius,5,false),material);
+ };
+ for(const sign of [-1,1]){
+   lineGeometry([[sign*1.8,.2,-1.6],[sign*4.4,.17,-.9],[sign*7.9,.12,1.27],[sign*8.8,.1,1.48]],.065,panelGlow);
+   lineGeometry([[sign*1.7,.19,4.2],[sign*3.7,.2,3.9],[sign*5.3,.23,3.75]],.045,panelGlow);
+   lineGeometry([[sign*.85,.76,-4.2],[sign*1.2,.74,-2.8],[sign*1.8,.51,-.4]],.045,spaceTrim);
+   const coupler=spaceBox(explorerBody,.35,.25,2.6,panelDark,sign*2.1,.14,1);
+   coupler.rotation.z=sign*.1;
+   for(let j=0;j<9;j++){
+     spaceBall(explorerBody,.12,j%3?spaceTrim:panelGlow,sign*(1.5+j*.32),.62,1.8-j*.4,8);
+   }
+ }
+ const engineDust=new T.MeshBasicMaterial({color:0xb9e9ff,toneMapped:false});
+ const engineLoops=[];
+ for(const sign of [-1,1]){
+   for(let i=0;i<4;i++){
+     const ring=spaceMesh(explorerBody,new T.TorusGeometry(.68+(3-i)*.08,.065,7,28),
+       i%2?panelGlow:panelDark,sign*1.3,-.12,5.12+i*.42);
+     ring.rotation.y=Math.PI*.5;
+     engineLoops.push(ring);
+   }
+ }
+ // Illuminated dorsal spine, RCS ports, clamps and sensor apertures.
+ const spine=spaceBox(explorerBody,.4,.36,7.4,panelDark,0,1.1,.45);
+ for(let i=0;i<16;i++){
+   const z=-3.7+i*.5;
+   spaceBox(explorerBody,.25,.08,.26,i%4?panelGlow:spaceGold,0,1.32,z);
+ }
+ const rcsPositions=[[1.2,.35,-4.6],[-1.2,.35,-4.6],[1.95,-.1,2.7],[-1.95,-.1,2.7]];
+ for(const [x,y,z] of rcsPositions){
+   const thr=spaceMesh(explorerBody,new T.CylinderGeometry(.21,.28,.5,10),panelDark,x,y,z);
+   thr.rotation.x=Math.PI/2;
+   glowSprite(explorerBody,0x7ddfff,x,y,z+.15,1.1,.61);
+ }
+
  // The Silent Array — orbiting relic and signal beams.
  const arraySite=new T.Group();arraySite.position.set(-235,15,-480);spaceRoot.add(arraySite);
  const ancientMetal=spaceMat(0x253a59,.36,.68),ancientGlow=new T.MeshBasicMaterial({color:0x9c72ff,toneMapped:false});
@@ -2462,7 +2518,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  stage.appendChild(spaceStatus);
  const spaceControls=document.createElement('div');
  spaceControls.style.cssText='position:absolute;bottom:8px;right:7px;z-index:6;display:none;pointer-events:auto;width:163px;font:700 11px system-ui;color:#fff;touch-action:manipulation';
- spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="world">🌍 WORLD</button><button data-space="director">✦ DIRECTOR</button></div>';
+ spaceControls.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px"><button data-space="nav">🪐 SIGHTS</button><button data-space="scan">⌁ SCAN</button><button data-space="boost">⚡ BOOST</button><button data-space="warp">✧ WARP</button><button data-space="up">▲ RISE</button><button data-space="down">▼ DIVE</button><button data-space="reveal">✧ V12 REVEAL</button><button data-space="camera">🎥 CAMERA</button><button data-space="graphics">✨ GRAPHICS</button><button data-space="director">✦ DIRECTOR</button><button data-space="world">🌍 WORLD</button><button data-space="nav">🪐 SIGHTS</button></div>';
  for(const button of spaceControls.querySelectorAll('button')){
    button.style.cssText='background:linear-gradient(145deg,#0f3857ef,#1e2554f1);border:1px solid #75a9d077;color:#e7faff;border-radius:8px;padding:10px 4px;min-height:41px;font:700 10px system-ui;box-shadow:0 2px 8px #0019;touch-action:none';
  }
@@ -2665,6 +2721,23 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      const route=spaceWaypoints.findIndex(w=>w.id===lastSight);
      warpTo(route>=0?route:2);
    }
+   if(action==='reveal'){
+     spaceCraftState.warp=null;spaceCraftState.speed=0;
+     spaceCraftState.pos.set(-60,48,-645);
+     yaw=-.06;pitch=-.035;
+     spaceNotify('✦ OVERDRIVE V12 · ORBITAL CATHEDRAL · AEON · DUST NEBULAE',5);
+   }
+   if(action==='camera'){
+     const modes=['chase','cinema','cockpit'];
+     const i=modes.indexOf(directorState.spaceCamera||'chase');
+     directorState.spaceCamera=modes[(i+1)%modes.length];
+     spaceNotify('CAMERA MODE · '+directorState.spaceCamera.toUpperCase(),2.1);
+   }
+   if(action==='graphics'){
+     const modes=['adaptive','cinema','battery'];
+     const i=modes.indexOf(overdrive.mode);
+     setOverdriveQuality(modes[(i+1)%modes.length]);
+   }
    if(action==='boost'){
      spaceCraftState.boost=!spaceCraftState.boost;
      b.style.borderColor=spaceCraftState.boost?'#8fffe2':'#75a9d077';
@@ -2676,6 +2749,13 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  function enterSpaceWorld(auto=false){
    if(spaceMode)return;
    if(riding)endFlight();
+   if(!directorState.v12Seen){
+     // Showcase the new orbital megastructure instead of reloading at an unremarkable saved camera position.
+     directorState.v12Seen=true;
+     spaceCraftState.pos.set(-60,48,-645);
+     spaceCraftState.warp=null;spaceCraftState.speed=0;
+     yaw=-.06;pitch=-.035;
+   }
    spaceStates.previousPosition.copy(loc);
    spaceStates.previousYaw=yaw;spaceStates.previousPitch=pitch;
    spaceStates.previousCameraFar=camera.far;
@@ -2691,7 +2771,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    camera.far=12000;camera.fov=72;camera.updateProjectionMatrix();
    scene.fog=null;scene.background=new T.Color(0x020410);
    hemi.intensity=1.9;sun.intensity=1.5;
-   yaw=spaceCraftState.heading;pitch=spaceCraftState.elevation;
+   yaw=directorState.v12Seen&&spaceCraftState.pos.z===-645?-.06:spaceCraftState.heading;
+   pitch=directorState.v12Seen&&spaceCraftState.pos.z===-645?-.035:spaceCraftState.elevation;
    spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='none';
    q('vxHotbar').style.display='none';
@@ -2771,10 +2852,15 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
    explorerThrusterLight.intensity=st.boost?9:3.2;
    // Chase camera: flight craft always visible in front of the user.
-   const wanted=shipLocation.clone().addScaledVector(forward,-30).add(new T.Vector3(0,9,0));
+   const camMode=directorState.spaceCamera||'chase';
+   const wanted=shipLocation.clone().addScaledVector(forward,camMode==='cockpit'?3.1:camMode==='cinema'?-52:-30).add(new T.Vector3(0,camMode==='cockpit'?1.7:camMode==='cinema'?18:9,0));
    camera.position.lerp(wanted,1-Math.exp(-dt*5.6));
    const focus=shipLocation.clone().addScaledVector(forward,46);
    camera.lookAt(focus);
+   // Distinctive flight camera shake is tiny and speed dependent, preserving readability.
+   const flightVelocity=Math.abs(st.speed);
+   camera.fov=T.MathUtils.damp(camera.fov,(directorState.spaceCamera==='cinema'?53:directorState.spaceCamera==='cockpit'?75:70)+(st.boost?flightVelocity*.013:0),2.6,dt);
+   camera.updateProjectionMatrix();
    nixAurora.uniforms.time.value=t;
    for(const [i,moon] of aeonMoons.entries()){
      const angle=t*moon.speed+moon.phase;
