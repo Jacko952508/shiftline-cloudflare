@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 14,
+  "latest": 15,
   "releases": [
     {
       "version": 11,
@@ -21,9 +21,14 @@
       "version": 14,
       "engineCommit": "e8597256949a5261c3e6b53b6292cdf3e7fd2cba",
       "engineFile": "engine-v14.js"
+    },
+    {
+      "version": 15,
+      "engineCommit": "44824f16cf50e1e982e9a0da8e0351a7a7936a49",
+      "engineFile": "engine-v15.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
   "sourceDir": "voxel-live",
-  "notes": "Direct immutable engine loading avoids requiring a live GitHub API directory listing. Fallback when discovery fails is to keep the current playable engine."
+  "notes": "Immutable engine pins. V15 iOS direct-first ASTRAEUS mode. Existing in-chat widgets need their loader updated to adopt new releases."
 }
