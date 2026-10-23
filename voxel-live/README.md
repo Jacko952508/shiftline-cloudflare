@@ -119,3 +119,23 @@ Live ChatGPT update descriptor: \`nimbus-chat-live/voxel-live/releases/v11.js\`.
 - Exact source and immutable GitHub descriptor verified, JavaScript parsed, startup ordering inspected.
 - **Not yet proven to render on the user's iPhone or to have a non-cached CDN response**.
 - The existing viewer must be at V10 to pick up V11 on the next update; older versions install sequentially unless they use a direct pinned V11 loader.
+
+
+## V12 — ASTRAEUS OVERDRIVE graphics rebuild (2026-10-23)
+
+**Source:** \`voxel-live/engine-v12.js\`, branch \`voxel-chat-live\`.
+**Immutable pinned engine commit:** \`b06b618984d9dc1d7be79435d65ef69711e601ee\`.
+**Release manifest:** \`nimbus-chat-live/voxel-live/releases/v12.js\`.
+
+V12 is a concrete renderer/asset overhaul, not merely new labels:
+- Dedicated WebGL multi-pass space renderer: full-sized scene render target, reduced-resolution selective glow extraction and blur, filmic composite, vignette, subtle chromatic dispersion and shader grain. Final stage uses Three's \`colorspace_fragment\` conversion.
+- Optional half-float HDR in "cinema" quality when \`EXT_color_buffer_float\` is supported; normal mode uses unsigned byte sRGB buffers. Default "adaptive" retains bloom but adjusts image resolution and bloom-buffer scale. Disabling/failing the effect falls back to direct WebGL render.
+- Updated 4-octave domain-warped planet surface shader with storm bands, irregular continents, geothermal cracks, edge scattering and independent animated cloud shell layers.
+- Three instanced GPU nebula dust groups, 2,000+ mobile particles with depth/parallax; a monumental ringed orbital cathedral built using instanced geometry and animated energy patterns near the initial space arrival.
+- Kestrel XR sculpting pass: instanced armour plates, tube-geometry trim following actual wing shape, cockpit details, RCS nozzles and procedurally animated ion exhaust.
+- Postprocess gravitational light-bending effect projected around Gravity Well X9; black hole visible only when in camera frustum/range.
+- "V12 REVEAL" button positions player at the revamped arrival sector; "CAMERA" cycles views; "GRAPHICS" cycles adaptive/cinema/battery; "POST FX" toggles the whole post pipeline for a direct visual comparison. HUD shows FX mode and rendering statistics.
+- Existing ASTRAEUS discoveries and both terrestrial worlds remain available, and \`snapshot()\` interface is unchanged. First V12 entry changes only space scene positioning, not discovery logs.
+- No Hatchable deployment; do not touch SHIFT LINE production main.
+
+QA: source parses and pinned manifest verified on GitHub. CDN response could not be verified in the available web environment; actual shader compilation, device FPS and visual quality **not yet verified on iPhone**. Do not claim otherwise.
