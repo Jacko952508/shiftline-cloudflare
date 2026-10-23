@@ -1906,6 +1906,212 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const directorButton=document.createElement('button');
  directorButton.textContent='✦ DIRECTOR';directorButton.style.cssText='background:#23645b;color:#e2fff3;font-weight:800;border-color:#94f5d7';
  topOptions?.appendChild(directorButton);
+
+ // V11 — ASTRAEUS / THE CELESTIAL EXPANSE: independent, GPU-first deep-space world.
+ // Space is a self-contained scene island: no terrain, NPC or coast tick runs while active.
+ const spaceRoot=new T.Group();spaceRoot.visible=false;scene.add(spaceRoot);
+ const spaceStates={restore:new Map(),previousCameraFar:camera.far,previousFog:scene.fog,
+   previousBackground:scene.background,previousPosition:loc.clone(),previousYaw:yaw,previousPitch:pitch,
+   previousSun:sun.intensity,previousHemi:hemi.intensity};
+ const spaceSave=directorState.spacePosition||{};
+ const spaceCraftState={
+   pos:new T.Vector3(Number.isFinite(spaceSave.x)?spaceSave.x:0,Number.isFinite(spaceSave.y)?spaceSave.y:12,Number.isFinite(spaceSave.z)?spaceSave.z:110),
+   speed:0,boost:false,up:false,down:false,warp:null,clock:0,
+   heading:Number.isFinite(spaceSave.heading)?spaceSave.heading:0,
+   elevation:Number.isFinite(spaceSave.elevation)?spaceSave.elevation:-.025
+ };
+ const spaceDiscoveries=new Set(Array.isArray(directorState.spaceDiscoveries)?directorState.spaceDiscoveries:[]);
+ const spaceWaypoints=[
+   {id:'monolith',name:'THE SILENT ARRAY',p:[-235,15,-380],note:'A derelict communications array broadcasting prime-number signals from an extinct civilisation'},
+   {id:'crystal',name:'CRYSTAL REEF',p:[355,-65,-490],note:'Violet crystalline growths on a shattered moon fragment, vibrating in perfect synchrony'},
+   {id:'giant',name:'AEON · THE RINGED GIANT',p:[-110,70,-670],note:'An immense blue-violet giant with layered rings and turbulent atmosphere'},
+   {id:'ember',name:'EMBER DRIFT',p:[-490,-70,-875],note:'A molten world of black volcanic stone and luminous thermal currents'},
+   {id:'gateway',name:'THE HORIZON GATE',p:[355,32,-1620],note:'An ancient luminous ring structure pointing into unknown interstellar space'},
+   {id:'nix',name:'NIX · ICE WORLD',p:[560,130,-1900],note:'An aurora-wrapped frozen sphere with towering icy continents'},
+   {id:'ark',name:'THE GHOST ARK',p:[-660,85,-2170],note:'A kilometre-long exploration vessel whose crew never returned'},
+   {id:'singularity',name:'GRAVITY WELL X9',p:[-780,60,-2430],note:'A gravitational singularity inside a whirling incandescent accretion disc'}
+ ];
+ const spacePalette={
+   indigo:new T.Color('#7775ff'),violet:new T.Color('#be60ff'),cyan:new T.Color('#58e7ff'),
+   amber:new T.Color('#ffc28d'),ice:new T.Color('#87eaff')
+ };
+ const spaceMat=(hex,rough=.32,metal=.4)=>new T.MeshPhysicalMaterial({color:hex,roughness:rough,metalness:metal,clearcoat:1,clearcoatRoughness:.12,envMapIntensity:1.35});
+ const spaceMetal=spaceMat(0xa8b7cf,.22,.81),spaceDark=spaceMat(0x192c48,.3,.82),
+       spaceTrim=spaceMat(0x4a82a5,.18,.8),spaceGlass=spaceMat(0x3986ae,.06,.36),
+       spaceGlow=new T.MeshBasicMaterial({color:0x61ddff,toneMapped:false}),
+       spaceGold=new T.MeshBasicMaterial({color:0xf9bb81,toneMapped:false});
+ const spaceMesh=(parent,geometry,material,x=0,y=0,z=0)=>{
+   const o=new T.Mesh(geometry,material);o.position.set(x,y,z);parent.add(o);return o;
+ };
+ const spaceBox=(parent,w,h,d,m,x=0,y=0,z=0)=>spaceMesh(parent,new T.BoxGeometry(w,h,d),m,x,y,z);
+ const spaceBall=(parent,r,m,x=0,y=0,z=0,segments=16)=>spaceMesh(parent,new T.SphereGeometry(r,segments,Math.max(9,segments/2)),m,x,y,z);
+ // Galaxy sky: animated 3D volumetric-looking fractal ribbons and fine star cells.
+ const cosmicSkyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,depthTest:false,
+  uniforms:{time:{value:0},nebula:{value:1}},
+  vertexShader:`varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`
+    varying vec3 vDir;uniform float time,nebula;
+    float hs(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+    float n3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+      return mix(mix(mix(hs(i),hs(i+vec3(1,0,0)),f.x),mix(hs(i+vec3(0,1,0)),hs(i+vec3(1,1,0)),f.x),f.y),
+                 mix(mix(hs(i+vec3(0,0,1)),hs(i+vec3(1,0,1)),f.x),mix(hs(i+vec3(0,1,1)),hs(i+vec3(1,1,1)),f.x),f.y),f.z);}
+    float fbm(vec3 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=n3(p)*a;p=p*2.1+1.27;a*=.5;}return v;}
+    void main(){
+      vec3 d=normalize(vDir);float t=time*.003;
+      float bands=fbm(d*4.2+vec3(t,.12,-t*.3));
+      float smoke=fbm(d*11.8+vec3(t*.42,.5,-t));
+      float swirl=fbm(d*2.4+vec3(bands*1.3,t*.16,smoke*.45));
+      float milky=pow(max(0.,1.-abs(dot(d,normalize(vec3(.14,.82,.41))))),2.4);
+      float cloud=smoothstep(.36,.73,bands*.64+smoke*.2+swirl*.43)*milky*nebula;
+      vec3 night=mix(vec3(.003,.006,.023),vec3(.014,.012,.052),smoothstep(-.7,.5,d.y));
+      vec3 magenta=vec3(.47,.075,.68),blue=vec3(.025,.24,.63),pink=vec3(.89,.21,.43);
+      vec3 glow=mix(blue,magenta,smoothstep(.38,.69,swirl));
+      glow=mix(glow,pink,pow(smoke,3.)*.64);
+      vec3 col=night+glow*cloud*.92;
+      float star=hs(floor(d*1850.));
+      col+=vec3(.67,.84,1.)*step(.99922,star)*(.4+.6*hs(floor(d*390.)));
+      float fine=hs(floor(d*3400.));
+      col+=vec3(.78,.68,1.)*step(.99986,fine)*.48;
+      gl_FragColor=vec4(col,1.);
+    }`
+ });
+ const cosmicSky=spaceMesh(spaceRoot,new T.SphereGeometry(7800,38,24),cosmicSkyMat);
+ cosmicSky.renderOrder=-30;
+ // High-density physical star parallax. One geometry and one draw call.
+ const starCount=mobile?3600:7500,starsGeometry=new T.BufferGeometry(),
+   starCoords=new Float32Array(starCount*3),starColors=new Float32Array(starCount*3);
+ for(let i=0;i<starCount;i++){
+   const u=hash(i*17,41)*2-1,a=hash(i*3+19,91)*Math.PI*2,rad=900+Math.pow(hash(i*9+1,73),.7)*4900;
+   const f=Math.sqrt(1-u*u);starCoords[i*3]=Math.cos(a)*f*rad;
+   starCoords[i*3+1]=u*rad;starCoords[i*3+2]=Math.sin(a)*f*rad;
+   const tint=hash(i,27),lum=.48+hash(i,61)*.52;
+   starColors[i*3]=(tint>.86?1:.72)*lum;
+   starColors[i*3+1]=(tint>.86?.72:.85)*lum;
+   starColors[i*3+2]=lum;
+ }
+ starsGeometry.setAttribute('position',new T.BufferAttribute(starCoords,3));
+ starsGeometry.setAttribute('color',new T.BufferAttribute(starColors,3));
+ const starfield=new T.Points(starsGeometry,new T.PointsMaterial({size:mobile?1.5:2.0,
+   sizeAttenuation:false,vertexColors:true,transparent:true,opacity:.89,depthWrite:false,blending:T.AdditiveBlending}));
+ spaceRoot.add(starfield);
+ // One reusable high quality corona texture provides economical apparent bloom (no multipass render).
+ const coronaCanvas=document.createElement('canvas');coronaCanvas.width=coronaCanvas.height=256;
+ const corCtx=coronaCanvas.getContext('2d'),corGrad=corCtx.createRadialGradient(128,128,1,128,128,126);
+ corGrad.addColorStop(0,'rgba(255,255,255,1)');corGrad.addColorStop(.09,'rgba(220,247,255,.93)');
+ corGrad.addColorStop(.22,'rgba(116,205,255,.51)');corGrad.addColorStop(.56,'rgba(101,125,255,.13)');
+ corGrad.addColorStop(1,'rgba(65,92,255,0)');
+ corCtx.fillStyle=corGrad;corCtx.fillRect(0,0,256,256);
+ const coronaTex=new T.CanvasTexture(coronaCanvas);coronaTex.colorSpace=T.SRGBColorSpace;
+ const glowSprite=(parent,color,x,y,z,width,opacity=.8)=>{
+   const mat=new T.SpriteMaterial({map:coronaTex,color,transparent:true,opacity,
+     depthWrite:false,blending:T.AdditiveBlending});
+   const sp=new T.Sprite(mat);sp.position.set(x,y,z);sp.scale.set(width,width,1);parent.add(sp);return sp;
+ };
+ // Procedural planet surface: storms and latitudinal banding, rim-lit by a fictional sun.
+ function planetSurface(name,pos,radius,palette,ringed=false){
+   const group=new T.Group();group.position.set(...pos);spaceRoot.add(group);
+   const material=new T.ShaderMaterial({uniforms:{
+     time:{value:0},cA:{value:new T.Color(palette[0])},cB:{value:new T.Color(palette[1])},
+     cC:{value:new T.Color(palette[2])},illum:{value:new T.Vector3(-.63,.5,.4).normalize()},
+     storminess:{value:palette[3]||1}
+    },
+    vertexShader:`varying vec3 vObj,vNor,vWorld;void main(){vObj=position;vNor=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`varying vec3 vObj,vNor,vWorld;
+      uniform vec3 cA,cB,cC,illum;uniform float time,storminess;
+      float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+      float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+       return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+        mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+      void main(){
+        vec3 n=normalize(vObj),N=normalize(vNor),v=normalize(cameraPosition-vWorld);
+        float lat=n.y*22.+sin(n.x*18.+time*.12)*.57;
+        float whorl=noise(n*13.+vec3(time*.015,0.,0.));
+        float band=sin(lat*2.9+whorl*5.1*storminess+noise(n*32.)*1.8)*.5+.5;
+        vec3 col=mix(cA,cB,smoothstep(.17,.89,band));
+        col=mix(col,cC,pow(whorl,3.)*.81);
+        float ndl=max(.08,dot(N,illum)*.62+.42);
+        float fres=pow(1.-max(dot(N,v),0.),3.);
+        col=col*(.18+.82*ndl)+mix(cB,vec3(.45,.67,1.),.54)*fres*.58;
+        gl_FragColor=vec4(col,1.);
+      }`
+   });
+   const sphere=spaceMesh(group,new T.SphereGeometry(radius,mobile?46:68,mobile?30:44),material);
+   const atmo=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.BackSide,
+     uniforms:{color:{value:new T.Color(palette[1])}},
+     vertexShader:`varying vec3 N,V;void main(){vec4 p=modelMatrix*vec4(position,1.);N=normalize(mat3(modelMatrix)*normal);V=normalize(cameraPosition-p.xyz);gl_Position=projectionMatrix*viewMatrix*p;}`,
+     fragmentShader:`varying vec3 N,V;uniform vec3 color;void main(){float f=pow(1.-abs(dot(normalize(N),normalize(V))),4.);gl_FragColor=vec4(color*f*2.3,f*.74);}`
+   });
+   const halo=spaceMesh(group,new T.SphereGeometry(radius*1.095,32,22),atmo);
+   const entry={name,group,sphere,material,atmo,halo,radius};
+   if(ringed){
+     const ringsMat=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
+      uniforms:{time:{value:0},inner:{value:radius*1.3},outer:{value:radius*2.06}},
+      vertexShader:`varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+      fragmentShader:`varying vec2 vP;uniform float time,inner,outer;
+        void main(){float r=length(vP);float p=(r-inner)/(outer-inner);
+          float lanes=sin(p*180.)*.23+sin(p*48.)*.2+sin(p*490.)*.06;
+          float gap=smoothstep(.12,.18,p)*smoothstep(.98,.88,p);
+          float density=clamp(.43+lanes,0.,1.)*gap;
+          vec3 gold=vec3(.63,.56,.91),icy=vec3(.30,.71,.93);
+          vec3 col=mix(gold,icy,sin(p*24.+time*.009)*.5+.5);
+          gl_FragColor=vec4(col*1.38,density*.83);
+        }`
+     });
+     const ring=spaceMesh(group,new T.RingGeometry(radius*1.3,radius*2.06,mobile?124:192,1),ringsMat);
+     ring.rotation.x=-.38;ring.rotation.y=.16;entry.ring=ring;entry.ringMat=ringsMat;
+   }
+   return entry;
+ }
+ const spacePlanets=[
+  planetSurface('AEON',[90,0,-1140],185,['#181039','#3855c6','#ba78f7',1.3],true),
+  planetSurface('NIX',[740,150,-2290],147,['#123359','#9deafb','#2a91bf',.65],false),
+  planetSurface('EMBER',[-520,-85,-1140],83,['#210b19','#ed492b','#ffcc63',1.8],false)
+ ];
+ const burningSun=spaceBall(spaceRoot,67,new T.MeshBasicMaterial({color:0xffbd7c,toneMapped:false}),-650,350,-1760,30);
+ const sunGlow=glowSprite(spaceRoot,0xffae68,-650,350,-1760,490,.92);
+ const sunFlare=glowSprite(spaceRoot,0xfce7ad,-650,350,-1760,760,.27);
+ const brightStarLight=new T.PointLight(0xa9cfff,25,1900,2);
+ brightStarLight.position.set(-650,350,-1760);spaceRoot.add(brightStarLight);
+ // Accretion-disc singularity; visible ion streams are not an expensive true raytracing solver.
+ const singularity=new T.Group();singularity.position.set(-940,85,-2780);spaceRoot.add(singularity);
+ const voidCore=spaceBall(singularity,97,new T.MeshBasicMaterial({color:0x010106}),0,0,0,32);
+ const discMat=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
+   uniforms:{time:{value:0}},blending:T.AdditiveBlending,
+   vertexShader:`varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+   fragmentShader:`varying vec2 vP;uniform float time;
+      void main(){float r=length(vP),angle=atan(vP.y,vP.x);float band=sin(r*.23-angle*11.+time*1.2)*.15;
+        float sw=sin(angle*21.-time*.65+r*.057)*.5+.5;
+        float edge=smoothstep(105.,151.,r)*smoothstep(333.,294.,r);
+        vec3 c=mix(vec3(.72,.09,.56),vec3(1.,.63,.17),smoothstep(170.,285.,r)+band);
+        gl_FragColor=vec4(c*(1.2+sw*.7),edge*(.58+sw*.4));
+      }`
+ });
+ const accretion=spaceMesh(singularity,new T.RingGeometry(110,330,170,1),discMat);
+ accretion.rotation.x=-.46;accretion.rotation.y=.24;
+ glowSprite(singularity,0xd353f0,0,0,0,540,.55);
+ const blackOrbit=new T.Mesh(new T.TorusGeometry(104,4,9,80),spaceGlow);
+ blackOrbit.rotation.x=.44;singularity.add(blackOrbit);
+ // Instanced asteroid cloud. Procedural positions and individual rotations in one draw call.
+ const rockCount=mobile?540:1200,rockGeo=new T.IcosahedronGeometry(1,1),
+   rockMat=new T.MeshStandardMaterial({color:0x768399,roughness:.92,metalness:.12});
+ const asteroids=new T.InstancedMesh(rockGeo,rockMat,rockCount);
+ const rockDummy=new T.Object3D(),rockColor=new T.Color();
+ for(let i=0;i<rockCount;i++){
+   const zone=i%3;
+   const angle=hash(i,11)*Math.PI*2,rad=zone===0?120+hash(i*3,13)*190:zone===1?290+hash(i*9,15)*650:210+hash(i*19,17)*320;
+   const center=zone===0?[-240,20,-435]:zone===1?[50,30,-1180]:[370,-75,-660];
+   const yy=(hash(i*4,39)-.5)*(zone===1?210:100);
+   rockDummy.position.set(center[0]+Math.cos(angle)*rad,center[1]+yy,center[2]+Math.sin(angle)*rad);
+   rockDummy.rotation.set(hash(i,20)*3,hash(i,30)*6,hash(i,40)*3);
+   const size=.7+Math.pow(hash(i,59),2)*(zone===1?11:8);
+   rockDummy.scale.set(size*(.6+hash(i,78)),size*.72,size*(.8+hash(i,93)));
+   rockDummy.updateMatrix();asteroids.setMatrixAt(i,rockDummy.matrix);
+   rockColor.setHSL(.58+hash(i,84)*.08,.09+hash(i,83)*.13,.22+hash(i,81)*.34);
+   asteroids.setColorAt(i,rockColor);
+ }
+ asteroids.instanceMatrix.needsUpdate=true;asteroids.instanceColor.needsUpdate=true;
+ asteroids.frustumCulled=false;spaceRoot.add(asteroids);
+
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
  directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="portal">🌀 VISIT PORTAL</button><button data-action="collapse">💥 DEMOLISH PAVILION</button><button data-action="rebuild">🏗 REBUILD PAVILION</button><button data-action="gravity">🌙 LOW GRAVITY</button><button data-action="front">⛈ STORM FRONTS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
