@@ -1,0 +1,1 @@
+export const release={version:6,engineCommit:'0966aeb685f03db6a3df4f91e99ebd3d7c8103c1',engineFile:'engine-v6.js',message:'RENDERING REVOLUTION: environment reflections, iridescent paint, terrain/road normal maps, Fresnel ocean waves, weather, golden hour, clouds and adaptive HD quality'};
