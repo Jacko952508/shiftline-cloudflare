@@ -6287,27 +6287,27 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
         te[6] = b * c;
         te[10] = a * c;
       } else if (euler.order === "YZX") {
-        const ac2 = a * c, ad = a * d, bc = b * c, bd = b * d;
+        const ac3 = a * c, ad = a * d, bc = b * c, bd = b * d;
         te[0] = c * e;
-        te[4] = bd - ac2 * f;
+        te[4] = bd - ac3 * f;
         te[8] = bc * f + ad;
         te[1] = f;
         te[5] = a * e;
         te[9] = -b * e;
         te[2] = -d * e;
         te[6] = ad * f + bc;
-        te[10] = ac2 - bd * f;
+        te[10] = ac3 - bd * f;
       } else if (euler.order === "XZY") {
-        const ac2 = a * c, ad = a * d, bc = b * c, bd = b * d;
+        const ac3 = a * c, ad = a * d, bc = b * c, bd = b * d;
         te[0] = c * e;
         te[4] = -f;
         te[8] = d * e;
-        te[1] = ac2 * f + bd;
+        te[1] = ac3 * f + bd;
         te[5] = a * e;
         te[9] = ad * f - bc;
         te[2] = bc * f - ad;
         te[6] = b * e;
-        te[10] = bd * f + ac2;
+        te[10] = bd * f + ac3;
       }
       te[3] = 0;
       te[7] = 0;
@@ -19093,12 +19093,12 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       );
     }
   };
-  function cloneUniforms(src2) {
+  function cloneUniforms(src3) {
     const dst = {};
-    for (const u in src2) {
+    for (const u in src3) {
       dst[u] = {};
-      for (const p in src2[u]) {
-        const property = src2[u][p];
+      for (const p in src3[u]) {
+        const property = src3[u][p];
         if (isThreeObject(property)) {
           if (property.isRenderTargetTexture) {
             warn("UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms().");
@@ -19136,10 +19136,10 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
   function isThreeObject(property) {
     return property && (property.isColor || property.isMatrix3 || property.isMatrix4 || property.isVector2 || property.isVector3 || property.isVector4 || property.isTexture || property.isQuaternion);
   }
-  function cloneUniformsGroups(src2) {
+  function cloneUniformsGroups(src3) {
     const dst = [];
-    for (let u = 0; u < src2.length; u++) {
-      dst.push(src2[u].clone());
+    for (let u = 0; u < src3.length; u++) {
+      dst.push(src3[u].clone());
     }
     return dst;
   }
@@ -20141,29 +20141,29 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
      * @param {KeyframeTrack} track - The keyframe track to serialize.
      * @return {Object} The serialized keyframe track as JSON.
      */
-    static toJSON(track3) {
-      const trackType = track3.constructor;
+    static toJSON(track4) {
+      const trackType = track4.constructor;
       let json;
       if (trackType.toJSON !== this.toJSON) {
-        json = trackType.toJSON(track3);
+        json = trackType.toJSON(track4);
       } else {
         json = {
-          "name": track3.name,
-          "times": convertArray(track3.times, Array),
-          "values": convertArray(track3.values, Array)
+          "name": track4.name,
+          "times": convertArray(track4.times, Array),
+          "values": convertArray(track4.values, Array)
         };
-        const interpolation = track3.getInterpolation();
-        if (interpolation !== track3.DefaultInterpolation) {
+        const interpolation = track4.getInterpolation();
+        if (interpolation !== track4.DefaultInterpolation) {
           json.interpolation = interpolation;
         }
-        if (hasTangents(track3.settings)) {
+        if (hasTangents(track4.settings)) {
           json.settings = {
-            inTangents: convertArray(track3.settings.inTangents, Array),
-            outTangents: convertArray(track3.settings.outTangents, Array)
+            inTangents: convertArray(track4.settings.inTangents, Array),
+            outTangents: convertArray(track4.settings.outTangents, Array)
           };
         }
       }
-      json.type = track3.ValueTypeName;
+      json.type = track4.ValueTypeName;
       return json;
     }
     /**
@@ -20453,15 +20453,15 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       const times = this.times.slice();
       const values = this.values.slice();
       const TypedKeyframeTrack = this.constructor;
-      const track3 = new TypedKeyframeTrack(this.name, times, values);
-      track3.createInterpolant = this.createInterpolant;
+      const track4 = new TypedKeyframeTrack(this.name, times, values);
+      track4.createInterpolant = this.createInterpolant;
       if (hasTangents(this.settings)) {
-        track3.settings = {
+        track4.settings = {
           inTangents: this.settings.inTangents.slice(),
           outTangents: this.settings.outTangents.slice()
         };
       }
-      return track3;
+      return track4;
     }
   };
   function scaleTangentTimes(tangents, timeScale) {
@@ -22487,7 +22487,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
     };
   }
   function WebGLAttributes(gl) {
-    const buffers2 = /* @__PURE__ */ new WeakMap();
+    const buffers3 = /* @__PURE__ */ new WeakMap();
     function createBuffer(attribute, bufferType) {
       const array = attribute.array;
       const usage = attribute.usage;
@@ -22569,22 +22569,22 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
     }
     function get(attribute) {
       if (attribute.isInterleavedBufferAttribute) attribute = attribute.data;
-      return buffers2.get(attribute);
+      return buffers3.get(attribute);
     }
     function remove(attribute) {
       if (attribute.isInterleavedBufferAttribute) attribute = attribute.data;
-      const data = buffers2.get(attribute);
+      const data = buffers3.get(attribute);
       if (data) {
         gl.deleteBuffer(data.buffer);
-        buffers2.delete(attribute);
+        buffers3.delete(attribute);
       }
     }
     function update(attribute, bufferType) {
       if (attribute.isInterleavedBufferAttribute) attribute = attribute.data;
       if (attribute.isGLBufferAttribute) {
-        const cached = buffers2.get(attribute);
+        const cached = buffers3.get(attribute);
         if (!cached || cached.version < attribute.version) {
-          buffers2.set(attribute, {
+          buffers3.set(attribute, {
             buffer: attribute.buffer,
             type: attribute.type,
             bytesPerElement: attribute.elementSize,
@@ -22593,9 +22593,9 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
         }
         return;
       }
-      const data = buffers2.get(attribute);
+      const data = buffers3.get(attribute);
       if (data === void 0) {
-        buffers2.set(attribute, createBuffer(attribute, bufferType));
+        buffers3.set(attribute, createBuffer(attribute, bufferType));
       } else if (data.version < attribute.version) {
         if (data.size !== attribute.array.byteLength) {
           throw new Error("THREE.WebGLAttributes: The size of the buffer attribute's array buffer does not match the original size. Resizing buffer attributes is not supported.");
@@ -23372,7 +23372,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       }
       return background;
     }
-    function render3(scene3) {
+    function render4(scene3) {
       let forceClear = false;
       const background = getBackground(scene3);
       if (background === null) {
@@ -23513,7 +23513,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
         clearAlpha = alpha2;
         setClear(clearColor, clearAlpha);
       },
-      render: render3,
+      render: render4,
       addToRenderList,
       dispose
     };
@@ -23887,7 +23887,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
     function setMode(value) {
       mode2 = value;
     }
-    function render3(start, count) {
+    function render4(start, count) {
       gl.drawArrays(mode2, start, count);
       info.update(count, mode2, 1);
     }
@@ -23907,7 +23907,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       info.update(elementCount, mode2, 1);
     }
     this.setMode = setMode;
-    this.render = render3;
+    this.render = render4;
     this.renderInstances = renderInstances;
     this.renderMultiDraw = renderMultiDraw;
   }
@@ -25189,7 +25189,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       type = value.type;
       bytesPerElement = value.bytesPerElement;
     }
-    function render3(start, count) {
+    function render4(start, count) {
       gl.drawElements(mode2, count, type, start * bytesPerElement);
       info.update(count, mode2, 1);
     }
@@ -25210,7 +25210,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
     }
     this.setMode = setMode;
     this.setIndex = setIndex;
-    this.render = render3;
+    this.render = render4;
     this.renderInstances = renderInstances;
     this.renderMultiDraw = renderMultiDraw;
   }
@@ -25219,7 +25219,7 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       geometries: 0,
       textures: 0
     };
-    const render3 = {
+    const render4 = {
       frame: 0,
       calls: 0,
       triangles: 0,
@@ -25227,22 +25227,22 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       lines: 0
     };
     function update(count, mode2, instanceCount) {
-      render3.calls++;
+      render4.calls++;
       switch (mode2) {
         case gl.TRIANGLES:
-          render3.triangles += instanceCount * (count / 3);
+          render4.triangles += instanceCount * (count / 3);
           break;
         case gl.LINES:
-          render3.lines += instanceCount * (count / 2);
+          render4.lines += instanceCount * (count / 2);
           break;
         case gl.LINE_STRIP:
-          render3.lines += instanceCount * (count - 1);
+          render4.lines += instanceCount * (count - 1);
           break;
         case gl.LINE_LOOP:
-          render3.lines += instanceCount * count;
+          render4.lines += instanceCount * count;
           break;
         case gl.POINTS:
-          render3.points += instanceCount * count;
+          render4.points += instanceCount * count;
           break;
         default:
           error("WebGLInfo: Unknown draw mode:", mode2);
@@ -25250,14 +25250,14 @@ body #menu.flowShell{background:linear-gradient(90deg,#030d18cc,#030d1855 75%,#0
       }
     }
     function reset() {
-      render3.calls = 0;
-      render3.triangles = 0;
-      render3.points = 0;
-      render3.lines = 0;
+      render4.calls = 0;
+      render4.triangles = 0;
+      render4.points = 0;
+      render4.lines = 0;
     }
     return {
       memory,
-      render: render3,
+      render: render4,
       programs: null,
       autoReset: true,
       reset,
@@ -31535,7 +31535,7 @@ void main() {
     };
   }
   function WebGLUniformsGroups(gl, info, capabilities, state2) {
-    let buffers2 = {};
+    let buffers3 = {};
     let updateList = {};
     let allocatedBindingPoints = [];
     const maxBindingPoints = gl.getParameter(gl.MAX_UNIFORM_BUFFER_BINDINGS);
@@ -31544,11 +31544,11 @@ void main() {
       state2.uniformBlockBinding(uniformsGroup, webglProgram);
     }
     function update(uniformsGroup, program) {
-      let buffer = buffers2[uniformsGroup.id];
+      let buffer = buffers3[uniformsGroup.id];
       if (buffer === void 0) {
         prepareUniformsGroup(uniformsGroup);
         buffer = createBuffer(uniformsGroup);
-        buffers2[uniformsGroup.id] = buffer;
+        buffers3[uniformsGroup.id] = buffer;
         uniformsGroup.addEventListener("dispose", onUniformsGroupsDispose);
       }
       const webglProgram = program.program;
@@ -31582,7 +31582,7 @@ void main() {
       return 0;
     }
     function updateBufferData(uniformsGroup) {
-      const buffer = buffers2[uniformsGroup.id];
+      const buffer = buffers3[uniformsGroup.id];
       const uniforms = uniformsGroup.uniforms;
       const cache3 = uniformsGroup.__cache;
       gl.bindBuffer(gl.UNIFORM_BUFFER, buffer);
@@ -31741,16 +31741,16 @@ void main() {
       uniformsGroup.removeEventListener("dispose", onUniformsGroupsDispose);
       const index = allocatedBindingPoints.indexOf(uniformsGroup.__bindingPointIndex);
       allocatedBindingPoints.splice(index, 1);
-      gl.deleteBuffer(buffers2[uniformsGroup.id]);
-      delete buffers2[uniformsGroup.id];
+      gl.deleteBuffer(buffers3[uniformsGroup.id]);
+      delete buffers3[uniformsGroup.id];
       delete updateList[uniformsGroup.id];
     }
     function dispose() {
-      for (const id in buffers2) {
-        gl.deleteBuffer(buffers2[id]);
+      for (const id in buffers3) {
+        gl.deleteBuffer(buffers3[id]);
       }
       allocatedBindingPoints = [];
-      buffers2 = {};
+      buffers3 = {};
       updateList = {};
     }
     return {
@@ -34351,11 +34351,11 @@ void main() {
   var icons = { flag: '<path d="M8 30V5m0 1h8l4 4h9v13h-9l-4-4H8"/><path d="M16 6v13m4-9v13M8 12h8m4 4h9"/>', clock: '<circle cx="18" cy="19" r="12"/><path d="M18 12v8l5 3M14 3h8m-4 0v4m9 1 3 3"/>', target: '<circle cx="18" cy="18" r="11"/><circle cx="18" cy="18" r="4"/><path d="M18 2v7m0 18v7M2 18h7m18 0h7"/>', film: '<rect x="4" y="6" width="28" height="24" rx="2"/><path d="M10 6v24m16-24v24M4 12h6m-6 12h6m16-12h6m-6 12h6"/><path d="m15 13 7 5-7 5z"/>' };
   $("#gameModes").innerHTML = GAME_MODES.map((m) => '<button type="button" class="modeChoice" data-mode="' + m.id + '"><span class="modeIcon" aria-hidden="true"><svg viewBox="0 0 36 36">' + icons[m.icon] + '</svg></span><span class="modeArrow" aria-hidden="true">\u2197</span><strong>' + m.name + "</strong>" + (m.id === "tour" ? '<small class="modeTag">DISPLAY RIDE</small>' : "") + "</button>").join("");
   function refresh() {
-    const p = readProgress(), state2 = flow.state, mode2 = modeDetails(state2.mode), track3 = TRACKS[state2.course];
-    document.documentElement.style.setProperty("--accent", track3.color);
+    const p = readProgress(), state2 = flow.state, mode2 = modeDetails(state2.mode), track4 = TRACKS[state2.course];
+    document.documentElement.style.setProperty("--accent", track4.color);
     $("#pilotXP").textContent = p.xp.toLocaleString() + " XP";
     $("#pilotRank").textContent = pilotTitle(p);
-    $("#trackTitle").textContent = track3.name;
+    $("#trackTitle").textContent = track4.name;
     $("#demoModeLabel").textContent = "/ " + mode2.name;
     $("#levelModeLabel").textContent = mode2.name;
     document.querySelectorAll("button[data-mode]").forEach((b) => {
@@ -34594,9 +34594,9 @@ void main() {
   }
   function consumeRematch(s, { host, connected, players, returning }) {
     if (!returning || !s.pending) return null;
-    const pending2 = s.pending;
+    const pending3 = s.pending;
     s.pending = null;
-    return host && connected && players >= 2 ? pending2 : null;
+    return host && connected && players >= 2 ? pending3 : null;
   }
   function scoreRound(s, classification, roundId) {
     var _a, _b;
@@ -37132,8 +37132,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/track-demo-v164.js?v=164
-  function createTrackDemo(track3, obstacles) {
-    return { track: track3, obstacles, distance: 8, time: 0, x: 0, y: 0, vx: 0, vy: 0, bank: 0, target: { x: 0, y: 0 }, think: 0, speed: 60, laps: 0 };
+  function createTrackDemo(track4, obstacles) {
+    return { track: track4, obstacles, distance: 8, time: 0, x: 0, y: 0, vx: 0, vy: 0, bank: 0, target: { x: 0, y: 0 }, think: 0, speed: 60, laps: 0 };
   }
   function advanceTrackDemo(d, dt) {
     dt = MathUtils.clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
@@ -37303,7 +37303,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   var collisionFrame2 = createTrackFrame();
   var collisionScale2 = SHIP_SCALE2 / 0.9;
   var BODY2 = [{ x: 0, y: 0, z: -1.12, r: 0.3 }, { x: 0, y: 0, z: 0, r: 0.47 }, { x: -0.76, y: 0, z: 0.35, r: 0.2 }, { x: 0.76, y: 0, z: 0.35, r: 0.2 }, { x: 0, y: 0, z: 1, r: 0.3 }].map((b) => ({ x: b.x * collisionScale2, y: b.y * collisionScale2, z: b.z * collisionScale2, r: b.r * collisionScale2 }));
-  function collisionAt(track3, specs2, s, x2, y2, time2, bank2 = 0, onClearance = null) {
+  function collisionAt(track4, specs2, s, x2, y2, time2, bank2 = 0, onClearance = null) {
     let first = 0, last = specs2.length;
     while (first < last) {
       const mid = first + last >>> 1;
@@ -37311,11 +37311,11 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       else last = mid;
     }
     if (first === specs2.length || specs2[first].s > s + 10) return null;
-    const F = track3.frame(s, collisionFrame2), cx = F.p.x + F.r.x * x2 + F.u.x * y2, cy = F.p.y + F.r.y * x2 + F.u.y * y2, cz = F.p.z + F.r.z * x2 + F.u.z * y2, c = Math.cos(bank2), si = Math.sin(bank2);
+    const F = track4.frame(s, collisionFrame2), cx = F.p.x + F.r.x * x2 + F.u.x * y2, cy = F.p.y + F.r.y * x2 + F.u.y * y2, cz = F.p.z + F.r.z * x2 + F.u.z * y2, c = Math.cos(bank2), si = Math.sin(bank2);
     for (let i = first; i < specs2.length; i++) {
       const o = specs2[i];
       if (o.s > s + 10) break;
-      const O = o.frame || track3.frame(o.s), state2 = obstacleState4(o, time2, o.collisionState ?? (o.collisionState = {}));
+      const O = o.frame || track4.frame(o.s), state2 = obstacleState4(o, time2, o.collisionState ?? (o.collisionState = {}));
       let gap = Infinity;
       for (const b of BODY2) {
         const bx = b.x * c - b.y * si, by = b.x * si + b.y * c, px2 = cx + F.r.x * bx + F.u.x * by - F.f.x * b.z - O.p.x, py2 = cy + F.r.y * bx + F.u.y * by - F.f.y * b.z - O.p.y, pz2 = cz + F.r.z * bx + F.u.z * by - F.f.z * b.z - O.p.z;
@@ -37408,12 +37408,12 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/race-recovery.js?v=159
-  function recoveryPose(track3, specs2, along2, time2, hit2 = null) {
-    const limit = Math.max(0, track3.length - 1);
+  function recoveryPose(track4, specs2, along2, time2, hit2 = null) {
+    const limit = Math.max(0, track4.length - 1);
     const start = Math.min(limit, Math.max(along2 + 8, hit2 ? hit2.s + 9 : 0));
     for (let extra = 0; extra <= 18; extra += 2) {
       const s = Math.min(limit, start + extra);
-      if ([0, 2, 4].every((d) => !collisionAt(track3, specs2, Math.min(limit, s + d), 0, 0, time2 + d / 84, 0))) return { s, x: 0, y: 0 };
+      if ([0, 2, 4].every((d) => !collisionAt(track4, specs2, Math.min(limit, s + d), 0, 0, time2 + d / 84, 0))) return { s, x: 0, y: 0 };
       if (s === limit) break;
     }
     return null;
@@ -37423,13 +37423,13 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/pulse-sight.js?v=73
-  function pulseSightPoint(track3, actor, distance, out = new Vector3()) {
-    return out.copy(track3.pose(Math.min(track3.length, actor.s + 2 + distance), actor.x, actor.y));
+  function pulseSightPoint(track4, actor, distance, out = new Vector3()) {
+    return out.copy(track4.pose(Math.min(track4.length, actor.s + 2 + distance), actor.x, actor.y));
   }
   function createPulseSight() {
     return { point: new Vector3(), ndc: new Vector3(), direction: new Vector3() };
   }
-  function updatePulseSight(v, node, track3, camera2, actor, { active = false, cooling = false, firing = false, width = 1, height = 1 } = {}) {
+  function updatePulseSight(v, node, track4, camera2, actor, { active = false, cooling = false, firing = false, width = 1, height = 1 } = {}) {
     if (!active) {
       node.classList.add("off");
       return false;
@@ -37438,7 +37438,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     camera2.getWorldDirection(v.direction);
     let visible = false;
     for (const range of [60, 30, 15, 8]) {
-      pulseSightPoint(track3, actor, range, v.point);
+      pulseSightPoint(track4, actor, range, v.point);
       if (v.ndc.copy(v.point).sub(camera2.position).dot(v.direction) <= 0) continue;
       v.ndc.copy(v.point).project(camera2);
       if (Number.isFinite(v.ndc.x) && Number.isFinite(v.ndc.y) && v.ndc.z >= -1 && v.ndc.z <= 1 && Math.abs(v.ndc.x) < 0.94 && Math.abs(v.ndc.y) < 0.82) {
@@ -37488,27 +37488,27 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     }
     return true;
   }
-  function safePosition(track3, s, p, x2, y2, world2) {
-    const v = track3.pose(Math.max(4, s - p.back), x2, y2);
+  function safePosition(track4, s, p, x2, y2, world2) {
+    const v = track4.pose(Math.max(4, s - p.back), x2, y2);
     if (world2?.ground) v.y = Math.max(v.y, world2.ground(v.x, v.z) + 15);
     return v;
   }
-  function resolveShot(track3, course2, shot, world2) {
+  function resolveShot(track4, course2, shot, world2) {
     const p = PREVIEW_CAMERA[course2] || PREVIEW_CAMERA[1];
     const index = Number.isFinite(shot) ? (Math.trunc(shot) % p.shots.length + p.shots.length) % p.shots.length : 0;
-    const base = clamp6(track3.length * p.shots[index], 60, track3.length - 170);
+    const base = clamp6(track4.length * p.shots[index], 60, track4.length - 170);
     const [ox, oy] = p.offsets[index] || [p.x, p.y];
     const candidate = course2 < 4 ? [[ox, oy]] : [[ox, oy], [-ox, oy], [ox, oy + 16], [-ox, oy + 16], [0.85, 0.65]];
-    const target2 = track3.pose(Math.min(track3.length - 4, base + p.front + 30), 0, 0);
-    const chosen = candidate.find(([x2, y2]) => candidateClear(safePosition(track3, base, p, x2, y2, world2), target2, world2)) || [0.85, 0.65];
+    const target2 = track4.pose(Math.min(track4.length - 4, base + p.front + 30), 0, 0);
+    const chosen = candidate.find(([x2, y2]) => candidateClear(safePosition(track4, base, p, x2, y2, world2), target2, world2)) || [0.85, 0.65];
     return { base, x: chosen[0], y: chosen[1] };
   }
-  function prepareMenuCamera(track3, course2, world2) {
+  function prepareMenuCamera(track4, course2, world2) {
     if (!world2) return;
     const p = PREVIEW_CAMERA[course2] || PREVIEW_CAMERA[1];
-    world2._menuShotPresets = new Map(p.shots.map((_, i) => [i, resolveShot(track3, course2, i, world2)]));
+    world2._menuShotPresets = new Map(p.shots.map((_, i) => [i, resolveShot(track4, course2, i, world2)]));
   }
-  function menuCamera(track3, course2, camera2, t, world2, reduced = false) {
+  function menuCamera(track4, course2, camera2, t, world2, reduced = false) {
     t = Number.isFinite(t) ? Math.max(0, t) : 0;
     const p = PREVIEW_CAMERA[course2] || PREVIEW_CAMERA[1], shot = reduced ? 0 : Math.floor(t / SHOT_SECONDS) % p.shots.length;
     const elapsed = reduced ? 0 : t % SHOT_SECONDS;
@@ -37516,17 +37516,17 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     if (world2 && !world2._menuShotPresets) world2._menuShotPresets = /* @__PURE__ */ new Map();
     let preset = world2 ? world2._menuShotPresets.get(shot) : null;
     if (!preset) {
-      preset = resolveShot(track3, course2, shot, world2);
+      preset = resolveShot(track4, course2, shot, world2);
       world2?._menuShotPresets.set(shot, preset);
     }
     const glide = reduced ? 0 : Math.min(1, progress + 0.027 * Math.sin(progress * Math.PI * 2));
-    const s = clamp6(preset.base + p.travel * glide, 60, track3.length - 95), F = track3.frame(Math.max(1, s - p.back));
+    const s = clamp6(preset.base + p.travel * glide, 60, track4.length - 95), F = track4.frame(Math.max(1, s - p.back));
     const wobble = reduced ? 0 : Math.sin(t * 0.48 + shot) * 0.62;
-    const from = safePosition(track3, s, p, preset.x + wobble, preset.y + (reduced ? 0 : Math.sin(t * 0.32) * 0.42), course2 >= 4 ? world2 : null);
+    const from = safePosition(track4, s, p, preset.x + wobble, preset.y + (reduced ? 0 : Math.sin(t * 0.32) * 0.42), course2 >= 4 ? world2 : null);
     camera2.position.copy(from);
     up.copy(F.u).addScaledVector(F.r, reduced ? 0 : Math.sin(t * 0.3 + shot) * 0.065).normalize();
     camera2.up.copy(up);
-    const look = track3.pose(Math.min(track3.length - 4, s + p.front), course2 >= 4 ? Math.sin(t * 0.16 + shot) * 2 : 0, course2 >= 4 ? 0.6 : 0);
+    const look = track4.pose(Math.min(track4.length - 4, s + p.front), course2 >= 4 ? Math.sin(t * 0.16 + shot) * 2 : 0, course2 >= 4 ? 0.6 : 0);
     camera2.lookAt(look);
     const fov2 = p.fov + (reduced ? 0 : Math.sin(t * 0.21 + shot) * 1.3);
     if (Math.abs(fov2 - camera2.fov) > 0.09) {
@@ -37772,7 +37772,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 768;
-    const ctx2 = canvas.getContext("2d"), texture = new CanvasTexture(canvas);
+    const ctx3 = canvas.getContext("2d"), texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
     texture.generateMipmaps = false;
     texture.minFilter = LinearFilter;
@@ -37966,7 +37966,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const sight = new LineSegments(sightGeo, new LineBasicMaterial({ color: tone2, transparent: true, opacity: 0.53, depthTest: false }));
     sight.renderOrder = 7;
     hud.add(sight);
-    const result = { scene: scene3, camera: camera2, root, hud, panels, stick, rightStick, forwardView, tub, noseCameraRoot, noseMeshes: [], hoodMeshes: [], noseFairing: null, noseBelly: null, button, cap, ring, trim, canvas, ctx: ctx2, texture, custom: a, model, lastPaint: -1, pitch: 0, roll: 0, scratch: new Vector3(), viewport: [], signature: "" };
+    const result = { scene: scene3, camera: camera2, root, hud, panels, stick, rightStick, forwardView, tub, noseCameraRoot, noseMeshes: [], hoodMeshes: [], noseFairing: null, noseBelly: null, button, cap, ring, trim, canvas, ctx: ctx3, texture, custom: a, model, lastPaint: -1, pitch: 0, roll: 0, scratch: new Vector3(), viewport: [], signature: "" };
     if (typeof window !== "undefined" && location.search.includes("cockpitqa=1")) {
       window.__shiftlineCockpitQA = {
         version: 165,
@@ -38535,19 +38535,19 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     freezeWorld(root, [rotor]);
     return { root, rotor, ring, inner, parts, geometry: [geo, ringGeo, innerGeo], materials: [material, glow], speed: course2 === 5 ? 0.012 : course2 === 2 ? 0.035 : course2 === 3 ? -0.06 : course2 === 4 ? 0.09 : 0.055 };
   }
-  function minimumClearance(root, track3) {
+  function minimumClearance(root, track4) {
     root.updateMatrixWorld(true);
     const inverse = root.matrixWorld.clone().invert(), p = new Vector3(), frame = createTrackFrame();
     let minimum = Infinity;
-    for (let s = 0; s <= track3.length; s += 2) {
-      p.copy(track3.frame(s, frame).p).applyMatrix4(inverse);
+    for (let s = 0; s <= track4.length; s += 2) {
+      p.copy(track4.frame(s, frame).p).applyMatrix4(inverse);
       const radial = Math.hypot(p.x, p.y), dr = Math.max(10.5 - radial, radial - 23, 0), dz = Math.max(Math.abs(p.z) - 3, 0);
       minimum = Math.min(minimum, Math.hypot(dr, dz));
     }
     return minimum;
   }
-  function attachRaceMoments(world2, track3, course2) {
-    const root = new Group(), sites = [], sectors2 = courseSectors2(course2, track3.length);
+  function attachRaceMoments(world2, track4, course2) {
+    const root = new Group(), sites = [], sectors2 = courseSectors2(course2, track4.length);
     root.name = "SIGNATURE TRACK MOMENTS";
     world2.root.add(root);
     for (const [number, index] of [1, 3].entries()) {
@@ -38555,10 +38555,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       let accepted = false;
       for (const offset of [0, 70, -70, 140, -140]) {
         site.s = sector.start + (sector.end - sector.start) * 0.48 + offset;
-        poseObject(site.root, track3.frame(site.s));
+        poseObject(site.root, track4.frame(site.s));
         site.root.updateMatrix();
         root.add(site.root);
-        site.clearance = minimumClearance(site.root, track3);
+        site.clearance = minimumClearance(site.root, track4);
         if (site.clearance >= 9) {
           accepted = true;
           break;
@@ -38933,7 +38933,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     return a - Math.floor(a);
   };
   var TAU10 = Math.PI * 2;
-  function installBiomeFloor(group, track3, course2, ground, clearance3) {
+  function installBiomeFloor(group, track4, course2, ground, clearance3) {
     const cfg = BIOMES[course2];
     if (!cfg) return null;
     const primaryGeo = course2 === 5 ? new TetrahedronGeometry(1) : course2 === 4 ? new IcosahedronGeometry(1, 0) : new TetrahedronGeometry(1);
@@ -38954,12 +38954,12 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const proxy = new Object3D(), tint = new Color(), accepted = [];
     let primaryCount = 0, accentCount = 0, rejected = 0;
     for (let i = 0; i < cfg.count; i++) {
-      const s = track3.length * (i + 0.5) / cfg.count;
-      const f = track3.frame(s), direction2 = TAU10 * hash(i + course2 * 37, 4);
+      const s = track4.length * (i + 0.5) / cfg.count;
+      const f = track4.frame(s), direction2 = TAU10 * hash(i + course2 * 37, 4);
       const offset = cfg.min + cfg.range * hash(i + course2 * 3, 7);
       const x2 = f.p.x + Math.cos(direction2) * offset, z = f.p.z + Math.sin(direction2) * offset, y2 = ground(x2, z);
       if (!Number.isFinite(y2)) continue;
-      const chapter = Math.min(3, Math.floor(s / track3.length * 4));
+      const chapter = Math.min(3, Math.floor(s / track4.length * 4));
       const radius = course2 === 4 ? 5 + 7 * hash(i, 10) : course2 === 5 ? 2.7 + 3.2 * hash(i, 10) : 3.5 + 5.6 * hash(i, 10);
       const height = course2 === 5 ? 3 + 5 * hash(i, 11) : course2 === 3 ? 5 + 9 * hash(i, 11) : course2 === 4 ? 2 + 7 * hash(i, 11) : 5 + 11 * hash(i, 11);
       const safety = clearance3.bounds(x2, y2 + height * 0.65, z, radius * 2.2, height * 1.6, radius * 2.2);
@@ -39026,10 +39026,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/scenery-clearance.js?v=51
-  function trackClearance(track3, radius = 8.4) {
+  function trackClearance(track4, radius = 8.4) {
     const cells = /* @__PURE__ */ new Map(), cell = 64, key = (x2, y2, z) => x2 + "," + y2 + "," + z, segments = [];
-    for (let i = 1; i < track3.frames.length; i++) {
-      const a = track3.frames[i - 1].p, b = track3.frames[i].p, id = segments.length;
+    for (let i = 1; i < track4.frames.length; i++) {
+      const a = track4.frames[i - 1].p, b = track4.frames[i].p, id = segments.length;
       segments.push([a, b]);
       const lo = a.clone().min(b).addScalar(-radius), hi = a.clone().max(b).addScalar(radius);
       for (let x2 = Math.floor(lo.x / cell); x2 <= Math.floor(hi.x / cell); x2++) for (let y2 = Math.floor(lo.y / cell); y2 <= Math.floor(hi.y / cell); y2++) for (let z = Math.floor(lo.z / cell); z <= Math.floor(hi.z / cell); z++) {
@@ -39116,7 +39116,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     };
     material.customProgramCacheKey = () => "world-finish-141-" + course2 + "-" + terrain;
   }
-  function installWorldFinish(root, track3, course2, materials, ground) {
+  function installWorldFinish(root, track4, course2, materials, ground) {
     for (const m of [materials.steel, materials.dark]) if (m) surface(m, course2);
     if (materials.rock) {
       surface(materials.rock, course2, true);
@@ -39125,7 +39125,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const detail = new Group();
     detail.name = "biome-exterior-detail";
     root.add(detail);
-    const clearance3 = trackClearance(track3), bounds = [], dummy2 = new Object3D(), rockMat = materials.rock;
+    const clearance3 = trackClearance(track4), bounds = [], dummy2 = new Object3D(), rockMat = materials.rock;
     const rockGeo = course2 === 4 ? alpineRidgeGeometry(false, false, -1.25) : new IcosahedronGeometry(1, 2), positions = rockGeo.attributes.position;
     if (course2 !== 4) for (let i = 0; i < positions.count; i++) {
       const x2 = positions.getX(i), y2 = positions.getY(i), z = positions.getZ(i), k = 1 + 0.14 * Math.sin(x2 * 9 + y2 * 7 + z * 11) + 0.07 * Math.sin(y2 * 17 - z * 13);
@@ -39135,7 +39135,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const rocks = new InstancedMesh(rockGeo, rockMat, 72);
     let count = 0;
     for (let i = 0; i < 72; i++) {
-      const F = track3.frame(track3.length * (i + 0.5) / 72), a = i * 2.399963, r = (course2 === 4 ? 230 : course2 === 3 ? 120 : 75) + i % 7 * 28, x2 = F.p.x + Math.cos(a) * r, z = F.p.z + Math.sin(a) * r, y2 = ground(x2, z), width = course2 === 4 ? 65 + i % 4 * 24 : course2 === 3 ? 16 + i % 4 * 8 : course2 === 5 ? 12 + i % 4 * 5 : 23 + i % 4 * 12, height = course2 === 4 ? 120 + i % 5 * 32 : course2 === 3 ? 35 + i % 5 * 15 : course2 === 5 ? 15 + i % 4 * 7 : 35 + i % 5 * 18;
+      const F = track4.frame(track4.length * (i + 0.5) / 72), a = i * 2.399963, r = (course2 === 4 ? 230 : course2 === 3 ? 120 : 75) + i % 7 * 28, x2 = F.p.x + Math.cos(a) * r, z = F.p.z + Math.sin(a) * r, y2 = ground(x2, z), width = course2 === 4 ? 65 + i % 4 * 24 : course2 === 3 ? 16 + i % 4 * 8 : course2 === 5 ? 12 + i % 4 * 5 : 23 + i % 4 * 12, height = course2 === 4 ? 120 + i % 5 * 32 : course2 === 3 ? 35 + i % 5 * 15 : course2 === 5 ? 15 + i % 4 * 7 : 35 + i % 5 * 18;
       const box2 = clearance3.bounds(x2, y2 + height * 0.4, z, width * 1.25, height * 0.85, width * 1.25);
       if (!clearance3.boxClear(box2)) continue;
       bounds.push(box2);
@@ -39153,7 +39153,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       const leaf = new MeshStandardMaterial({ color: 4287285, vertexColors: true, roughness: 0.94 }), bark = new MeshStandardMaterial({ color: 4208428, roughness: 0.97 }), crowns = new InstancedMesh(forestCrown(), leaf, 144), trunks = new InstancedMesh(ancientTrunk(), bark, 48);
       let trees = 0, c = 0;
       for (let i = 0; i < 48; i++) {
-        const F = track3.frame(track3.length * (i + 0.5) / 48), a = i * 2.399963, r = 95 + i % 5 * 23, x2 = F.p.x + Math.cos(a) * r, z = F.p.z + Math.sin(a) * r, y2 = ground(x2, z), h = 65 + i % 5 * 10, box2 = clearance3.bounds(x2, y2 + h * 0.5, z, 30, h * 0.55 + 12, 30);
+        const F = track4.frame(track4.length * (i + 0.5) / 48), a = i * 2.399963, r = 95 + i % 5 * 23, x2 = F.p.x + Math.cos(a) * r, z = F.p.z + Math.sin(a) * r, y2 = ground(x2, z), h = 65 + i % 5 * 10, box2 = clearance3.bounds(x2, y2 + h * 0.5, z, 30, h * 0.55 + 12, 30);
         if (!clearance3.boxClear(box2)) continue;
         bounds.push(box2);
         dummy2.position.set(x2, y2 + h * 0.5, z);
@@ -39176,7 +39176,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       detail.add(crowns, trunks);
     }
     if (course2 === 4) alpineSurface(rockMat);
-    const floor = installBiomeFloor(detail, track3, course2, ground, clearance3);
+    const floor = installBiomeFloor(detail, track4, course2, ground, clearance3);
     return { bounds, detail, floor };
   }
 
@@ -39200,10 +39200,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/tunnel-geometry.js?v=58
-  function shell(track3, start, end, a0, a1, rad = RADIUS) {
+  function shell(track4, start, end, a0, a1, rad = RADIUS) {
     const n = Math.ceil((end - start) / 2.5), nr = Math.max(2, Math.ceil((a1 - a0) * 14)), p = [], uv = [], ix = [];
     for (let i = 0; i <= n; i++) {
-      const s = start + (end - start) * i / n, F = track3.frame(s);
+      const s = start + (end - start) * i / n, F = track4.frame(s);
       for (let j = 0; j <= nr; j++) {
         const a = a0 + (a1 - a0) * j / nr, r = rad;
         const v = F.p.clone().addScaledVector(F.r, Math.cos(a) * r).addScaledVector(F.u, Math.sin(a) * r);
@@ -39222,10 +39222,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     g.computeVertexNormals();
     return g;
   }
-  function makeRibbon(track3, start, end, a, width, rad, twist = 0) {
+  function makeRibbon(track4, start, end, a, width, rad, twist = 0) {
     const n = Math.ceil((end - start) / 3), p = [], ix = [], uv = [];
     for (let i = 0; i <= n; i++) {
-      const s = start + (end - start) * i / n, F = track3.frame(s), aa = a + Math.sin(s * 6e-3) * twist;
+      const s = start + (end - start) * i / n, F = track4.frame(s), aa = a + Math.sin(s * 6e-3) * twist;
       for (const d of [-width / 2, width / 2]) {
         const v = F.p.clone().addScaledVector(F.r, Math.cos(aa + d) * rad).addScaledVector(F.u, Math.sin(aa + d) * rad);
         p.push(v.x, v.y, v.z);
@@ -39266,9 +39266,9 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   function tex(data, n, color = false) {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = n;
-    const ctx2 = canvas.getContext("2d"), im = ctx2.createImageData(n, n);
+    const ctx3 = canvas.getContext("2d"), im = ctx3.createImageData(n, n);
     im.data.set(data);
-    ctx2.putImageData(im, 0, 0);
+    ctx3.putImageData(im, 0, 0);
     const t = new CanvasTexture(canvas);
     t.wrapS = t.wrapT = RepeatWrapping;
     t.colorSpace = color ? SRGBColorSpace : NoColorSpace;
@@ -39436,8 +39436,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const craters = 11 * Math.sin(x2 * 6e-3 + z * 7e-3) ** 2 + 5 * Math.sin(x2 * 0.019 - z * 0.014) ** 2;
     return base - craters;
   }
-  function createExpansionWorld(scene3, track3) {
-    const course2 = track3.course, p = EXPANSIONS[course2], root = new Group(), environment = hdrEnvironment(false, course2), metalMaps = acquirePBR2("metal"), rockMaps = acquirePBR2("rock");
+  function createExpansionWorld(scene3, track4) {
+    const course2 = track4.course, p = EXPANSIONS[course2], root = new Group(), environment = hdrEnvironment(false, course2), metalMaps = acquirePBR2("metal"), rockMaps = acquirePBR2("rock");
     scene3.environment = environment;
     scene3.environmentIntensity = 0.42;
     scene3.userData.underwater = false;
@@ -39447,7 +39447,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     steel.roughness = 0.68;
     steel.clearcoat = 0.18;
     dark.color.setHex(course2 === 5 ? 2636848 : course2 === 6 ? 2699326 : 3029836);
-    const clearance3 = trackClearance(track3), sceneryBounds = [];
+    const clearance3 = trackClearance(track4), sceneryBounds = [];
     const chunks = [], machines = [], dynamic = [], materials = { steel, dark, rock: rock2, glow, glass };
     const add = (g, geo, mat, x2 = 0, y2 = 0, z = 0) => {
       const m = new Mesh(geo, mat);
@@ -39457,19 +39457,19 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       g.add(m);
       return m;
     };
-    for (let s = 0; s < track3.length; s += 84) {
-      const end = Math.min(track3.length, s + 84), idx = Math.min(3, Math.floor(s / track3.length * 4)), g = new Group(), closed = (idx === 1 || idx === 3) && s % 420 < 170;
+    for (let s = 0; s < track4.length; s += 84) {
+      const end = Math.min(track4.length, s + 84), idx = Math.min(3, Math.floor(s / track4.length * 4)), g = new Group(), closed = (idx === 1 || idx === 3) && s % 420 < 170;
       root.add(g);
       for (let k = 0; k < 6; k++) {
         const a = k * TAU12 / 6;
-        add(g, shell(track3, s, end, a + 0.025, a + (closed ? 0.74 : course2 === 5 ? 0.18 : 0.22), 7.6), k % 2 ? steel : dark);
-        if (!closed && k % 2 === 0) add(g, shell(track3, s, end, a + (course2 === 5 ? 0.21 : 0.25), a + 0.98, 7.65), glass);
-        if (k % 2 === 0) add(g, makeRibbon(track3, s, end, a + 0.025, 0.014, 7.43), glow);
+        add(g, shell(track4, s, end, a + 0.025, a + (closed ? 0.74 : course2 === 5 ? 0.18 : 0.22), 7.6), k % 2 ? steel : dark);
+        if (!closed && k % 2 === 0) add(g, shell(track4, s, end, a + (course2 === 5 ? 0.21 : 0.25), a + 0.98, 7.65), glass);
+        if (k % 2 === 0) add(g, makeRibbon(track4, s, end, a + 0.025, 0.014, 7.43), glow);
       }
       const ribs = new InstancedMesh(new TorusGeometry(7.65, 0.105, 6, 48), steel, 5), rim = new InstancedMesh(new TorusGeometry(7.5, 0.028, 4, 48), glow, 5), dummy3 = new Object3D();
       let count = 0;
       for (let at2 = s; at2 < end; at2 += 18) {
-        poseObject(dummy3, track3.frame(at2));
+        poseObject(dummy3, track4.frame(at2));
         dummy3.updateMatrix();
         ribs.setMatrixAt(count, dummy3.matrix);
         rim.setMatrixAt(count, dummy3.matrix);
@@ -39480,7 +39480,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       g.add(ribs, rim);
       chunks.push({ g, start: s, end, idx });
     }
-    const bounds = new Box3().setFromPoints(track3.frames.map((f) => f.p)), size = bounds.getSize(new Vector3()), center = bounds.getCenter(new Vector3()), endZ = track3.frames.at(-1).p.z, ground = (x2, z) => expansionGround(course2, x2, z, endZ);
+    const bounds = new Box3().setFromPoints(track4.frames.map((f) => f.p)), size = bounds.getSize(new Vector3()), center = bounds.getCenter(new Vector3()), endZ = track4.frames.at(-1).p.z, ground = (x2, z) => expansionGround(course2, x2, z, endZ);
     const terrain = new PlaneGeometry(size.x + 3200, size.z + 2200, course2 === 4 ? 128 : 80, course2 === 4 ? 256 : 180);
     terrain.rotateX(-Math.PI / 2);
     terrain.translate(center.x, 0, center.z);
@@ -39489,10 +39489,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     terrain.computeVertexNormals();
     add(root, terrain, rock2);
     const horizon = course2 === 4 ? attachTempestHorizon(root, terrain, rock2, ground) : null;
-    const dummy2 = new Object3D(), supportStep = course2 === 4 ? 520 : 155, supportCount = Math.ceil(track3.length / supportStep) * 2, columns = new InstancedMesh(new CylinderGeometry(1.4, 2.2, 1, 8), course2 === 4 ? steel : dark, supportCount), feet = new InstancedMesh(new BoxGeometry(10, 2, 10), steel, supportCount);
+    const dummy2 = new Object3D(), supportStep = course2 === 4 ? 520 : 155, supportCount = Math.ceil(track4.length / supportStep) * 2, columns = new InstancedMesh(new CylinderGeometry(1.4, 2.2, 1, 8), course2 === 4 ? steel : dark, supportCount), feet = new InstancedMesh(new BoxGeometry(10, 2, 10), steel, supportCount);
     let support = 0;
-    for (let s = 40; s < track3.length; s += supportStep) {
-      const F = track3.frame(s), g = new Group();
+    for (let s = 40; s < track4.length; s += supportStep) {
+      const F = track4.frame(s), g = new Group();
       poseObject(g, F);
       root.add(g);
       add(g, new BoxGeometry(23, 0.65, 2.5), steel, 0, -9, 0);
@@ -39503,7 +39503,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       }
       sceneryBounds.push(new Box3().setFromObject(g));
       for (const side of [-1, 1]) {
-        const top = track3.pose(s, side * 10, -9), floor = ground(top.x, top.z), height = top.y - floor;
+        const top = track4.pose(s, side * 10, -9), floor = ground(top.x, top.z), height = top.y - floor;
         if (height <= 0) continue;
         const columnBox = clearance3.bounds(top.x, floor + height / 2, top.z, course2 === 4 ? 6.5 : 2.2, height / 2, course2 === 4 ? 6.5 : 2.2), footBox = clearance3.bounds(top.x, floor + 1, top.z, course2 === 4 ? 8 : 5, course2 === 4 ? 1.6 : 1, course2 === 4 ? 8 : 5);
         if (!clearance3.boxClear(columnBox) || !clearance3.boxClear(footBox)) continue;
@@ -39525,7 +39525,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     root.add(columns, feet);
     const stationCount = course2 === 4 ? 9 : 28;
     for (let i = 0; i < stationCount; i++) {
-      const s = track3.length * (course2 === 4 ? 0.065 + i * 0.1 : 0.025 + i * 0.032), F = track3.frame(s), side = i % 2 ? 1 : -1, x2 = F.p.x + side * (55 + i % 4 * 18), z = F.p.z, y2 = ground(x2, z), g = new Group();
+      const s = track4.length * (course2 === 4 ? 0.065 + i * 0.1 : 0.025 + i * 0.032), F = track4.frame(s), side = i % 2 ? 1 : -1, x2 = F.p.x + side * (55 + i % 4 * 18), z = F.p.z, y2 = ground(x2, z), g = new Group();
       g.position.set(x2, y2, z);
       root.add(g);
       const h = Math.max(28, Math.min(course2 === 4 ? 72 : 210, F.p.y - y2 + 28));
@@ -39601,7 +39601,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       const tint = new Color();
       let n = 0, l = 0;
       for (let i = 0; i < 180; i++) {
-        const s = track3.length * (i / 180), F = track3.frame(s), a = i * 2.39996, r = 65 + i % 7 * 22;
+        const s = track4.length * (i / 180), F = track4.frame(s), a = i * 2.39996, r = 65 + i % 7 * 22;
         const x2 = F.p.x + Math.cos(a) * r, z = F.p.z + Math.sin(a) * r, y2 = ground(x2, z);
         const h = 30 + i % 6 * 5, wide = 11 + i % 4 * 1.35;
         const bound = clearance3.bounds(x2, y2 + h * 0.63, z, 25, h * 0.61 + 14, 25);
@@ -39645,7 +39645,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       materials.leaf = leaf;
       dynamic.push(foliage);
       for (let i = 0; i < 5; i++) {
-        const s = track3.length * (0.27 + i * 0.035), F = track3.frame(s), x2 = F.p.x + 65, z = F.p.z, y2 = ground(x2, z), wallBox = clearance3.bounds(x2, y2 + 75, z, 17, 75, 11);
+        const s = track4.length * (0.27 + i * 0.035), F = track4.frame(s), x2 = F.p.x + 65, z = F.p.z, y2 = ground(x2, z), wallBox = clearance3.bounds(x2, y2 + 75, z, 17, 75, 11);
         if (!clearance3.boxClear(wallBox)) continue;
         sceneryBounds.push(wallBox);
         const wall = add(root, new BoxGeometry(34, 150, 20), rock2, x2, y2 + 75, z);
@@ -39658,7 +39658,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const distantMaterial = new ShaderMaterial({ uniforms: { anchor: { value: new Vector3() }, color: { value: new Color(p.colors[0]) } }, vertexShader: "varying vec3 w;void main(){w=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}", fragmentShader: "varying vec3 w;uniform vec3 anchor,color;void main(){if(distance(w,anchor)<750.)discard;gl_FragColor=vec4(color*.65,1.);}", toneMapped: false });
     for (let k = 0; k < 4; k++) {
       const points = [];
-      for (let s = 0; s <= track3.length; s += 20) points.push(track3.pose(s, Math.cos(k * TAU12 / 4) * 7.6, Math.sin(k * TAU12 / 4) * 7.6));
+      for (let s = 0; s <= track4.length; s += 20) points.push(track4.pose(s, Math.cos(k * TAU12 / 4) * 7.6, Math.sin(k * TAU12 / 4) * 7.6));
       root.add(new Line(new BufferGeometry().setFromPoints(points), distantMaterial));
     }
     materials.distant = distantMaterial;
@@ -39671,7 +39671,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       band.rotation.x = 1.25;
       add(root, new SphereGeometry(675, 40, 24), new MeshBasicMaterial({ color: 10272767, transparent: true, opacity: 0.085, side: BackSide, depthWrite: false }), -2100, 1500, center.z - 900);
     }
-    const finish = installWorldFinish(root, track3, course2, { steel, dark, rock: rock2 }, ground);
+    const finish = installWorldFinish(root, track4, course2, { steel, dark, rock: rock2 }, ground);
     sceneryBounds.push(...finish.bounds);
     const ambient = new HemisphereLight(course2 === 5 ? 11653563 : 11849193, course2 === 5 ? 2438432 : 2500147, 1.15), sun = new DirectionalLight(course2 === 4 ? 16308397 : course2 === 5 ? 16770483 : 13162495, 1.45);
     sun.position.set(-800, 1500, 800);
@@ -39686,7 +39686,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const batchStats = batchScenery(root, [...chunks.map((c) => c.g), ...machines.map((m) => m.g)]);
     scene3.add(root);
     freezeWorld(root, [sky, key, key.target, fill2, ...machines.map((m) => m.g), ...dynamic]);
-    return { kind: "expansion", horizon, batchStats, sceneryBounds, stationCount, bridgeSupportCount: support, course: course2, root, track: track3, chunks, materials, machines, sky, skyMat, key, fill: fill2, ground, textures: [environment], materialKinds: ["metal", "rock"], petals: [], act: 0, gradientColors: course2 === 5 ? ["#071c17", "#244b37", "#0b251b"] : course2 === 4 ? ["#111e34", "#365a76", "#152638"] : ["#070b1c", "#2b2841", "#101424"] };
+    return { kind: "expansion", horizon, batchStats, sceneryBounds, stationCount, bridgeSupportCount: support, course: course2, root, track: track4, chunks, materials, machines, sky, skyMat, key, fill: fill2, ground, textures: [environment], materialKinds: ["metal", "rock"], petals: [], act: 0, gradientColors: course2 === 5 ? ["#071c17", "#244b37", "#0b251b"] : course2 === 4 ? ["#111e34", "#365a76", "#152638"] : ["#070b1c", "#2b2841", "#101424"] };
   }
   function updateExpansionWorld(w, s, time2) {
     const shift = expansionShift(time2), p = EXPANSIONS[w.course], act = expansionAct(s, w.track.length, w.course);
@@ -39844,7 +39844,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     mesh.count = entries.length;
     mesh.instanceMatrix.needsUpdate = true;
   }
-  function attachChapterLandmarks(world2, track3, course2, quality = "auto") {
+  function attachChapterLandmarks(world2, track4, course2, quality = "auto") {
     const profile = PROFILES2[course2];
     if (!profile) throw Error("Unknown landmark world " + course2);
     const check = world2.farScenery?.checkClearance;
@@ -39870,8 +39870,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const v = new Vector3(), dir = new Vector3(), centre = new Vector3();
     let totalParts = 0, skipped = 0, minClearance = Infinity;
     for (let chapter = 0; chapter < 4; chapter++) for (let n = 0; n < groupCount; n++) {
-      const act = actAt2(track3.length * (chapter + 0.5) / 4, track3.length, course2);
-      const s = track3.length * (act.start + (act.end - act.start) * (n + 0.5) / groupCount), frame = track3.frame(s);
+      const act = actAt2(track4.length * (chapter + 0.5) / 4, track4.length, course2);
+      const s = track4.length * (act.start + (act.end - act.start) * (n + 0.5) / groupCount), frame = track4.frame(s);
       dir.copy(frame.r).setY(0);
       if (dir.lengthSq() < 0.025) dir.set(frame.f.z, 0, -frame.f.x);
       if (dir.lengthSq() < 0.025) dir.set(1, 0, 0);
@@ -39945,7 +39945,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       window.__shiftlineChapterLandmarkQA = {
         course: course2,
         version: 144,
-        actBoundaries: sites.map((s) => ({ chapter: s.chapter, position: s.s / track3.length, start: s.actStart, end: s.actEnd, name: s.actName })),
+        actBoundaries: sites.map((s) => ({ chapter: s.chapter, position: s.s / track4.length, start: s.actStart, end: s.actEnd, name: s.actName })),
         chapterCounts: [...chapterCounts],
         sites: sites.length,
         parts: totalParts,
@@ -40141,8 +40141,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     return t - Math.floor(t);
   };
   var clamp8 = (n, a, b) => Math.min(b, Math.max(a, n));
-  function trackIndex(track3) {
-    const cell = 105, map = /* @__PURE__ */ new Map(), points = track3.frames, step2 = Math.max(1, Math.floor(20 / track3.step));
+  function trackIndex(track4) {
+    const cell = 105, map = /* @__PURE__ */ new Map(), points = track4.frames, step2 = Math.max(1, Math.floor(20 / track4.step));
     const key = (x2, y2, z) => x2 + ":" + y2 + ":" + z;
     for (let i = 0; i < points.length; i += step2) {
       const p2 = points[i].p, x2 = Math.floor(p2.x / cell), y2 = Math.floor(p2.y / cell), z = Math.floor(p2.z / cell), k2 = key(x2, y2, z);
@@ -40268,7 +40268,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     dummy2.updateMatrix();
     return out.copy(dummy2.matrix);
   }
-  function attachFarScenery(scene3, world2, track3, course2, quality = "auto") {
+  function attachFarScenery(scene3, world2, track4, course2, quality = "auto") {
     const profile = PROFILES3[course2];
     if (!profile) throw Error("Unknown scenery course " + course2);
     const low = quality === "low", high = quality === "high", stride = course2 === 4 ? low ? 280 : 245 : low ? 265 : high ? 165 : 205, perChunk = course2 === 4 ? low ? 2 : 3 : low ? 4 : high ? 11 : 8;
@@ -40297,13 +40297,13 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       alpineSurface(materials[i]);
     }
     for (const i of [0, 1, 2, 4]) if (!(course2 === 5 && i === 1)) finishSurface(materials[i], course2 === 1 ? "city" : course2 === 5 ? "organic" : course2 === 6 && i !== 0 ? "tunnel" : "landscape", course2);
-    const candidates = trackIndex(track3), dummy2 = new Object3D(), chunks = [];
+    const candidates = trackIndex(track4), dummy2 = new Object3D(), chunks = [];
     const horizontal = new Vector3(), normal = new Vector3(), point = new Vector3(), centre = new Vector3();
     const tint = new Color();
     const chapterCounts = [0, 0, 0, 0];
     let total = 0, skipped = 0, minClearance = Infinity, dynamicCount = 0, nearCount = 0;
-    for (let start = 0; start < track3.length; start += stride) {
-      const end = Math.min(track3.length, start + stride);
+    for (let start = 0; start < track4.length; start += stride) {
+      const end = Math.min(track4.length, start + stride);
       const group = new Group();
       group.name = "V130 / FARSCAPE SECTION " + Math.round(start);
       group.visible = false;
@@ -40320,8 +40320,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       let count = 0;
       for (let j = 0; j < perChunk; j++) {
         const seed = start * 1.97 + j * 19.23 + course2 * 403;
-        const chapter = Math.min(3, Math.floor((start + (end - start) * hash2(seed, 1)) / track3.length * 4));
-        const s = clamp8(start + (end - start) * (0.12 + 0.76 * hash2(seed, 1)), 2, track3.length - 2), f = track3.frame(s);
+        const chapter = Math.min(3, Math.floor((start + (end - start) * hash2(seed, 1)) / track4.length * 4));
+        const s = clamp8(start + (end - start) * (0.12 + 0.76 * hash2(seed, 1)), 2, track4.length - 2), f = track4.frame(s);
         const angle = TAU13 * ((j + 0.34 * hash2(seed, 2)) / perChunk);
         horizontal.copy(f.r).multiplyScalar(Math.cos(angle)).addScaledVector(f.u, Math.sin(angle));
         horizontal.y = 0;
@@ -40403,7 +40403,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       motionStep: -1,
       dummy: new Object3D(),
       transform: new Matrix4(),
-      length: track3.length,
+      length: track4.length,
       lastAtmos: -Infinity,
       chapterBlend: { from: 0, to: 0, t: 0 },
       baseColors: materials.map((m) => m.color.clone()),
@@ -40502,13 +40502,13 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     5: { fog: [1389868, 1852739, 3950384, 3160392], sky: [2313528, 2451036, 7038526, 5461868], density: [16e-5, 23e-5, 21e-5, 265e-6] },
     6: { fog: [1316907, 1713732, 3155269, 3811400], sky: [4143966, 3362423, 6047870, 8407156], density: [1e-4, 13e-5, 17e-5, 14e-5] }
   };
-  function attachBiomeAtmosphere(scene3, w, track3, course2) {
+  function attachBiomeAtmosphere(scene3, w, track4, course2) {
     const x2 = STYLES[course2];
     if (!x2) throw Error("Unsupported chapter atmosphere " + course2);
     w.biomeAtmosphere = {
       scene: scene3,
       course: course2,
-      length: track3.length,
+      length: track4.length,
       lastS: -Infinity,
       lastFog: null,
       lastLow: null,
@@ -40570,8 +40570,8 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
 
   // public/tunnel-detail.js?v=153
   var PALETTE2 = { 1: 5818092, 2: 6015427, 3: 15113065, 4: 9485820, 5: 9161115, 6: 11837951 };
-  function attachTunnelDetails(w, track3, course2) {
-    const countAt = Math.max(0, Math.floor((track3.length - 32) / 30)), perStation = 4, count = countAt * perStation;
+  function attachTunnelDetails(w, track4, course2) {
+    const countAt = Math.max(0, Math.floor((track4.length - 32) / 30)), perStation = 4, count = countAt * perStation;
     if (!w?.root || !count) return w;
     const frame = new Matrix4(), dummy2 = new Object3D(), to = new Vector3(), radial = new Vector3();
     const metal = w.materials?.titanium || w.materials?.bronze || w.materials?.steel || w.materials?.dark;
@@ -40581,7 +40581,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const bolts = new InstancedMesh(new BoxGeometry(0.09, 0.13, 0.22), metal, count * 2);
     const meshes = [panel, stripe, bolts], sourceMatrices = [];
     for (let i = 0; i < countAt; i++) {
-      const s = 18 + i * 30, F = track3.frame(s);
+      const s = 18 + i * 30, F = track4.frame(s);
       frame.makeBasis(F.r, F.u, to.copy(F.f).negate());
       for (let k = 0; k < perStation; k++) {
         const angle = Math.PI * (0.25 + k * 0.5), cs = Math.cos(angle), sn = Math.sin(angle), index = i * perStation + k;
@@ -40646,7 +40646,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const r = Math.hypot(x2, z + 750);
     return -155 + 540 * Math.exp(-(((r - 610) / 130) ** 2)) + 24 * Math.sin(x2 * 6e-3) * Math.sin(z * 5e-3) * Math.min(1, r / 420);
   }
-  function createCinderWorld(scene3, track3) {
+  function createCinderWorld(scene3, track4) {
     const root = new Group(), maps = acquirePBR2("metal"), rockMaps = acquirePBR2("rock"), environment = hdrEnvironment(false, 3);
     for (const t of [rockMaps.map, rockMaps.normalMap, rockMaps.roughnessMap, rockMaps.aoMap]) t.repeat.set(128, 168);
     scene3.environment = environment;
@@ -40679,33 +40679,33 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     const lava = add(root, new CircleGeometry(390, 96), lavaMat, 0, -148, -750);
     lava.rotation.x = -Math.PI / 2;
     dynamic.push(lava);
-    for (let s = 0; s < track3.length; s += 72) {
-      const end = Math.min(track3.length, s + 72), act = cinderAct(s, track3.length), idx = +act.name.slice(0, 2), g = new Group();
+    for (let s = 0; s < track4.length; s += 72) {
+      const end = Math.min(track4.length, s + 72), act = cinderAct(s, track4.length), idx = +act.name.slice(0, 2), g = new Group();
       root.add(g);
       const closed = idx === 2 && s % 360 < 220;
       for (let k = 0; k < 8; k++) {
         const a = k * TAU14 / 8;
-        add(g, shell(track3, s, end, a + 0.02, a + (closed ? 0.67 : 0.19), 7.6), k % 2 ? steel : dark);
-        if (!closed && k % 2 === 0) add(g, shell(track3, s, end, a + 0.225, a + 0.74, 7.63), glass);
-        if (k % 2 === 0) add(g, makeRibbon(track3, s, end, a + 0.03, 0.012, 7.44), glow);
+        add(g, shell(track4, s, end, a + 0.02, a + (closed ? 0.67 : 0.19), 7.6), k % 2 ? steel : dark);
+        if (!closed && k % 2 === 0) add(g, shell(track4, s, end, a + 0.225, a + 0.74, 7.63), glass);
+        if (k % 2 === 0) add(g, makeRibbon(track4, s, end, a + 0.03, 0.012, 7.44), glow);
       }
       for (let at2 = s; at2 < end; at2 += 18) {
         const rib = add(g, new TorusGeometry(7.68, 0.105, 6, 48), dark);
-        poseObject(rib, track3.frame(at2));
+        poseObject(rib, track4.frame(at2));
         const rim = add(g, new TorusGeometry(7.54, 0.027, 4, 48), glow);
-        poseObject(rim, track3.frame(at2));
+        poseObject(rim, track4.frame(at2));
       }
       chunks.push({ g, start: s, end, idx });
     }
-    const count = Math.ceil(track3.length / 140), columns = new InstancedMesh(new CylinderGeometry(2.1, 3.4, 1, 8), dark, count * 2), feet = new InstancedMesh(new BoxGeometry(13, 2, 13), steel, count * 2), dummy2 = new Object3D();
+    const count = Math.ceil(track4.length / 140), columns = new InstancedMesh(new CylinderGeometry(2.1, 3.4, 1, 8), dark, count * 2), feet = new InstancedMesh(new BoxGeometry(13, 2, 13), steel, count * 2), dummy2 = new Object3D();
     let n = 0;
-    for (let s = 80; s < track3.length; s += 140) {
-      const F = track3.frame(s), g = new Group();
+    for (let s = 80; s < track4.length; s += 140) {
+      const F = track4.frame(s), g = new Group();
       poseObject(g, F);
       root.add(g);
       add(g, new BoxGeometry(25, 0.75, 2.8), steel, 0, -9.6, 0);
       for (const side of [-1, 1]) {
-        const anchor = track3.pose(s, side * 12, -9.6), x2 = anchor.x, z = anchor.z, base = cinderGround(x2, z), top = anchor.y, height = Math.max(3, top - base);
+        const anchor = track4.pose(s, side * 12, -9.6), x2 = anchor.x, z = anchor.z, base = cinderGround(x2, z), top = anchor.y, height = Math.max(3, top - base);
         dummy2.position.set(x2, base + height / 2, z);
         dummy2.quaternion.identity();
         dummy2.scale.set(1, height, 1);
@@ -40756,7 +40756,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
         vanes.instanceMatrix.needsUpdate = true;
         rotor.add(vanes);
         g.add(rotor);
-        machines.push({ g: rotor, s: i / 24 * track3.length, base: rotor.quaternion.clone(), direction: side });
+        machines.push({ g: rotor, s: i / 24 * track4.length, base: rotor.quaternion.clone(), direction: side });
       }
     }
     const reactor = new Group();
@@ -40780,13 +40780,13 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     dynamic.push(sky);
     const ashGeo = new BufferGeometry(), ash = [];
     for (let i = 0; i < 550; i++) {
-      const s = i / 550 * track3.length, F = track3.frame(s), a = i * 2.399963, r = 12 + i % 35;
+      const s = i / 550 * track4.length, F = track4.frame(s), a = i * 2.399963, r = 12 + i % 35;
       ash.push(F.p.x + Math.cos(a) * r, F.p.y + Math.sin(a) * r, F.p.z);
     }
     ashGeo.setAttribute("position", new Float32BufferAttribute(ash, 3));
     const ashMat = new ShaderMaterial({ uniforms: { time: { value: 0 } }, vertexShader: `uniform float time;void main(){vec3 p=position;p.y+=sin(time*.22+position.x)*1.4;p.x+=cos(time*.18+position.z);vec4 v=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*v;gl_PointSize=clamp(26./max(1.,-v.z),1.,3.);}`, fragmentShader: `void main(){float a=1.-smoothstep(.05,.5,length(gl_PointCoord-.5));gl_FragColor=vec4(.7,.32,.12,a*.35);}`, transparent: true, depthWrite: false });
     root.add(new Points(ashGeo, ashMat));
-    installWorldFinish(root, track3, 3, { steel, dark, rock: rock2 }, cinderGround);
+    installWorldFinish(root, track4, 3, { steel, dark, rock: rock2 }, cinderGround);
     steel.roughness = 0.66;
     steel.clearcoat = 0.18;
     const sun = new DirectionalLight(16038799, 1.7), ambient = new HemisphereLight(10993102, 3283986, 1.1);
@@ -40827,7 +40827,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     }
     scene3.add(root);
     freezeWorld(root, dynamic);
-    return { kind: "cinder", root, ground: cinderGround, track: track3, chunks, machines, materials: { steel, dark, glass, glow, amber }, key, fill: fill2, sky, skyMat, lavaMat, ashMat, textures: [environment], act: 1 };
+    return { kind: "cinder", root, ground: cinderGround, track: track4, chunks, machines, materials: { steel, dark, glass, glow, amber }, key, fill: fill2, sky, skyMat, lavaMat, ashMat, textures: [environment], act: 1 };
   }
   function updateCinderWorld(w, s, time2) {
     const shift = cinderShift(time2);
@@ -40866,10 +40866,10 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
 
   // public/eclipse-horizon.js?v=58
   var vertex3 = `attribute float routeS;uniform float viewS;varying float fade;varying vec3 tint;void main(){fade=smoothstep(620.,950.,abs(routeS-viewS));tint=instanceColor;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}`;
-  function createHorizon(root, track3) {
-    const n = Math.ceil(track3.length / 55), tube2 = new InstancedMesh(new CylinderGeometry(7.65, 7.65, 1, 12, 1, true), new ShaderMaterial({ vertexShader: vertex3, fragmentShader: `varying float fade;varying vec3 tint;void main(){gl_FragColor=vec4(mix(vec3(.04,.075,.12),tint,.12),fade*.48);}`, uniforms: { viewS: { value: 0 } }, side: DoubleSide, transparent: true, depthWrite: false }), n), rib = new InstancedMesh(new TorusGeometry(7.8, 0.11, 6, 40), new ShaderMaterial({ vertexShader: vertex3, fragmentShader: `varying float fade;varying vec3 tint;uniform float shift;void main(){gl_FragColor=vec4(mix(tint,vec3(.55,.3,.12),shift*.35)*1.2,fade*.68);}`, uniforms: { viewS: { value: 0 }, shift: { value: 0 } }, transparent: true, depthWrite: false }), n), dummy2 = new Object3D(), routes = new Float32Array(n);
+  function createHorizon(root, track4) {
+    const n = Math.ceil(track4.length / 55), tube2 = new InstancedMesh(new CylinderGeometry(7.65, 7.65, 1, 12, 1, true), new ShaderMaterial({ vertexShader: vertex3, fragmentShader: `varying float fade;varying vec3 tint;void main(){gl_FragColor=vec4(mix(vec3(.04,.075,.12),tint,.12),fade*.48);}`, uniforms: { viewS: { value: 0 } }, side: DoubleSide, transparent: true, depthWrite: false }), n), rib = new InstancedMesh(new TorusGeometry(7.8, 0.11, 6, 40), new ShaderMaterial({ vertexShader: vertex3, fragmentShader: `varying float fade;varying vec3 tint;uniform float shift;void main(){gl_FragColor=vec4(mix(tint,vec3(.55,.3,.12),shift*.35)*1.2,fade*.68);}`, uniforms: { viewS: { value: 0 }, shift: { value: 0 } }, transparent: true, depthWrite: false }), n), dummy2 = new Object3D(), routes = new Float32Array(n);
     for (let i = 0; i < n; i++) {
-      const s = i * 55, end = Math.min(track3.length, s + 55), A = track3.frame(s), B = track3.frame(end);
+      const s = i * 55, end = Math.min(track4.length, s + 55), A = track4.frame(s), B = track4.frame(end);
       routes[i] = (s + end) / 2;
       dummy2.position.copy(A.p).add(B.p).multiplyScalar(0.5);
       dummy2.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), B.p.clone().sub(A.p).normalize());
@@ -40881,7 +40881,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
       dummy2.scale.setScalar(1);
       dummy2.updateMatrix();
       rib.setMatrixAt(i, dummy2.matrix);
-      const color = new Color(actAt2(s, track3.length).color);
+      const color = new Color(actAt2(s, track4.length).color);
       tube2.setColorAt(i, color);
       rib.setColorAt(i, color);
     }
@@ -40974,11 +40974,11 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
     t.colorSpace = SRGBColorSpace;
     return t;
   }
-  function createSeaLife(root, track3) {
+  function createSeaLife(root, track4) {
     const texture = scales(), bodyGeo = fishHull(), tailGeo = fin(true), dorsalGeo = fin(), eyeGeo = new SphereGeometry(0.037, 12, 8), bodyMat = new MeshPhysicalMaterial({ map: texture, color: 11524558, metalness: 0.12, roughness: 0.55, clearcoat: 0.18, emissive: 2378824, emissiveIntensity: 0.25 }), finMat = new MeshStandardMaterial({ color: 4557703, metalness: 0.1, roughness: 0.5 }), eyeMat = new MeshStandardMaterial({ color: 465440, roughness: 0.12 }), schools = [], N = 9;
-    for (let s = 200, i = 0; s < track3.loopStart - 100; s += 105, i++) {
+    for (let s = 200, i = 0; s < track4.loopStart - 100; s += 105, i++) {
       const g = new Group();
-      poseObject2(g, track3.frame(s));
+      poseObject2(g, track4.frame(s));
       const body = new InstancedMesh(bodyGeo, bodyMat, N), tail = new InstancedMesh(tailGeo, finMat, N), dorsal = new InstancedMesh(dorsalGeo, finMat, N), eyes = new InstancedMesh(eyeGeo, eyeMat, N * 2);
       for (const m of [body, tail, dorsal, eyes]) {
         m.frustumCulled = false;
@@ -41022,7 +41022,7 @@ float adLine(float x,float width){float a=max(fwidth(x),.0005);return 1.-smooths
   }
 
   // public/ocean-vista.js?v=154
-  function createOceanVista(root, track3, stone, coral, seabed, coralShapes = createCoralShapes()) {
+  function createOceanVista(root, track4, stone, coral, seabed, coralShapes = createCoralShapes()) {
     const chunks = [], kelp = new ShaderMaterial({ side: DoubleSide, uniforms: { time: { value: 0 }, tide: { value: 0 } }, vertexShader: `uniform float time;uniform float tide;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;float tip=uv.y*uv.y;p.x+=sin(time*.65+position.y*.7)*tip*(.35+tide*.25);p.z+=cos(time*.42+position.y*.6)*tip*.25;
 #ifdef USE_INSTANCING
 p=(instanceMatrix*vec4(p,1.)).xyz;
@@ -41049,15 +41049,15 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     coralMat.emissiveIntensity = 0.09;
     const [branchGeo, capGeo] = coralShapes;
     branchGeo.userData.groundKind = capGeo.userData.groundKind = "coral";
-    const frames = track3.frames.filter((_, i) => i % 3 === 0);
+    const frames = track4.frames.filter((_, i) => i % 3 === 0);
     function outside(mesh) {
       mesh.updateWorldMatrix(true, false);
       mesh.geometry.computeBoundingSphere();
       const sphere = mesh.geometry.boundingSphere.clone().applyMatrix4(mesh.matrixWorld);
       return frames.every((f) => f.p.distanceTo(sphere.center) > 10 + sphere.radius + (mesh.material === kelp ? 0.7 : 0));
     }
-    for (let s = 80, index = 0; s < track3.loopStart - 140; s += 90, index++) {
-      const g = new Group(), F = track3.frame(s), right = F.r.clone().setY(0).normalize(), forward = F.f.clone().setY(0).normalize();
+    for (let s = 80, index = 0; s < track4.loopStart - 140; s += 90, index++) {
+      const g = new Group(), F = track4.frame(s), right = F.r.clone().setY(0).normalize(), forward = F.f.clone().setY(0).normalize();
       g.position.copy(F.p);
       root.add(g);
       const add = (geo, mat, x2, y2, z, sx = 1, sy = sx, sz = sx) => {
@@ -41118,7 +41118,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     water.frustumCulled = false;
     water.renderOrder = -10;
     root.add(water);
-    return { chunks, kelp, water, track: track3, seabed };
+    return { chunks, kelp, water, track: track4, seabed };
   }
   function updateOceanVista(v, s, time2, tide) {
     v.kelp.uniforms.time.value = time2;
@@ -41130,8 +41130,8 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     for (const c of v.seabed.tiles) c.mesh.visible = c.bounds.distanceToPoint(viewer) < 850;
     for (const c of v.chunks) c.g.visible = Math.abs(c.s - s) < 650;
   }
-  function createSeabed(root, track3) {
-    const samples = track3.frames.filter((_, i) => i % 8 === 0), cache3 = /* @__PURE__ */ new Map(), tiles = [], step2 = 8;
+  function createSeabed(root, track4) {
+    const samples = track4.frames.filter((_, i) => i % 8 === 0), cache3 = /* @__PURE__ */ new Map(), tiles = [], step2 = 8;
     function sample(ix, iz) {
       const key = ix + ":" + iz;
       if (cache3.has(key)) return cache3.get(key);
@@ -41180,7 +41180,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       const height = top.y - bottom.y;
       if (height < 1) return;
       const axis = top.clone().sub(bottom).normalize();
-      for (const F of track3.frames) {
+      for (const F of track4.frames) {
         const t = MathUtils.clamp(F.p.clone().sub(bottom).dot(axis), 0, height);
         if (bottom.clone().addScaledVector(axis, t).distanceTo(F.p) < 9.7) return;
       }
@@ -41244,7 +41244,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     g.rotateX(Math.PI / 2);
     return g;
   }
-  function creature(scene3, track3) {
+  function creature(scene3, track4) {
     const g = new Group(), mat = new MeshPhysicalMaterial({ color: 2178634, metalness: 0.2, roughness: 0.42, clearcoat: 0.4, emissive: 399645, emissiveIntensity: 0.5 }), glow = new MeshBasicMaterial({ color: new Color(5894096).multiplyScalar(1.8), toneMapped: false }), body = new Mesh(beastGeometry(), mat);
     g.add(body);
     const fins = [];
@@ -41273,7 +41273,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     g.traverse((o) => {
       if (o.isMesh) o.castShadow = true;
     });
-    const s = track3.length * 0.59, F = track3.frame(s);
+    const s = track4.length * 0.59, F = track4.frame(s);
     poseObject(g, F);
     g.rotateY(Math.PI / 2);
     scene3.add(g);
@@ -41287,14 +41287,14 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     m.scale.setScalar(4);
     return m;
   }
-  function createLeviathanWorld(scene3, track3) {
+  function createLeviathanWorld(scene3, track4) {
     const root = new Group(), metalMaps = acquirePBR2("metal"), stoneMaps = acquirePBR2("stone"), environment = hdrEnvironment(true, 2), bronze = new MeshPhysicalMaterial({ ...metalMaps, color: 7052178, metalness: 0.76, roughness: 0.72, clearcoat: 0.22, clearcoatRoughness: 0.4, anisotropy: 0.3, side: DoubleSide }), dark = new MeshStandardMaterial({ ...metalMaps, color: 1654083, metalness: 0.75, roughness: 1, side: DoubleSide }), stone = new MeshStandardMaterial({ ...stoneMaps, color: 6521722, metalness: 0.05, roughness: 1, side: DoubleSide }), coral = new MeshStandardMaterial({ color: 16777215, vertexColors: true, roughness: 0.88, metalness: 0, emissive: 16777215, emissiveIntensity: 0.09 }), glass = new MeshPhysicalMaterial({ color: 7715768, roughness: 0.18, metalness: 0, clearcoat: 0.12, iridescence: 0, transparent: true, opacity: 0.018, depthWrite: false, side: DoubleSide }), glow = new MeshBasicMaterial({ color: new Color(5822162).multiplyScalar(2.3), toneMapped: false }), caustic = causticMaterial(), shaft = shaftMaterial(), flow2 = flowMaterial(), chunks = [], arches = [], habitats = [], plants = [];
     const coralShapes = createCoralShapes();
     glass.forceSinglePass = true;
-    const seabed = createSeabed(root, track3);
+    const seabed = createSeabed(root, track4);
     const ribGeo = new TorusGeometry(7.68, 0.16, 10, 72), stripGeo = new TorusGeometry(7.5, 0.025, 6, 72), boxGeo = new BoxGeometry(1, 1, 1);
-    for (let s = 0; s < track3.length; s += 80) {
-      const end = Math.min(track3.length, s + 80), idx = Number(actAt((s + end) / 2, track3.length, 2).name.slice(0, 2)), g = new Group();
+    for (let s = 0; s < track4.length; s += 80) {
+      const end = Math.min(track4.length, s + 80), idx = Number(actAt((s + end) / 2, track4.length, 2).name.slice(0, 2)), g = new Group();
       const add = (geo, mat) => {
         const m = new Mesh(geo, mat);
         m.castShadow = m.receiveShadow = mat !== glass && mat !== flow2 && mat !== caustic;
@@ -41305,13 +41305,13 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       for (let k = 0; k < sides; k++) {
         const a = k * TAU16 / sides, span = TAU16 / sides;
         const width = span * (idx === 1 ? 0.25 : idx === 3 ? 0.08 : 0.13);
-        add(shell(track3, s, end, a + 0.025, a + width, 7.59), idx === 2 && k % 2 ? stone : k % 2 ? bronze : dark);
-        add(shell(track3, s, end, a + width + 0.02, a + span - 0.025, 7.62), glass);
-        add(makeRibbon(track3, s, end, a + 0.025, 0.015, 7.47), flow2);
+        add(shell(track4, s, end, a + 0.025, a + width, 7.59), idx === 2 && k % 2 ? stone : k % 2 ? bronze : dark);
+        add(shell(track4, s, end, a + width + 0.02, a + span - 0.025, 7.62), glass);
+        add(makeRibbon(track4, s, end, a + 0.025, 0.015, 7.47), flow2);
       }
-      add(shell(track3, s, end, Math.PI * 1.15, Math.PI * 1.85, 7.53), caustic);
+      add(shell(track4, s, end, Math.PI * 1.15, Math.PI * 1.85, 7.53), caustic);
       if (idx === 3) {
-        const cave = add(shell(track3, s, end, 0, TAU16, 64), stone);
+        const cave = add(shell(track4, s, end, 0, TAU16, 64), stone);
         const p = cave.geometry.attributes.position;
         for (let i = 0; i < p.count; i++) {
           const x2 = p.getX(i), y2 = p.getY(i), z = p.getZ(i);
@@ -41320,7 +41320,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
         cave.geometry.computeVertexNormals();
       }
       for (let ss = s; ss < end; ss += 16) {
-        const F = track3.frame(ss), r = new Mesh(ribGeo, bronze), l = new Mesh(stripGeo, glow);
+        const F = track4.frame(ss), r = new Mesh(ribGeo, bronze), l = new Mesh(stripGeo, glow);
         poseObject(r, F);
         poseObject(l, F);
         r.castShadow = r.receiveShadow = true;
@@ -41336,9 +41336,9 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       root.add(g);
       chunks.push({ g, start: s, end, idx });
     }
-    for (let s = 96, index = 0; s < track3.length; s += 128, index++) {
+    for (let s = 96, index = 0; s < track4.length; s += 128, index++) {
       const g = new Group();
-      poseObject(g, track3.frame(s));
+      poseObject(g, track4.frame(s));
       const parts = [];
       for (const radius of [10.5, 13.3]) {
         const ring = new Mesh(new TorusGeometry(radius, 0.26, 10, 96), bronze);
@@ -41362,9 +41362,9 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       for (const side of [-1, 1]) seabed.support(g, side * 10.5, 0, bronze);
       arches.push({ g, s, parts, index });
     }
-    for (let s = track3.length * 0.2, index = 0; s < track3.length * 0.49; s += 100, index++) {
+    for (let s = track4.length * 0.2, index = 0; s < track4.length * 0.49; s += 100, index++) {
       const g = new Group();
-      poseObject(g, track3.frame(s));
+      poseObject(g, track4.frame(s));
       for (const side of [-1, 1]) {
         const tray = new Mesh(new BoxGeometry(7, 0.7, 18), stone);
         tray.position.set(side * 14, -6, 0);
@@ -41387,9 +41387,9 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       root.add(g);
       habitats.push({ g, s });
     }
-    for (let s = track3.length * 0.5; s < track3.length * 0.76; s += 140) {
+    for (let s = track4.length * 0.5; s < track4.length * 0.76; s += 140) {
       const g = new Group();
-      poseObject(g, track3.frame(s));
+      poseObject(g, track4.frame(s));
       for (const side of [-1, 1]) {
         const beam = new Mesh(new ConeGeometry(9, 70, 24, 1, true), shaft);
         beam.position.set(side * 24, 24, side * 9);
@@ -41404,9 +41404,9 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       habitats.push({ g, s });
     }
     const reactors = [];
-    for (let s = track3.length * 0.78, i = 0; s < track3.length - 250; s += 110, i++) {
+    for (let s = track4.length * 0.78, i = 0; s < track4.length - 250; s += 110, i++) {
       const g = new Group();
-      poseObject(g, track3.frame(s));
+      poseObject(g, track4.frame(s));
       for (const radius of [12, 16, 20]) {
         const r = new Mesh(new TorusGeometry(radius, 0.32, 10, 96), bronze);
         g.add(r);
@@ -41423,10 +41423,10 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       for (const side of [-1, 1]) seabed.support(g, side * 16, 0, bronze);
       reactors.push({ g, s, base: g.quaternion.clone(), sign: i % 2 ? 1 : -1 });
     }
-    const life = createSeaLife(root, track3), beast = creature(root, track3), vista = createOceanVista(root, track3, stone, coral, seabed, coralShapes);
+    const life = createSeaLife(root, track4), beast = creature(root, track4), vista = createOceanVista(root, track4, stone, coral, seabed, coralShapes);
     const sedimentP = [], phases = [];
     for (let i = 0; i < 1600; i++) {
-      const s = 20 + i / 1600 * (track3.length - 40), F = track3.frame(s), a = i * 2.399963, r = 2 + i % 13, v = F.p.clone().addScaledVector(F.r, Math.cos(a) * r).addScaledVector(F.u, Math.sin(a) * r);
+      const s = 20 + i / 1600 * (track4.length - 40), F = track4.frame(s), a = i * 2.399963, r = 2 + i % 13, v = F.p.clone().addScaledVector(F.r, Math.cos(a) * r).addScaledVector(F.u, Math.sin(a) * r);
       sedimentP.push(v.x, v.y, v.z);
       phases.push(i * 0.37);
     }
@@ -41455,7 +41455,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     scene3.environment = environment;
     scene3.environmentIntensity = 0.6;
     freezeWorld(root, [key, key.target, fill2, vista.water, beast.g, ...beast.fins, beast.tail, ...arches.flatMap((o) => o.parts.map((p) => p.pivot)), ...reactors.map((o) => o.g)]);
-    return { kind: "leviathan", scene: scene3, root, track: track3, chunks, arches, habitats, plants, reactors, life, beast, vista, caustic, shaft, flow: flow2, sedimentMat, ambient, sun, key, fill: fill2, materials: { bronze, dark, stone, glass, glow }, textures: [environment, life.texture], materialKinds: ["metal", "stone"] };
+    return { kind: "leviathan", scene: scene3, root, track: track4, chunks, arches, habitats, plants, reactors, life, beast, vista, caustic, shaft, flow: flow2, sedimentMat, ambient, sun, key, fill: fill2, materials: { bronze, dark, stone, glass, glow }, textures: [environment, life.texture], materialKinds: ["metal", "stone"] };
   }
   function updateLeviathanWorld(w, s, time2) {
     const tide = shiftState4(time2).amount;
@@ -41653,15 +41653,15 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
   // public/live-track-explorer.js?v=159
   var clamp9 = MathUtils.clamp;
   var UP_WORLD = new Vector3(0, 1, 0);
-  function at(track3, s, x2 = 0, y2 = 0) {
-    return track3.pose(clamp9(s, 2, track3.length - 2), x2, y2);
+  function at(track4, s, x2 = 0, y2 = 0) {
+    return track4.pose(clamp9(s, 2, track4.length - 2), x2, y2);
   }
   function setFrameUp(vec, frame) {
     vec.copy(frame.u);
   }
-  function createTrackExplorer(track3, scene3, world2, specs2 = []) {
+  function createTrackExplorer(track4, scene3, world2, specs2 = []) {
     return {
-      track: track3,
+      track: track4,
       scene: scene3,
       world: world2,
       specs: specs2,
@@ -41920,12 +41920,12 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       const c = document.createElement("canvas");
       c.width = 2;
       c.height = 256;
-      const ctx2 = c.getContext("2d"), g = ctx2.createLinearGradient(0, 0, 0, 256), palette = w.gradientColors || (w.kind === "leviathan" ? ["#03131e", "#12414c", "#061f2d"] : w.kind === "cinder" ? ["#10131f", "#462a2b", "#1d1520"] : ["#060c20", "#16334c", "#0a1328"]);
+      const ctx3 = c.getContext("2d"), g = ctx3.createLinearGradient(0, 0, 0, 256), palette = w.gradientColors || (w.kind === "leviathan" ? ["#03131e", "#12414c", "#061f2d"] : w.kind === "cinder" ? ["#10131f", "#462a2b", "#1d1520"] : ["#060c20", "#16334c", "#0a1328"]);
       g.addColorStop(0, palette[0]);
       g.addColorStop(0.55, palette[1]);
       g.addColorStop(1, palette[2]);
-      ctx2.fillStyle = g;
-      ctx2.fillRect(0, 0, 2, 256);
+      ctx3.fillStyle = g;
+      ctx3.fillRect(0, 0, 2, 256);
       w.gradient = new CanvasTexture(c);
       w.gradient.colorSpace = SRGBColorSpace;
       w.gradient.generateMipmaps = false;
@@ -42143,12 +42143,12 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
     outline.rotation.x = -Math.PI / 2;
     const shadowCanvas = document.createElement("canvas");
     shadowCanvas.width = shadowCanvas.height = 128;
-    const ctx2 = shadowCanvas.getContext("2d"), gradient = ctx2.createRadialGradient(64, 64, 4, 64, 64, 64);
+    const ctx3 = shadowCanvas.getContext("2d"), gradient = ctx3.createRadialGradient(64, 64, 4, 64, 64, 64);
     gradient.addColorStop(0, "rgba(0,0,0,.52)");
     gradient.addColorStop(0.5, "rgba(0,0,0,.27)");
     gradient.addColorStop(1, "rgba(0,0,0,0)");
-    ctx2.fillStyle = gradient;
-    ctx2.fillRect(0, 0, 128, 128);
+    ctx3.fillStyle = gradient;
+    ctx3.fillRect(0, 0, 128, 128);
     const shadowTexture = new CanvasTexture(shadowCanvas), shadowMat = new MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false });
     const contact = add(new PlaneGeometry(3.1, 3.8), shadowMat, 0, -0.627, 0);
     contact.rotation.x = -Math.PI / 2;
@@ -42554,7 +42554,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
   };
 
   // public/combat-view.js?v=159
-  function createCombatView(scene3, track3, ships) {
+  function createCombatView(scene3, track4, ships) {
     const root = new Group(), dummy2 = new Object3D(), groups = {}, geos2 = [], mats = [];
     for (const [kind, geo, color] of [["pulse", new CapsuleGeometry(0.075, 1.4, 3, 6), 8579327], ["missile", new CapsuleGeometry(0.17, 1, 3, 8), 16760690], ["mine", new TorusGeometry(0.8, 0.16, 6, 20), 16740694]]) {
       if (kind !== "mine") geo.rotateX(Math.PI / 2);
@@ -42586,7 +42586,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       }
     }
     scene3.add(root);
-    return { root, track: track3, dummy: dummy2, groups, pickups, geos: geos2, mats, shields };
+    return { root, track: track4, dummy: dummy2, groups, pickups, geos: geos2, mats, shields };
   }
   function shieldHit(v, id, time2) {
     const shield = v?.shields.get(id);
@@ -42669,17 +42669,17 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       mesh.add(sprite);
       tag = mesh.userData.nameTag = { canvas, texture, sprite, name: "" };
     }
-    const ctx2 = tag.canvas.getContext("2d");
-    ctx2.clearRect(0, 0, 512, 128);
-    ctx2.fillStyle = "#071520e8";
-    ctx2.fillRect(8, 18, 496, 92);
-    ctx2.fillStyle = "#75e9ee";
-    ctx2.fillRect(8, 18, 496, 4);
-    ctx2.font = "700 50px monospace";
-    ctx2.textAlign = "center";
-    ctx2.textBaseline = "middle";
-    ctx2.fillStyle = "#efffff";
-    ctx2.fillText(name, 256, 66, 460);
+    const ctx3 = tag.canvas.getContext("2d");
+    ctx3.clearRect(0, 0, 512, 128);
+    ctx3.fillStyle = "#071520e8";
+    ctx3.fillRect(8, 18, 496, 92);
+    ctx3.fillStyle = "#75e9ee";
+    ctx3.fillRect(8, 18, 496, 4);
+    ctx3.font = "700 50px monospace";
+    ctx3.textAlign = "center";
+    ctx3.textBaseline = "middle";
+    ctx3.fillStyle = "#efffff";
+    ctx3.fillText(name, 256, 66, 460);
     tag.name = name;
     tag.texture.needsUpdate = true;
   }
@@ -42841,7 +42841,7 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
   function clearance2(o, state2, x2, y2) {
     return Math.min(localDistance5(o, state2, x2 + BODY3[1].x, y2 + BODY3[1].y, 0) - BODY3[1].r, localDistance5(o, state2, x2 + BODY3[2].x, y2 + BODY3[2].y, 0) - BODY3[2].r, localDistance5(o, state2, x2 + BODY3[3].x, y2 + BODY3[3].y, 0) - BODY3[3].r);
   }
-  function collisionAt2(track3, specs2, s, x2, y2, time2, bank2 = 0, onClearance = null) {
+  function collisionAt2(track4, specs2, s, x2, y2, time2, bank2 = 0, onClearance = null) {
     let first = 0, last = specs2.length;
     while (first < last) {
       const mid = first + last >>> 1;
@@ -42849,11 +42849,11 @@ gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`, fragmentShader: `var
       else last = mid;
     }
     if (first === specs2.length || specs2[first].s > s + 10) return null;
-    const F = track3.frame(s, collisionFrame3), cx = F.p.x + F.r.x * x2 + F.u.x * y2, cy = F.p.y + F.r.y * x2 + F.u.y * y2, cz = F.p.z + F.r.z * x2 + F.u.z * y2, c = Math.cos(bank2), si = Math.sin(bank2);
+    const F = track4.frame(s, collisionFrame3), cx = F.p.x + F.r.x * x2 + F.u.x * y2, cy = F.p.y + F.r.y * x2 + F.u.y * y2, cz = F.p.z + F.r.z * x2 + F.u.z * y2, c = Math.cos(bank2), si = Math.sin(bank2);
     for (let i = first; i < specs2.length; i++) {
       const o = specs2[i];
       if (o.s > s + 10) break;
-      const O = o.frame || track3.frame(o.s), state2 = obstacleState5(o, time2, o.collisionState ?? (o.collisionState = {}));
+      const O = o.frame || track4.frame(o.s), state2 = obstacleState5(o, time2, o.collisionState ?? (o.collisionState = {}));
       let gap = Infinity;
       for (const b of BODY3) {
         const bx = b.x * c - b.y * si, by = b.x * si + b.y * c, px2 = cx + F.r.x * bx + F.u.x * by - F.f.x * b.z - O.p.x, py2 = cy + F.r.y * bx + F.u.y * by - F.f.y * b.z - O.p.y, pz2 = cz + F.r.z * bx + F.u.z * by - F.f.z * b.z - O.p.z;
@@ -42990,15 +42990,15 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
     label.name = text;
     return label;
   }
-  function buildObstacles(scene3, track3, course2, select = null, profile = "classic") {
-    const generated = specifications3(course2, track3.length, profile), specs2 = select ? generated.filter(select) : generated;
+  function buildObstacles(scene3, track4, course2, select = null, profile = "classic") {
+    const generated = specifications3(course2, track4.length, profile), specs2 = select ? generated.filter(select) : generated;
     const quality = typeof document !== "undefined" ? document.getElementById("quality")?.value || "auto" : "auto";
     let bodyworkCount = 0, metalParts = 0, glowParts = 0;
     for (const o of specs2) {
       o.material = makeObstacleMaterial(o);
       o.edge = new LineBasicMaterial({ color: 10279915, transparent: true, opacity: 0.72, toneMapped: false });
       o.trim = [o.edge];
-      o.frame = track3.frame(o.s);
+      o.frame = track4.frame(o.s);
       o.rig = new Group();
       o.motion = new Group();
       o.pieces = [];
@@ -43149,9 +43149,9 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
   function energyMaterial(color) {
     return new ShaderMaterial({ uniforms: { time: { value: 0 }, accent: { value: new Color(color) }, power: { value: 1 } }, vertexShader: vertex4, fragmentShader: `varying vec2 vUv;uniform float time;uniform vec3 accent;uniform float power;void main(){float core=pow(1.-abs(vUv.x-.5)*2.,2.);float wave=.82+.18*sin(vUv.y*3.-time*2.);float pulse=exp(-pow(sin(vUv.y*.35-time*.9)*5.,2.));float dash=.28+.72*pow(.5+.5*cos(vUv.y*5.02655-time*2.5),5.);gl_FragColor=vec4(accent*(1.0+core*2.8+pulse*.8)*wave*power,dash*(.3+core*.65));}`, transparent: true, depthWrite: false, side: DoubleSide, blending: AdditiveBlending, toneMapped: false });
   }
-  function station(track3, s, scale, materials) {
+  function station(track4, s, scale, materials) {
     const g = new Group();
-    poseObject(g, track3.frame(s));
+    poseObject(g, track4.frame(s));
     const { titanium, dark, gold, cyan } = materials;
     const add = (geo, mat, x2 = 0, y2 = 0, z = 0) => {
       const m = new Mesh(geo, mat);
@@ -43176,34 +43176,34 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
     }
     return g;
   }
-  var addEnvironment = (scene3, track3, course2, w) => {
+  var addEnvironment = (scene3, track4, course2, w) => {
     attachSkyVisibility(w, course2);
     attachSightlines(w);
     const quality = typeof document !== "undefined" ? document.getElementById("quality")?.value || "auto" : "auto";
-    attachTunnelDetails(w, track3, course2);
-    attachFarScenery(scene3, w, track3, course2, quality);
-    attachChapterLandmarks(w, track3, course2, quality);
+    attachTunnelDetails(w, track4, course2);
+    attachFarScenery(scene3, w, track4, course2, quality);
+    attachChapterLandmarks(w, track4, course2, quality);
     attachRaceFinish(scene3, w, course2);
     for (const key of ["titanium", "bronze", "steel", "dark"]) finishSurface(w.materials?.[key], "tunnel", course2);
     if (w.materials?.leaf) finishSurface(w.materials.leaf, "canopy", course2);
     if (course2 === 4) refineAlpineGeology(w.root);
     if (typeof window !== "undefined" && typeof location !== "undefined" && location.search.includes("graphicsqa=1")) window.__shiftlineArtQA = { version: 148, course: course2, tunnel: true, background: true, addedPasses: 0 };
-    attachBiomeAtmosphere(scene3, w, track3, course2);
-    attachRaceMoments(w, track3, course2);
+    attachBiomeAtmosphere(scene3, w, track4, course2);
+    attachRaceMoments(w, track4, course2);
     return optimiseTunnel(w);
   };
-  function createWorld(scene3, track3, course2 = track3.course) {
-    if (course2 >= 4) return addEnvironment(scene3, track3, course2, createExpansionWorld(scene3, track3));
-    if (course2 === 3) return addEnvironment(scene3, track3, course2, createCinderWorld(scene3, track3));
-    if (course2 === 2) return addEnvironment(scene3, track3, course2, createLeviathanWorld(scene3, track3));
+  function createWorld(scene3, track4, course2 = track4.course) {
+    if (course2 >= 4) return addEnvironment(scene3, track4, course2, createExpansionWorld(scene3, track4));
+    if (course2 === 3) return addEnvironment(scene3, track4, course2, createCinderWorld(scene3, track4));
+    if (course2 === 2) return addEnvironment(scene3, track4, course2, createLeviathanWorld(scene3, track4));
     const root = new Group(), metalMaps = acquirePBR2("metal"), environment = hdrEnvironment(false, 1);
     scene3.environment = environment;
     scene3.userData.underwater = false;
     scene3.userData.heat = false;
     scene3.environmentIntensity = 0.62;
     const titanium = new MeshPhysicalMaterial({ ...metalMaps, color: 10398907, metalness: 0.88, roughness: 0.76, clearcoat: 0.12, clearcoatRoughness: 0.45, anisotropy: 0.42, anisotropyRotation: Math.PI / 2, side: DoubleSide }), dark = new MeshStandardMaterial({ ...metalMaps, color: 2568510, metalness: 0.82, roughness: 0.95, side: DoubleSide }), glass = new MeshPhysicalMaterial({ color: 7844567, metalness: 0, roughness: 0.18, clearcoat: 0.12, iridescence: 0.08, iridescenceThicknessRange: [200, 380], transparent: true, opacity: 0.022, depthWrite: false, side: DoubleSide }), cyan = new MeshBasicMaterial({ color: new Color(5036799).multiplyScalar(3), toneMapped: false }), gold = new MeshBasicMaterial({ color: new Color(16759393).multiplyScalar(2.5), toneMapped: false }), red = new MeshBasicMaterial({ color: new Color(16738133).multiplyScalar(2.5), toneMapped: false }), materials = { titanium, dark, glass, cyan, gold, red }, chunks = [], mechanisms = [], energy2 = [], petals = [];
-    for (let s = 0; s < track3.length; s += 80) {
-      const end = Math.min(track3.length, s + 80), act = actAt((s + end) / 2, track3.length), idx = Number(act.name.slice(0, 2)), g = new Group();
+    for (let s = 0; s < track4.length; s += 80) {
+      const end = Math.min(track4.length, s + 80), act = actAt((s + end) / 2, track4.length), idx = Number(act.name.slice(0, 2)), g = new Group();
       root.add(g);
       const add = (geo, mat) => {
         const m = new Mesh(geo, mat);
@@ -43217,44 +43217,44 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
         g.userData.panorama = panorama;
         for (let k = 0; k < 8; k++) {
           const a = k * TAU20 / 8, width = panorama ? 0.13 : k % 2 ? 0.68 : 0.45;
-          add(shell(track3, s, end, a + 0.035, a + width, 7.55), k % 2 ? titanium : dark);
-          add(shell(track3, s, end, a + width + 0.02, a + 0.75, 7.58), glass);
+          add(shell(track4, s, end, a + 0.035, a + width, 7.55), k % 2 ? titanium : dark);
+          add(shell(track4, s, end, a + width + 0.02, a + 0.75, 7.58), glass);
         }
       } else if (idx === 2) {
         for (let k = 0; k < 6; k++) {
           const a = k * TAU20 / 6;
-          add(shell(track3, s, end, a + 0.035, a + 0.78, 7.62), glass);
-          add(shell(track3, s, end, a + 0.82, a + 1.01, 7.55), titanium);
+          add(shell(track4, s, end, a + 0.035, a + 0.78, 7.62), glass);
+          add(shell(track4, s, end, a + 0.82, a + 1.01, 7.55), titanium);
         }
       } else {
         for (let k = 0; k < 4; k++) {
           const a = k * TAU20 / 4 + 0.5;
-          add(shell(track3, s, end, a, a + 0.17, 7.55), titanium);
+          add(shell(track4, s, end, a, a + 0.17, 7.55), titanium);
         }
       }
       for (let k = 0; k < 8; k++) {
         const a = k * TAU20 / 8;
-        add(makeRibbon(track3, s, end, a, 0.018, 7.42), dark);
+        add(makeRibbon(track4, s, end, a, 0.018, 7.42), dark);
         if (k % 2 === 0) {
           const mat = energyMaterial(act.color);
           mat.userData.section = idx;
           mat.userData.s = (s + end) / 2;
           energy2.push(mat);
-          add(makeRibbon(track3, s, end, a + 0.035, 0.014, 7.4, idx === 2 ? 0.15 : 0), mat);
+          add(makeRibbon(track4, s, end, a + 0.035, 0.014, 7.4, idx === 2 ? 0.15 : 0), mat);
         }
       }
       chunks.push({ g, start: s, end, idx });
     }
-    const count = Math.ceil(track3.length / 12), rib = new InstancedMesh(new TorusGeometry(7.66, 0.12, 8, 64), dark, count), ribLight = new InstancedMesh(new TorusGeometry(7.51, 0.024, 5, 64), new MeshBasicMaterial({ color: new Color(16777215).multiplyScalar(2.35), toneMapped: false }), count), bolts = new InstancedMesh(new BoxGeometry(0.36, 0.28, 0.55), titanium, count * 8), lights = new InstancedMesh(new BoxGeometry(0.06, 0.08, 1.5), new MeshBasicMaterial({ color: new Color(16777215).multiplyScalar(1.95), toneMapped: false }), count * 8);
+    const count = Math.ceil(track4.length / 12), rib = new InstancedMesh(new TorusGeometry(7.66, 0.12, 8, 64), dark, count), ribLight = new InstancedMesh(new TorusGeometry(7.51, 0.024, 5, 64), new MeshBasicMaterial({ color: new Color(16777215).multiplyScalar(2.35), toneMapped: false }), count), bolts = new InstancedMesh(new BoxGeometry(0.36, 0.28, 0.55), titanium, count * 8), lights = new InstancedMesh(new BoxGeometry(0.06, 0.08, 1.5), new MeshBasicMaterial({ color: new Color(16777215).multiplyScalar(1.95), toneMapped: false }), count * 8);
     const dummy2 = new Object3D();
     let bidx = 0;
     for (let i = 0; i < count; i++) {
-      const s = i * 12, F = track3.frame(s);
+      const s = i * 12, F = track4.frame(s);
       poseObject(dummy2, F);
       dummy2.updateMatrix();
       rib.setMatrixAt(i, dummy2.matrix);
       ribLight.setMatrixAt(i, dummy2.matrix);
-      const act = actAt(s, track3.length);
+      const act = actAt(s, track4.length);
       ribLight.setColorAt(i, new Color(act.color).multiplyScalar(2));
       for (let k = 0; k < 8; k++) {
         const a = k * TAU20 / 8;
@@ -43292,9 +43292,9 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
     petalGeo.setAttribute("uv", new Float32BufferAttribute(petalUV, 2));
     petalGeo.setIndex(petalIx);
     petalGeo.computeVertexNormals();
-    for (let s = 48; s < track3.length; s += 48) {
+    for (let s = 48; s < track4.length; s += 48) {
       const g = new Group();
-      poseObject(g, track3.frame(s));
+      poseObject(g, track4.frame(s));
       const parts = [];
       for (let k = 0; k < 4; k++) {
         const a = k * TAU20 / 4 + Math.PI / 8, m = new Mesh(petalGeo, titanium);
@@ -43307,12 +43307,12 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
       root.add(g);
       petals.push({ g, s, parts });
     }
-    for (let s = 130; s < track3.length; s += 230) {
-      const act = actAt(s, track3.length), idx = Number(act.name.slice(0, 2)), g = station(track3, s, idx === 3 ? 18 : 12, materials);
+    for (let s = 130; s < track4.length; s += 230) {
+      const act = actAt(s, track4.length), idx = Number(act.name.slice(0, 2)), g = station(track4, s, idx === 3 ? 18 : 12, materials);
       root.add(g);
       mechanisms.push({ g, s, kind: "station", base: g.quaternion.clone(), phase: s * 0.01 });
       const braces = new Group();
-      poseObject(braces, track3.frame(s));
+      poseObject(braces, track4.frame(s));
       for (let i = 0; i < 8; i++) {
         const a = i * TAU20 / 8, m = new Mesh(new CylinderGeometry(0.17, 0.17, idx === 3 ? 9 : 4, 8), titanium);
         m.position.set(Math.cos(a) * (idx === 3 ? 13 : 10), Math.sin(a) * (idx === 3 ? 13 : 10), 0);
@@ -43323,8 +43323,8 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
       mechanisms.push({ g: braces, s, kind: "fixed" });
     }
     for (const ratio of [0.045, 0.49, 0.93]) {
-      const s = ratio * track3.length, g = new Group();
-      poseObject(g, track3.frame(s));
+      const s = ratio * track4.length, g = new Group();
+      poseObject(g, track4.frame(s));
       const isOrbit = ratio === 0.49, rad = isOrbit ? 68 : 32;
       for (let i = 0; i < 12; i++) {
         const a = i * TAU20 / 12, tower = new Group();
@@ -43355,7 +43355,7 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
       mechanisms.push({ g, s, kind: "fixed", range: 900 });
     }
     for (let k = 0; k < 5; k++) {
-      const s = track3.length * (0.85 + k * 0.028), g = station(track3, s, 11 + k * 1.5, materials);
+      const s = track4.length * (0.85 + k * 0.028), g = station(track4, s, 11 + k * 1.5, materials);
       root.add(g);
       mechanisms.push({ g, s, kind: "reactor", base: g.quaternion.clone(), phase: k * 0.4, direction: k % 2 ? 1 : -1 });
     }
@@ -43377,14 +43377,14 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
     root.add(planetRing);
     const dp = [];
     for (let i = 0; i < 900; i++) {
-      const s = 20 + i / 900 * (track3.length - 40), a = i * 2.399963, r = 2 + i % 11 / 11 * 4.6, F = track3.frame(s), v = F.p.clone().addScaledVector(F.r, Math.cos(a) * r).addScaledVector(F.u, Math.sin(a) * r);
+      const s = 20 + i / 900 * (track4.length - 40), a = i * 2.399963, r = 2 + i % 11 / 11 * 4.6, F = track4.frame(s), v = F.p.clone().addScaledVector(F.r, Math.cos(a) * r).addScaledVector(F.u, Math.sin(a) * r);
       dp.push(v.x, v.y, v.z);
     }
     const dg = new BufferGeometry();
     dg.setAttribute("position", new Float32BufferAttribute(dp, 3));
     const motes = new Points(dg, new PointsMaterial({ color: 10868970, size: 0.038, transparent: true, opacity: 0.45, depthWrite: false, blending: AdditiveBlending }));
     root.add(motes);
-    const horizon = createHorizon(root, track3);
+    const horizon = createHorizon(root, track4);
     const ambient = new HemisphereLight(9615071, 1185313, 0.9), sun = new DirectionalLight(16765858, 1.8);
     sun.position.set(-1e3, 800, 1e3);
     root.add(ambient, sun);
@@ -43404,7 +43404,7 @@ obstacleRadial=vec2(dot(obstacleWorld,obstacleRight),dot(obstacleWorld,obstacleU
     root.add(bounce);
     scene3.add(root);
     freezeWorld(root, [sky, stars, key, key.target, fill2, bounce, ...mechanisms.map((o) => o.g), ...petals.flatMap((o) => o.parts.map((p) => p.m))]);
-    return addEnvironment(scene3, track3, course2, { root, track: track3, horizon, chunks, mechanisms, energy: energy2, petals, materials, key, fill: fill2, bounce, sky, skyMat, planet, stars, motes, rib, ribLight, bolts, lights, ribCount: count, textures: [environment], materialKinds: ["metal"], act: 0 });
+    return addEnvironment(scene3, track4, course2, { root, track: track4, horizon, chunks, mechanisms, energy: energy2, petals, materials, key, fill: fill2, bounce, sky, skyMat, planet, stars, motes, rib, ribLight, bolts, lights, ribCount: count, textures: [environment], materialKinds: ["metal"], act: 0 });
   }
   function updateWorld2(w, s, time2) {
     updateRaceMoments(w, s, time2, typeof document !== "undefined" && document.getElementById("reducedMotion")?.checked);
@@ -43924,11 +43924,11 @@ void main(){
   var SR = 32e3;
   var TAU21 = Math.PI * 2;
   var cache2 = /* @__PURE__ */ new Map();
-  function effectBuffer(ctx2, name, water = false) {
+  function effectBuffer(ctx3, name, water = false) {
     const key = name + ":" + Number(water);
     if (cache2.has(key)) return cache2.get(key);
     const looping = name.startsWith("engine"), duration = looping ? 1 : { pulse: 0.24, missile: 1.05, mine: 0.62, crash: 1.25, shield: 0.48, hull: 0.6, boost: 0.75, release: 0.38, scrape: 0.22, flyby: 0.42, hit: 0.2, kill: 0.8 }[name] || 0.3;
-    const N = Math.round(duration * SR), b = ctx2.createBuffer(2, N, SR), L = b.getChannelData(0), R = b.getChannelData(1);
+    const N = Math.round(duration * SR), b = ctx3.createBuffer(2, N, SR), L = b.getChannelData(0), R = b.getChannelData(1);
     let seed = 9157, low = 0, slow = 0;
     const sin = (n) => Math.sin(TAU21 * n), dec = (t, k) => Math.exp(-t * k);
     for (let i = 0; i < N; i++) {
@@ -44065,7 +44065,7 @@ void main(){
     sfxLimiter.connect(master);
     return ctx;
   }
-  var recordings = { 0: { url: "./music/m1.mp3?v=1a9617a75454", seconds: 12.88589569161, beats: 32 }, 1: { url: "./music/s1.mp3?v=b227c68a7d35", seconds: 25.77181405896, beats: 64 }, 5: { url: "./music/s2.mp3?v=c295d79ed0bc", seconds: 24.30378684807, beats: 64 }, 10: { url: "./music/s3.mp3?v=8a7a585b3745", seconds: 40, beats: 96 }, 14: { url: "./music/s4.mp3?v=3eea3f669ebe", seconds: 19.2, beats: 32 }, 18: { url: "./music/s5.mp3?v=15e090851419", seconds: 182.4, beats: 304 }, 22: { url: "./music/s6.mp3?v=1fd94e42b1b5", seconds: 220.68965986394556, beats: 640 } };
+  var recordings = { 0: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/m1.mp3?v=1a9617a75454", seconds: 12.88589569161, beats: 32 }, 1: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s1.mp3?v=b227c68a7d35", seconds: 25.77181405896, beats: 64 }, 5: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s2.mp3?v=c295d79ed0bc", seconds: 24.30378684807, beats: 64 }, 10: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s3.mp3?v=8a7a585b3745", seconds: 40, beats: 96 }, 14: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s4.mp3?v=3eea3f669ebe", seconds: 19.2, beats: 32 }, 18: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s5.mp3?v=15e090851419", seconds: 182.4, beats: 304 }, 22: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s6.mp3?v=1fd94e42b1b5", seconds: 220.68965986394556, beats: 640 } };
   function cacheBuffer(id, b) {
     buffers.set(id, b);
     while (buffers.size > 1 && (buffers.size > 3 || [...buffers.values()].reduce((n, b2) => n + b2.length * 8, 0) > 4e7)) buffers.delete(buffers.keys().next().value);
@@ -46864,6 +46864,281 @@ void main(){
       }
     }
   }
+
+  // public/audio.js
+  var ctx2;
+  var master2;
+  var music2;
+  var sfx2;
+  var track3 = 0;
+  var src2 = null;
+  var srcTrack2 = -1;
+  var userVolume2 = 1;
+  var boosted2 = false;
+  var lastBoost2 = false;
+  var synth2 = null;
+  var playGeneration2 = 0;
+  var engine2 = null;
+  var sfxLimiter2;
+  var warmQueue2 = null;
+  var warmPending2 = false;
+  var buffers2 = /* @__PURE__ */ new Map();
+  var pending2 = /* @__PURE__ */ new Map();
+  var voices2 = /* @__PURE__ */ new Set();
+  var musicVoices2 = /* @__PURE__ */ new Set();
+  var effectTimes2 = /* @__PURE__ */ new Map();
+  var timings2 = /* @__PURE__ */ new WeakMap();
+  var missingRecordings2 = /* @__PURE__ */ new Set();
+  function ac2() {
+    if (ctx2 && ctx2.state !== "closed") return ctx2;
+    if (ctx2?.state === "closed") audioStop2();
+    ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+    ctx2.addEventListener?.("statechange", () => {
+      if (ctx2.state === "running" && userVolume2 > 0 && !document.hidden) {
+        warmEffects2();
+        if (!src2 || srcTrack2 !== track3) play2();
+      }
+    });
+    master2 = ctx2.createGain();
+    master2.gain.value = 0.7 * userVolume2;
+    master2.connect(ctx2.destination);
+    music2 = ctx2.createGain();
+    music2.gain.value = 0.52;
+    music2.connect(master2);
+    sfx2 = ctx2.createGain();
+    sfx2.gain.value = 0.72;
+    sfxLimiter2 = ctx2.createDynamicsCompressor();
+    sfxLimiter2.threshold.value = -12;
+    sfxLimiter2.knee.value = 6;
+    sfxLimiter2.ratio.value = 4;
+    sfxLimiter2.attack.value = 3e-3;
+    sfxLimiter2.release.value = 0.14;
+    sfx2.connect(sfxLimiter2);
+    sfxLimiter2.connect(master2);
+    return ctx2;
+  }
+  var recordings2 = { 0: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/m1.mp3?v=1a9617a75454", seconds: 12.88589569161, beats: 32 }, 1: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s1.mp3?v=b227c68a7d35", seconds: 25.77181405896, beats: 64 }, 5: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s2.mp3?v=c295d79ed0bc", seconds: 24.30378684807, beats: 64 }, 10: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s3.mp3?v=8a7a585b3745", seconds: 40, beats: 96 }, 14: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s4.mp3?v=3eea3f669ebe", seconds: 19.2, beats: 32 }, 18: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s5.mp3?v=15e090851419", seconds: 182.4, beats: 304 }, 22: { url: "https://cdn.jsdelivr.net/gh/Jacko952508/shiftline-cloudflare@3bf6e8d8d317eba49dec145de6091fd117205f8b/public/music/s6.mp3?v=1fd94e42b1b5", seconds: 220.68965986394556, beats: 640 } };
+  function cacheBuffer2(id, b) {
+    buffers2.set(id, b);
+    while (buffers2.size > 1 && (buffers2.size > 3 || [...buffers2.values()].reduce((n, b2) => n + b2.length * 8, 0) > 4e7)) buffers2.delete(buffers2.keys().next().value);
+    return b;
+  }
+  function render3(id) {
+    if (buffers2.has(id)) {
+      const b = buffers2.get(id);
+      buffers2.delete(id);
+      buffers2.set(id, b);
+      return Promise.resolve(b);
+    }
+    if (pending2.has(id)) return pending2.get(id).promise;
+    const recording2 = recordings2[id];
+    if (recording2 && !missingRecordings2.has(id)) {
+      const promise2 = (async () => {
+        const response = await fetch(recording2.url);
+        if (!response.ok) throw new Error("Soundtrack unavailable");
+        const decoded = await ac2().decodeAudioData(await response.arrayBuffer()), length = Math.min(decoded.length, Math.round(recording2.seconds * decoded.sampleRate)), b = length === decoded.length ? decoded : ac2().createBuffer(decoded.numberOfChannels, length, decoded.sampleRate);
+        for (let channel = 0; channel < b.numberOfChannels; channel++) {
+          const out = b.getChannelData(channel);
+          if (b !== decoded) out.set(decoded.getChannelData(channel).subarray(0, length));
+          const width = Math.min(128, length), jump = out[0] - out[length - 1];
+          for (let i = 0; i < width; i++) out[i] -= jump * (1 - i / width) ** 3;
+        }
+        timings2.set(b, { beat: b.duration / recording2.beats, beats: recording2.beats, kind: 100 + id });
+        return cacheBuffer2(id, b);
+      })().catch((error2) => {
+        console.warn("SHIFTLINE: recorded soundtrack unavailable; using synthesised fallback", recording2.url, error2);
+        missingRecordings2.add(id);
+        pending2.delete(id);
+        return render3(id);
+      });
+      pending2.set(id, { promise: promise2 });
+      promise2.finally(() => pending2.delete(id)).catch(() => {
+      });
+      return promise2;
+    }
+    if (!synth2) {
+      try {
+        synth2 = new Worker("./audio-worker.js?v=53");
+        synth2.onmessage = ({ data }) => {
+          const p = pending2.get(data.id);
+          if (!p || !p.resolve) return;
+          pending2.delete(data.id);
+          if (data.error) {
+            p.reject(new Error(data.error));
+            return;
+          }
+          const b = ac2().createBuffer(2, data.left.length, data.sampleRate || 32e3);
+          b.copyToChannel(data.left, 0);
+          b.copyToChannel(data.right, 1);
+          timings2.set(b, { beat: data.left.length / (data.sampleRate || 32e3) / (data.beats || 64), beats: data.beats || 64, kind: data.family || 0 });
+          cacheBuffer2(data.id, b);
+          p.resolve(b);
+        };
+        synth2.onerror = () => {
+          for (const [id2, p] of pending2) {
+            if (p.reject) {
+              p.reject(new Error("Music synthesis unavailable"));
+              pending2.delete(id2);
+            }
+          }
+          synth2.terminate();
+          synth2 = null;
+        };
+      } catch {
+        return Promise.reject(new Error("Music unavailable"));
+      }
+    }
+    let resolve, reject;
+    const promise = new Promise((a, b) => {
+      resolve = a;
+      reject = b;
+    });
+    pending2.set(id, { promise, resolve, reject });
+    synth2.postMessage(id);
+    return promise;
+  }
+  function clean2(v) {
+    v.source.disconnect();
+    for (const n of v.nodes) n.disconnect();
+    voices2.delete(v);
+    musicVoices2.delete(v);
+  }
+  function play2() {
+    if (!ctx2 || ctx2.state !== "running" || userVolume2 <= 0) return;
+    const generation2 = ++playGeneration2, id = track3;
+    render3(id).then((buffer) => {
+      if (generation2 !== playGeneration2 || track3 !== id || ctx2.state !== "running" || userVolume2 <= 0) return;
+      const t = ctx2.currentTime, info = timings2.get(buffer), old = [...musicVoices2].find((v2) => v2.source === src2);
+      const matched = old && old.startedAt <= t && info.kind !== 0 && old.info.kind === info.kind;
+      let start = t, offset = 0, fade = 0.55;
+      if (matched) {
+        const position = Math.max(0, t - old.startedAt + old.offset), beatIndex = Math.ceil((position + 0.025) / (old.info.beat * 4)) * 4;
+        start = old.startedAt - old.offset + beatIndex * old.info.beat;
+        offset = beatIndex % info.beats * info.beat;
+        fade = Math.min(0.4, info.beat * 0.9);
+      }
+      for (const v2 of [...musicVoices2]) {
+        if (v2 !== old) {
+          try {
+            v2.source.stop();
+          } catch {
+          }
+          clean2(v2);
+          continue;
+        }
+        v2.gain.gain.cancelScheduledValues(t);
+        v2.gain.gain.setValueAtTime(v2.gain.gain.value, t);
+        v2.gain.gain.linearRampToValueAtTime(0, matched ? start + fade : t + 0.18);
+        try {
+          v2.source.stop((matched ? start + fade : t + 0.18) + 0.02);
+        } catch {
+        }
+      }
+      if (old && !matched) start = t + 0.2;
+      const source = ctx2.createBufferSource(), gain = ctx2.createGain(), v = { source, gain, nodes: [gain], info, startedAt: start, offset };
+      source.buffer = buffer;
+      source.loop = true;
+      gain.gain.setValueAtTime(0, start);
+      for (let i = 1; i <= 12; i++) gain.gain.linearRampToValueAtTime(Math.sin(i / 12 * Math.PI / 2), start + fade * i / 12);
+      source.connect(gain);
+      gain.connect(music2);
+      source.onended = () => clean2(v);
+      musicVoices2.add(v);
+      source.start(start, offset);
+      src2 = source;
+      srcTrack2 = id;
+    }).catch(() => {
+    });
+  }
+  function warmEffects2() {
+    if (warmPending2 || !ctx2 || ctx2.state !== "running" || !userVolume2) return;
+    warmQueue2 ?? (warmQueue2 = [...["engineBody", "engineTurbine", "engineAir"].map((n) => [n, false]), ...[false, true].flatMap((w) => ["pulse", "missile", "mine", "crash", "shield", "hull", "boost", "release", "scrape", "flyby", "hit", "kill"].map((n) => [n, w]))]);
+    if (!warmQueue2.length) return;
+    warmPending2 = true;
+    const run = () => {
+      warmPending2 = false;
+      if (!ctx2 || ctx2.state !== "running" || !userVolume2) return;
+      const [name, water] = warmQueue2.shift();
+      effectBuffer(ctx2, name, water);
+      warmEffects2();
+    };
+    if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1500 });
+    else setTimeout(run, 40);
+  }
+  async function audioStart2(gesture = false) {
+    if (!userVolume2) return;
+    const c = ac2();
+    const resume = c.state !== "running" ? c.resume().catch(() => {
+    }) : Promise.resolve();
+    if (gesture && c.state !== "running") {
+      const source = c.createBufferSource(), gain = c.createGain(), v = { source, nodes: [gain] };
+      source.buffer = c.createBuffer(1, 1, c.sampleRate);
+      gain.gain.value = 0;
+      source.connect(gain);
+      gain.connect(master2);
+      source.onended = () => clean2(v);
+      voices2.add(v);
+      source.start();
+      source.stop(c.currentTime + 0.01);
+    }
+    try {
+      await resume;
+    } catch {
+    }
+    if (c.state === "running") {
+      warmEffects2();
+      if (!src2 || srcTrack2 !== track3) play2();
+    }
+  }
+  async function audioResume2(gesture = false) {
+    await audioStart2(gesture);
+    if (music2) music2.gain.setTargetAtTime(boosted2 ? 0.6 : 0.52, ctx2.currentTime, 0.1);
+  }
+  function audioStop2() {
+    playGeneration2++;
+    for (const v of [...musicVoices2]) {
+      try {
+        v.source.stop();
+      } catch {
+      }
+      clean2(v);
+    }
+    for (const v of [...voices2]) {
+      try {
+        v.source.stop();
+      } catch {
+      }
+      clean2(v);
+    }
+    src2 = null;
+    srcTrack2 = -1;
+    lastBoost2 = boosted2 = false;
+    effectTimes2.clear();
+    if (ctx2 && music2) {
+      music2.gain.cancelScheduledValues(ctx2.currentTime);
+      music2.gain.setValueAtTime(0.52, ctx2.currentTime);
+    }
+    stopEngine2();
+  }
+  function stopEngine2() {
+    if (!engine2) return;
+    for (const v of engine2) {
+      try {
+        v.source.stop();
+      } catch {
+      }
+      v.source.disconnect();
+      v.filter.disconnect();
+      v.gain.disconnect();
+    }
+    engine2 = null;
+  }
+  function __chatAudioInfo() {
+    return { state: ctx2?.state ?? "not-created", volume: userVolume2, track: track3, playing: !!src2, missing: [...missingRecordings2], pending: [...pending2.keys()] };
+  }
+
+  // ../../../../../tmp/shiftline-chat-entry-2192.mjs
+  window.__shiftlineChatAudio = { resume: audioResume2, status: __chatAudioInfo };
 })();
 /**
  * @license
