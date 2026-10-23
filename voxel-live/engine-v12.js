@@ -2238,6 +2238,119 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const scannerRing=spaceMesh(explorerBody,new T.TorusGeometry(1.45,.07,8,48),spaceGlow,0,1.2,-3.1);
  scannerRing.rotation.x=Math.PI/2;
  const explorerThrusterLight=new T.PointLight(0x71ecff,2.8,29,2);explorerThrusterLight.position.set(0,0,6);explorer.add(explorerThrusterLight);
+
+ // V12: translucent GPU particle nebula with three differently-coloured, depth-sorted filament populations.
+ // Four draw calls total even with thousands of dust motes and an animated stellar shockwave.
+ const nebulaPopulations=[];
+ const nebulaVertex=`attribute float radiusPx;attribute vec3 particleColour;attribute float seed;
+    varying vec3 c;varying float alpha;
+    uniform float time;
+    void main(){
+      c=particleColour;
+      vec3 p=position;
+      p.xy+=vec2(sin(time*.032+seed*6.),cos(time*.028+seed*7.))*4.;
+      vec4 mv=modelViewMatrix*vec4(p,1.);
+      float distanceFade=clamp(1.15+mv.z/4200.,.12,1.);
+      alpha=distanceFade;
+      gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp(radiusPx*700./max(100.,-mv.z),1.,72.);
+    }`;
+ const nebulaFragment=`varying vec3 c;varying float alpha;
+    void main(){
+      vec2 p=gl_PointCoord*2.-1.;float r=dot(p,p);
+      if(r>1.)discard;
+      float core=exp(-r*8.),mist=exp(-r*3.);
+      vec3 color=c*(.48+.65*core);
+      gl_FragColor=vec4(color,alpha*(mist*.18+core*.31));
+    }`;
+ function filamentGroup(origin,count,color,seed){
+   const coords=new Float32Array(count*3),col=new Float32Array(count*3),sizes=new Float32Array(count),seeds=new Float32Array(count);
+   const base=new T.Color(color),c2=new T.Color(0xabc4ff);
+   for(let i=0;i<count;i++){
+     const phase=hash(i+seed,21)*Math.PI*2,a=phase+hash(i+seed,31)*14.8;
+     const radius=Math.pow(hash(i*3+seed,61),.75)*425;
+     const curved=hash(i+seed,17)*1100-350;
+     const k=i*3;
+     coords[k]=origin[0]+Math.cos(a)*radius+Math.sin(curved*.009)*120;
+     coords[k+1]=origin[1]+Math.sin(a*1.7)*radius*.35+Math.cos(curved*.007)*65;
+     coords[k+2]=origin[2]+curved+Math.sin(a)*radius*.42;
+     const colorMix=hash(i+seed,18);const temp=base.clone().lerp(c2,colorMix*.55);
+     col[k]=temp.r;col[k+1]=temp.g;col[k+2]=temp.b;
+     sizes[i]=2.5+Math.pow(hash(i+seed,54),1.9)*23;
+     seeds[i]=hash(i+seed,43);
+   }
+   const g=new T.BufferGeometry();
+   g.setAttribute('position',new T.BufferAttribute(coords,3));
+   g.setAttribute('particleColour',new T.BufferAttribute(col,3));
+   g.setAttribute('radiusPx',new T.BufferAttribute(sizes,1));
+   g.setAttribute('seed',new T.BufferAttribute(seeds,1));
+   const m=new T.ShaderMaterial({uniforms:{time:{value:0}},vertexShader:nebulaVertex,fragmentShader:nebulaFragment,
+      transparent:true,depthWrite:false,depthTest:true,blending:T.AdditiveBlending});
+   const pts=new T.Points(g,m);pts.frustumCulled=false;spaceRoot.add(pts);
+   nebulaPopulations.push({pts,material:m});
+ }
+ filamentGroup([120,75,-1220],mobile?850:1900,0x624ae6,7);
+ filamentGroup([-230,180,-1500],mobile?680:1420,0xc038b1,119);
+ filamentGroup([490,-150,-2050],mobile?530:1120,0x2c9df2,402);
+ // A moon-sized derelict station, the ruined star cathedral.
+ const cathedral=new T.Group();cathedral.position.set(-170,55,-890);spaceRoot.add(cathedral);
+ const cathedralSteel=spaceMat(0x4a6386,.23,.84),cathedralGold=spaceMat(0xa58e81,.32,.7);
+ const cathedralGlow=new T.MeshBasicMaterial({color:0x93d4ff,toneMapped:false});
+ const stationCore=spaceBall(cathedral,23,cathedralSteel,0,0,0,28);
+ const cathedralRings=[];
+ for(let i=0;i<4;i++){
+   const radius=65+i*17;
+   const ring=spaceMesh(cathedral,new T.TorusGeometry(radius,2.1+i*.35,10,128),
+      i%2?cathedralSteel:cathedralGold);
+   ring.rotation.set(.3+i*.21,.25+i*.14,.09-i*.12);
+   cathedralRings.push({ring,spin:(i%2?-.025:.019)/(1+i*.19)});
+ }
+ // Thousands of structural details batched in just two InstancedMeshes.
+ const ribs=mobile?128:240;
+ const ribGeo=new T.BoxGeometry(1,1,1),ribMesh=new T.InstancedMesh(ribGeo,cathedralSteel,ribs);
+ const ribsGlow=new T.InstancedMesh(new T.BoxGeometry(1,1,1),cathedralGlow,ribs);
+ const ribDummy=new T.Object3D();
+ for(let i=0;i<ribs;i++){
+   const ring=i%4,phase=i/ribs*Math.PI*8,rad=65+ring*17;
+   ribDummy.position.set(Math.cos(phase)*rad,Math.sin(phase)*rad,Math.sin(phase*3.1)*9);
+   ribDummy.rotation.set(phase*.21,0,phase);
+   ribDummy.scale.set(1.1,5+hash(i,18)*8,2.5);
+   ribDummy.updateMatrix();ribMesh.setMatrixAt(i,ribDummy.matrix);
+   ribDummy.position.z+=2;ribDummy.scale.set(.13,4.5,.5);ribDummy.updateMatrix();
+   ribsGlow.setMatrixAt(i,ribDummy.matrix);
+ }
+ ribMesh.instanceMatrix.needsUpdate=true;ribsGlow.instanceMatrix.needsUpdate=true;
+ cathedral.add(ribMesh,ribsGlow);
+ for(let i=0;i<6;i++){
+   const a=i*Math.PI/3;
+   const node=spaceBall(cathedral,5,i%2?cathedralGold:cathedralSteel,Math.cos(a)*120,Math.sin(a)*110,0,20);
+   const light=glowSprite(cathedral,i%2?0x8be3ff:0xf9bc86,Math.cos(a)*120,Math.sin(a)*110,0,38,.57);
+ }
+ glowSprite(cathedral,0x87c9ff,0,0,0,150,.72);
+ // Engine glow with physical 3D afterburner trails rather than oversized glowing billboard alone.
+ const ionCount=mobile?170:380,ionGeometry=new T.BufferGeometry();
+ const ionPositions=new Float32Array(ionCount*3),ionVelocities=new Float32Array(ionCount);
+ for(let i=0;i<ionCount;i++)ionVelocities[i]=hash(i*13,62);
+ ionGeometry.setAttribute('position',new T.BufferAttribute(ionPositions,3));
+ const ionShader=new T.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,blending:T.AdditiveBlending,
+    vertexShader:`varying float phase;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);phase=position.z;
+      gl_Position=projectionMatrix*mv;gl_PointSize=clamp(3.*200./max(2.,-mv.z),1.,11.);}`,
+    fragmentShader:`varying float phase;void main(){vec2 p=gl_PointCoord-.5;float a=exp(-dot(p,p)*18.);
+      gl_FragColor=vec4(mix(vec3(.27,.62,1.),vec3(.78,1.,1.),a),a*.77);}`
+ });
+ const ionParticles=new T.Points(ionGeometry,ionShader);ionParticles.frustumCulled=false;explorer.add(ionParticles);
+ function animateIonTrails(t,boost){
+   for(let i=0;i<ionCount;i++){
+     const phase=(ionVelocities[i]+t*(boost?1.8:.55)+i*.007)%1;
+     const engine=i%2?-1.3:1.3;
+     const j=i*3;
+     ionPositions[j]=engine+Math.sin(i*2.4)*(.15+phase*.82);
+     ionPositions[j+1]=-.12+Math.cos(i*2.6)*(.11+phase*.7);
+     ionPositions[j+2]=5.8+phase*(boost?72:24);
+   }
+   ionGeometry.attributes.position.needsUpdate=true;
+ }
+
  // The Silent Array — orbiting relic and signal beams.
  const arraySite=new T.Group();arraySite.position.set(-235,15,-480);spaceRoot.add(arraySite);
  const ancientMetal=spaceMat(0x253a59,.36,.68),ancientGlow=new T.MeshBasicMaterial({color:0x9c72ff,toneMapped:false});
@@ -2677,6 +2790,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      p.cloudShell.rotation.y=t*.003;
      if(p.ringMat)p.ringMat.uniforms.time.value=t;
    }
+   for(const n of nebulaPopulations)n.material.uniforms.time.value=t;
+   for(const n of cathedralRings)n.ring.rotation.z+=dt*n.spin;
+   cathedral.rotation.y=Math.sin(t*.006)*.05;
+   animateIonTrails(t,st.boost);
    discMat.uniforms.time.value=t;accretion.rotation.z=t*.065;
    blackOrbit.rotation.y=t*.22;
    signalRing.rotation.z+=dt*.07;
@@ -3136,6 +3253,8 @@ directorPanel.addEventListener('click',e=>{
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
         overdrive.beauty?.dispose();overdrive.blur?.dispose();postTriangle.dispose();bloomExtract.dispose();spaceFinalMat.dispose();
+        ionGeometry.dispose();ionShader.dispose();
+        for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
         warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();
         const sg=new Set(),sm=new Set();
         spaceRoot.traverse(o=>{if(o.geometry)sg.add(o.geometry);
