@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V12 · ASTRAEUS OVERDRIVE · TRUE BLOOM · NEBULA';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V13 · COSMIC ASCENT · LIVING NEBULA · REAL BLOOM';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -2690,7 +2690,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  // Space exploration UI is touch-first and separate from terrestrial builder controls.
  const spaceStatus=document.createElement('div');
  spaceStatus.style.cssText='position:absolute;z-index:5;top:65px;left:9px;right:9px;pointer-events:none;color:#e4f8ff;display:none;font:11px/1.5 ui-monospace,monospace;text-shadow:0 1px 8px #001420';
- spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V12 OVERDRIVE</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
+ spaceStatus.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><b style="font:700 14px system-ui;letter-spacing:1.9px;color:#9edbff">✦ ASTRAEUS <span style="color:#e3a4ff">/ V13 COSMIC ASCENT</span></b><span data-readout style="background:#081725aa;border:1px solid #37667e;padding:3px 7px;border-radius:6px">ENGINES READY</span></div><div data-telemetry style="padding:5px 0 0;font-size:10px;color:#bad3e4">KESTREL XR · DEEP SPACE EXPEDITION</div>';
  stage.appendChild(spaceStatus);
  const spaceControls=document.createElement('div');
  spaceControls.style.cssText='position:absolute;bottom:env(safe-area-inset-bottom,8px);right:7px;z-index:6;display:none;pointer-events:auto;width:min(168px,45vw);font:700 11px system-ui;color:#fff;touch-action:manipulation';
@@ -2899,11 +2899,33 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }else spaceNotify('✧ '+near.w.name+' — '+near.w.note,7);
    updateNavigation();
  }
+
+ // Cinematic pilot: spline-based flyby aimed at the cathedral, living ray and upper AEON atmosphere.
+ // Handing control back never reloads the scene or affects exploration progress.
+ let cinematicFlyby=null;
+ function beginFlyby(){
+   if(cinematicFlyby){cinematicFlyby=null;spaceNotify('FLYBY ENDED · Manual flight restored',2);return}
+   if(!spaceMode)return;
+   spaceCraftState.warp=null;spaceCraftState.boost=false;
+   const path=[
+     [-35,90,-630],[-60,122,-723],[-120,142,-816],[-206,169,-946],
+     [-272,197,-1050],[-230,207,-1135],[-92,210,-1146],[23,197,-1108]
+   ].map(p=>new T.Vector3(...p));
+   cinematicFlyby={
+     curve:new T.CatmullRomCurve3(path,false,'centripetal'),elapsed:0,duration:26
+   };
+   spaceCraftState.pos.copy(path[0]);
+   spaceCraftState.speed=0;
+   starNav.style.display='none';
+   spaceNotify('V13 CINEMATIC FLYBY · Choir of Orbits → Celestial Ray → AEON',4);
+ }
+
  function warpTo(index){
    const target=spaceWaypoints[index];
    if(!target||!spaceMode)return;
    const from=spaceCraftState.pos.clone(),to=new T.Vector3(...target.p);
    if(from.distanceTo(to)<45){spaceNotify('Already in the '+target.name+' sector. Try SCAN.',4);return}
+   cinematicFlyby=null;
    spaceCraftState.warp={from,to,elapsed:0,duration:3.65,targetIndex:index};
    spaceCraftState.boost=false;lastSight=target.id;
    starNav.style.display='none';
@@ -2939,7 +2961,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      const route=spaceWaypoints.findIndex(w=>w.id===lastSight);
      warpTo(route>=0?route:2);
    }
+   if(action==='tour'){beginFlyby();spaceControls.querySelector('[data-systems]').style.display='none'}
    if(action==='reveal'){
+     cinematicFlyby=null;
      spaceCraftState.warp=null;spaceCraftState.speed=0;
      spaceCraftState.pos.set(-60,48,-645);
      yaw=-.06;pitch=-.035;
@@ -2971,10 +2995,16 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  function enterSpaceWorld(auto=false){
    if(spaceMode)return;
    if(riding)endFlight();
+   const firstV13=!directorState.v13Seen;
+   if(firstV13){
+     directorState.v13Seen=true;
+     spaceCraftState.pos.set(-35,90,-630);
+     spaceCraftState.warp=null;spaceCraftState.speed=0;
+   }
    if(!directorState.v12Seen){
      // Showcase the new orbital megastructure instead of reloading at an unremarkable saved camera position.
      directorState.v12Seen=true;
-     spaceCraftState.pos.set(-60,48,-645);
+     if(!firstV13)spaceCraftState.pos.set(-60,48,-645);
      spaceCraftState.warp=null;spaceCraftState.speed=0;
      yaw=-.06;pitch=-.035;
    }
@@ -3000,8 +3030,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    q('vxHotbar').style.display='none';
    for(const id of ['vxMine','vxPlace','vxJump','vxRun','vxInventory'])q(id).style.display='none';
    const top=root.querySelector('.vxTopOptions');if(top)top.style.opacity='.68';
-   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V12 · OVERDRIVE · ORBITAL CATHEDRAL';
-   spaceNotify(auto?'OVERDRIVE V12 · NEW LIGHTING + COSMIC EFFECTS · press V12 REVEAL':'OVERDRIVE V12 · enhanced space visuals · press V12 REVEAL',5.8);
+   const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V13 · COSMIC ASCENT · LIVING VOID';
+   if(firstV13){beginFlyby();}
+   else spaceNotify(auto?'ASTRAEUS V13 · new volumetric world · open SYSTEMS to fly cinematic tour':'V13 COSMIC ASCENT · use SYSTEMS for the flyby',5);
  }
  function leaveSpaceWorld(silent=false){
    if(!spaceMode)return;
@@ -3033,7 +3064,17 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    cosmicSkyMat.uniforms.time.value=t;
    cosmicSky.position.copy(st.pos);
    // Throttle controls: left-side steering joystick; drag viewport for pitch/heading.
-   if(st.warp){
+   if(cinematicFlyby){
+     cinematicFlyby.elapsed+=dt;
+     const fraction=Math.min(1,cinematicFlyby.elapsed/cinematicFlyby.duration);
+     const eased=fraction*fraction*(3-2*fraction);
+     st.pos.copy(cinematicFlyby.curve.getPointAt(eased));
+     const direction=cinematicFlyby.curve.getTangentAt(Math.min(.999,eased)).normalize();
+     yaw=Math.atan2(-direction.x,-direction.z);
+     pitch=Math.asin(T.MathUtils.clamp(direction.y,-.92,.92));
+     st.speed=cinematicFlyby.curve.getLength()/cinematicFlyby.duration;
+     if(fraction>=1){cinematicFlyby=null;st.speed=0;spaceNotify('FLYBY COMPLETE · AEON high orbit · manual controls restored',5)}
+   }else if(st.warp){
      const w=st.warp;w.elapsed+=dt;
      const progress=T.MathUtils.clamp(w.elapsed/w.duration,0,1);
      const eased=progress*progress*(3-2*progress);
@@ -3078,7 +3119,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    const wanted=shipLocation.clone().addScaledVector(forward,camMode==='cockpit'?3.1:camMode==='cinema'?-52:-30).add(new T.Vector3(0,camMode==='cockpit'?1.7:camMode==='cinema'?18:9,0));
    camera.position.lerp(wanted,1-Math.exp(-dt*5.6));
    const focus=shipLocation.clone().addScaledVector(forward,46);
-   camera.lookAt(focus);
+   if(cinematicFlyby){
+     const phase=cinematicFlyby.elapsed/cinematicFlyby.duration;
+     const interest=phase<.52?cathedral.position:phase<.78?livingRay.position:spacePlanets[0].group.position;
+     camera.lookAt(focus.clone().lerp(interest,phase<.84?.19:.1));
+   }else camera.lookAt(focus);
    // Project the gravity well into image space; only distort the visible close-range region.
    const holeProjected=singularity.position.clone().project(camera);
    const holeDist=shipLocation.distanceTo(singularity.position);
