@@ -3208,11 +3208,15 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
    for(const n of nebulaPopulations)n.material.uniforms.time.value=t;
    for(const n of volumetricClouds){
-     n.shader.uniforms.time.value=t;
      const dist=shipLocation.distanceTo(n.center);
-     n.sphere.visible=dist<n.radius+1150&&overdrive.mode!=='battery';
-     n.shader.uniforms.steps.value=adaptive.frameMs>35?4:adaptive.frameMs>27?5:mobile?6:8;
-     n.shader.uniforms.density.value=overdrive.mode==='cinema'?.91:overdrive.mode==='battery'?.3:.68;
+     const isVisible=dist<n.radius+1250;
+     // Keep the cloud shape at reduced fidelity rather than disabling its shader on frame drops.
+     n.sphere.visible=isVisible&&overdrive.mode!=='battery';
+     if(!n.sphere.visible)continue;
+     n.shader.uniforms.time.value=t;
+     const pressure=adaptive.frameMs;
+     n.shader.uniforms.steps.value=overdrive.mode==='cinema'?(mobile?6:8):pressure>43?2:pressure>34?3:pressure>27?4:mobile?5:8;
+     n.shader.uniforms.density.value=overdrive.mode==='cinema'?.92:.7;
    }
    for(const n of cathedralRings)n.ring.rotation.z+=dt*n.spin;
    cathedral.rotation.y=Math.sin(t*.006)*.05;
@@ -3251,14 +3255,14 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      if(universeToastUntil<performance.now())universeToast.style.display='none';
      spaceFrameCount+=1;
      const rate=Math.round(1000/Math.max(10,adaptive.frameMs));
-     text('vxFps',rate+' FPS · SPACE · '+renderer.getPixelRatio().toFixed(2)+'x');
+     text('vxFps',rate+' FPS · '+(overdrive.enabled&&!overdrive.failed?'BLOOM '+Math.round(overdrive.bloomScale*100)+'%':'DIRECT')+' · '+renderer.getPixelRatio().toFixed(2)+'x');
      if(quality==='auto'&&performance.now()>adaptive.nextCheck){
        const ratio=renderer.getPixelRatio(),fps=1000/Math.max(1,adaptive.frameMs);
-       if(overdrive.mode==='adaptive'&&!overdrive.failed){
+       if(overdrive.mode==='adaptive'&&!overdrive.failed&&overdrive.enabled){
          const previous=overdrive.bloomScale;
-         if(fps<28)overdrive.bloomScale=Math.max(.12,previous-.035);
-         else if(fps>48)overdrive.bloomScale=Math.min(mobile?.27:.4,previous+.018);
-         if(Math.abs(previous-overdrive.bloomScale)>.001)overdrive.w=0;
+         if(fps<28)overdrive.bloomScale=Math.max(.12,previous-.045);
+         else if(fps>49)overdrive.bloomScale=Math.min(mobile?.28:.43,previous+.025);
+         if(Math.abs(previous-overdrive.bloomScale)>.005)overdrive.w=0;
        }
        if(fps<28&&ratio>.68)renderer.setPixelRatio(Math.max(.68,ratio-.075));
        else if(fps>49&&ratio<Math.min(devicePixelRatio||2,mobile?1.25:1.8))renderer.setPixelRatio(Math.min(mobile?1.25:1.8,ratio+.045));
