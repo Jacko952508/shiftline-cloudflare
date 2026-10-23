@@ -2112,6 +2112,153 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  asteroids.instanceMatrix.needsUpdate=true;asteroids.instanceColor.needsUpdate=true;
  asteroids.frustumCulled=false;spaceRoot.add(asteroids);
 
+
+ // ASTRAEUS "KESTREL XR" exploratory spacecraft, bespoke cockpit and animated ion thrusters.
+ const explorer=new T.Group();spaceRoot.add(explorer);
+ const explorerBody=new T.Group();explorer.add(explorerBody);
+ const explorerHull=spaceBall(explorerBody,1,spaceMetal,0,0,0,22);explorerHull.scale.set(2.5,.92,6.9);
+ const beak=spaceBall(explorerBody,1,spaceDark,0,.27,-3.3,20);beak.scale.set(1.5,.64,3.6);
+ const canopy=spaceBall(explorerBody,1,spaceGlass,0,1.08,-2.2,24);canopy.scale.set(1.52,.67,2.35);
+ spaceMesh(explorerBody,new T.TorusGeometry(1.34,.075,6,40,Math.PI),spaceTrim,0,1.1,-2.2).rotation.x=Math.PI/2;
+ function explorerWing(sign){
+   const mesh=new T.BufferGeometry();
+   const v=new Float32Array([
+     sign*1.9,0,-1.6,sign*9.5,0,1.45,sign*5.3,0,3.9,
+     sign*1.9,0,-1.6,sign*5.3,0,3.9,sign*1.8,0,4.1,
+     sign*2, -.11,-1.7,sign*5.3,-.11,3.9,sign*9.5,-.11,1.45,
+     sign*2, -.11,-1.7,sign*1.8,-.11,4.1,sign*5.3,-.11,3.9,
+   ]);
+   mesh.setAttribute('position',new T.BufferAttribute(v,3));mesh.computeVertexNormals();
+   spaceMesh(explorerBody,mesh,new T.MeshPhysicalMaterial({color:0x829cbd,metalness:.88,roughness:.26,side:T.DoubleSide,clearcoat:1}));
+   const edge=spaceBox(explorerBody,7.5,.12,.17,spaceGlow,sign*5.4,.16,1.18);
+   edge.rotation.y=sign*.18;
+   const pod=spaceBall(explorerBody,1,spaceDark,sign*7.2,-.27,1.52,16);pod.scale.set(.72,.58,2);
+   const tube=spaceMesh(explorerBody,new T.CylinderGeometry(.36,.36,1.2,16),spaceTrim,sign*7.2,-.26,2.65);
+   tube.rotation.x=Math.PI/2;
+   const flame=spaceBall(explorerBody,.37,spaceGlow,sign*7.2,-.26,3.48,14);flame.scale.z=2.9;
+   return flame;
+ }
+ const explorerThrust=[explorerWing(-1),explorerWing(1)];
+ const mainThrusters=[];
+ for(const side of [-1,1]){
+   const housing=spaceMesh(explorerBody,new T.CylinderGeometry(.76,.89,3.1,18),spaceDark,side*1.3,-.12,3.92);
+   housing.rotation.x=Math.PI/2;
+   const ring=spaceMesh(explorerBody,new T.TorusGeometry(.69,.14,8,26),spaceGlow,side*1.3,-.12,5.48);
+   const glow=glowSprite(explorerBody,0x77f0ff,side*1.3,-.1,6.6,6,.84);
+   mainThrusters.push({ring,glow});
+ }
+ // Mechanical articulation and visual identity.
+ for(const side of [-1,1]){
+   const fin=spaceBox(explorerBody,.17,2.1,2.4,spaceTrim,side*2.1,1.03,3.55);fin.rotation.z=side*.27;
+   for(let i=0;i<5;i++)spaceBox(explorerBody,.35,.08,.45,spaceGold,side*.75,.92,-3.4+i*.64);
+ }
+ const scannerDome=spaceBall(explorerBody,.64,spaceGlow,0,1.48,.6,14);
+ const scannerRing=spaceMesh(explorerBody,new T.TorusGeometry(1.45,.07,8,48),spaceGlow,0,1.2,-3.1);
+ scannerRing.rotation.x=Math.PI/2;
+ const explorerThrusterLight=new T.PointLight(0x71ecff,2.8,29,2);explorerThrusterLight.position.set(0,0,6);explorer.add(explorerThrusterLight);
+ // The Silent Array — orbiting relic and signal beams.
+ const arraySite=new T.Group();arraySite.position.set(-235,15,-480);spaceRoot.add(arraySite);
+ const ancientMetal=spaceMat(0x253a59,.36,.68),ancientGlow=new T.MeshBasicMaterial({color:0x9c72ff,toneMapped:false});
+ const centralCore=spaceBall(arraySite,18,ancientMetal,0,0,0,20);
+ const signal=spaceBall(arraySite,12,ancientGlow,0,0,0,18);
+ signal.material.transparent=true;signal.material.opacity=.31;
+ const orbitalSpokes=[];
+ for(let i=0;i<7;i++){
+   const a=i*Math.PI*2/7;
+   const spire=spaceMesh(arraySite,new T.CylinderGeometry(2.2,3.9,85,8),ancientMetal,
+      Math.cos(a)*54,Math.sin(a*2)*15,Math.sin(a)*54);
+   spire.rotation.z=a*.12;orbitalSpokes.push(spire);
+   spaceBox(arraySite,1.3,2.2,9,ancientGlow,Math.cos(a)*54,Math.sin(a*2)*15+17,Math.sin(a)*54);
+ }
+ const signalRing=spaceMesh(arraySite,new T.TorusGeometry(75,1.1,8,96),ancientGlow);
+ signalRing.rotation.y=.42;signalRing.rotation.x=.64;
+ glowSprite(arraySite,0xa97fff,0,0,0,175,.39);
+ // The Crystal Reef — jagged iridescent formations on a drifting rock.
+ const crystalSite=new T.Group();crystalSite.position.set(355,-75,-660);spaceRoot.add(crystalSite);
+ const crystalBase=spaceMesh(crystalSite,new T.IcosahedronGeometry(69,2),spaceDark);
+ crystalBase.scale.set(1.28,.34,.95);crystalBase.rotation.z=.18;
+ const crystalGeo=new T.ConeGeometry(1,1,5),crystalMat=new T.MeshPhysicalMaterial({
+   color:0x9679ff,metalness:.34,roughness:.12,clearcoat:1,iridescence:.75,iridescenceIOR:1.27,emissive:0x301a76,emissiveIntensity:.6,flatShading:true
+ });
+ const shardCount=mobile?145:280,crystals=new T.InstancedMesh(crystalGeo,crystalMat,shardCount),
+   crystalDummy=new T.Object3D(),crystalColor=new T.Color();
+ for(let i=0;i<shardCount;i++){
+   const a=hash(i,10)*Math.PI*2,rad=Math.sqrt(hash(i,20))*69;
+   const x=Math.cos(a)*rad,z=Math.sin(a)*rad*.84,h=3+hash(i,35)*39;
+   crystalDummy.position.set(x,h*.41,z);crystalDummy.rotation.set((hash(i,24)-.5)*.45,hash(i,28)*6,(hash(i,36)-.5)*.45);
+   crystalDummy.scale.set(1+hash(i,42)*3.8,h,1+hash(i,44)*4);crystalDummy.updateMatrix();
+   crystals.setMatrixAt(i,crystalDummy.matrix);
+   crystalColor.setHSL(.68+hash(i,55)*.13,.77,.54+hash(i,58)*.31);crystals.setColorAt(i,crystalColor);
+ }
+ crystals.instanceMatrix.needsUpdate=true;crystals.instanceColor.needsUpdate=true;
+ crystalSite.add(crystals);
+ glowSprite(crystalSite,0x9672ff,0,28,0,170,.55);
+ // Horizon Gate, a colossal portal-shaped ancient alien structure.
+ const horizonGate=new T.Group();horizonGate.position.set(355,32,-1840);spaceRoot.add(horizonGate);
+ const gateRadius=72;
+ for(let i=0;i<4;i++){
+   const ring=spaceMesh(horizonGate,new T.TorusGeometry(gateRadius+i*7,1.9+i*.7,8,120),
+      i%2?spaceGlow:ancientMetal);
+   ring.rotation.y=i*.21;ring.rotation.x=i*.19;
+ }
+ const gateSpines=[];
+ for(let i=0;i<12;i++){
+   const a=i*Math.PI/6;
+   const ob=spaceMesh(horizonGate,new T.OctahedronGeometry(6+hash(i,20)*8),i%3?ancientMetal:ancientGlow,
+     Math.cos(a)*103,Math.sin(a)*103,0);
+   ob.rotation.y=a;gateSpines.push(ob);
+ }
+ const gatewayEye=glowSprite(horizonGate,0x5adfff,0,0,0,150,.58);
+ // The Ghost Ark: recognisable asymmetric wreck and solar sails.
+ const ghostArk=new T.Group();ghostArk.position.set(-660,85,-2310);spaceRoot.add(ghostArk);
+ const arkShip=spaceBall(ghostArk,1,ancientMetal,0,0,0,30);arkShip.scale.set(22,13,117);
+ for(let i=0;i<9;i++){
+   const z=-93+i*24,r=17+(i%3)*4;
+   const rib=spaceMesh(ghostArk,new T.TorusGeometry(r,2.4,7,32),spaceMetal,0,0,z);rib.rotation.y=.14+i*.01;
+ }
+ for(const side of [-1,1]){
+   const sail=spaceBox(ghostArk,3.5,75,94,ancientMetal,side*28,0,10);sail.rotation.z=side*.14;
+   for(let i=0;i<10;i++){
+     spaceBox(ghostArk,3,1.1,5,spaceGlow,side*30,-29+i*6.4,11+i*.24);
+   }
+ }
+ spaceBox(ghostArk,13,8,48,spaceDark,0,15,-51);
+ glowSprite(ghostArk,0x5ca4ef,0,-4,116,98,.35);
+ // Moving signal drones near the artefacts.
+ const artifactDrones=[];
+ const droneMaterial=new T.MeshBasicMaterial({color:0x7edfff,toneMapped:false});
+ for(let j=0;j<14;j++){
+   const host=j%3===0?arraySite:j%3===1?crystalSite:horizonGate;
+   const drone=spaceBall(host,1.1,droneMaterial,0,0,0,10);
+   artifactDrones.push({drone,host,radius:32+hash(j,22)*82,phase:j*2.39,rate:.03+hash(j,33)*.055});
+ }
+ // Warp field: velocity-oriented light tunnels use one LineSegments draw call.
+ const warpCount=mobile?85:170,warpGeometry=new T.BufferGeometry(),
+  warpPositions=new Float32Array(warpCount*6);
+ warpGeometry.setAttribute('position',new T.BufferAttribute(warpPositions,3));
+ const warpMaterial=new T.LineBasicMaterial({color:0x91e5ff,transparent:true,opacity:.88,
+   depthWrite:false,blending:T.AdditiveBlending});
+ const warpLines=new T.LineSegments(warpGeometry,warpMaterial);
+ spaceRoot.add(warpLines);warpLines.visible=false;warpLines.frustumCulled=false;
+ function updateWarpVisual(t,forward){
+   warpLines.visible=!!spaceCraftState.warp;
+   if(!spaceCraftState.warp)return;
+   const p=spaceCraftState.pos;
+   const side=new T.Vector3().crossVectors(forward,new T.Vector3(0,1,0)).normalize();
+   const up=new T.Vector3().crossVectors(side,forward).normalize();
+   for(let i=0;i<warpCount;i++){
+     const angle=hash(i,13)*Math.PI*2,rad=7+hash(i,19)*38;
+     const xx=Math.cos(angle)*rad,yy=Math.sin(angle)*rad;
+     const zz=18+((hash(i,61)*260+t*170+i*4)%260);
+     const origin=p.clone().addScaledVector(side,xx).addScaledVector(up,yy).addScaledVector(forward,zz-120);
+     for(let j=0;j<2;j++){
+       const dst=origin.clone().addScaledVector(forward,j?8+hash(i,27)*42:0);
+       const k=i*6+j*3;warpPositions[k]=dst.x;warpPositions[k+1]=dst.y;warpPositions[k+2]=dst.z;
+     }
+   }
+   warpGeometry.attributes.position.needsUpdate=true;
+ }
+
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
  directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="portal">🌀 VISIT PORTAL</button><button data-action="collapse">💥 DEMOLISH PAVILION</button><button data-action="rebuild">🏗 REBUILD PAVILION</button><button data-action="gravity">🌙 LOW GRAVITY</button><button data-action="front">⛈ STORM FRONTS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
