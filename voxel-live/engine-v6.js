@@ -330,6 +330,29 @@ function roadMesh(nodes,width=7){
  mainRoads.push({curve,width,count});
 }
 for(const path of pathLines)roadMesh(path,path===pathLines[1]?8:7);
+
+ // Puddled road layer, batched into one instanced draw call.
+ let wetness=0;
+ const puddleCanvas=document.createElement('canvas');puddleCanvas.width=puddleCanvas.height=96;
+ const pct=puddleCanvas.getContext('2d'),pg=pct.createRadialGradient(48,48,3,48,48,46);
+ pg.addColorStop(0,'rgba(220,240,250,.65)');pg.addColorStop(.48,'rgba(200,235,255,.34)');
+ pg.addColorStop(.83,'rgba(183,224,255,.1)');pg.addColorStop(1,'rgba(175,220,255,0)');
+ pct.fillStyle=pg;pct.fillRect(0,0,96,96);
+ const puddleTexture=new T.CanvasTexture(puddleCanvas);
+ const puddleMat=new T.MeshBasicMaterial({map:puddleTexture,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
+ const puddleGeometry=new T.PlaneGeometry(1,1);puddleGeometry.rotateX(-Math.PI/2);
+ const puddleCount=mobile?40:75,puddles=new T.InstancedMesh(puddleGeometry,puddleMat,puddleCount);
+ const puddleDummy=new T.Object3D();
+ for(let i=0;i<puddleCount;i++){
+  const road=mainRoads[i%mainRoads.length],along=hash(i*7,91)*.91+.045,p=road.curve.getPoint(along);
+  const tangent=road.curve.getTangent(along),side=hash(i,7)>.5?1:-1;
+  const drift=(hash(i,51)*.8+.1)*road.width*.36*side;
+  puddleDummy.position.set(p.x-tangent.z*drift,coastH(p.x,p.z)+.43,p.z+tangent.x*drift);
+  puddleDummy.rotation.y=hash(i,61)*Math.PI;puddleDummy.scale.set(.85+hash(i,71)*1.8,1,1.3+hash(i,76)*2);
+  puddleDummy.updateMatrix();puddles.setMatrixAt(i,puddleDummy.matrix);
+ }
+ puddles.instanceMatrix.needsUpdate=true;puddles.visible=false;smoothWorld.add(puddles);
+
 const roadFurnitureMat=coastMaterial(0x33404b,.38,.74),warmLamp=new T.MeshBasicMaterial({color:0xffdda0,toneMapped:false});
 const baseBox=new T.BoxGeometry(1,1,1);
 const placeBox=(group,w,h,d,mat,x,y,z)=>{
@@ -1356,7 +1379,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      mapctx.fillStyle='#ff5e48';mapctx.fillRect(Math.floor(loc.x)-2,Math.floor(loc.z)-2,5,5);
      mapctx.strokeStyle='#fff';mapctx.strokeRect(Math.floor(loc.x)-5,Math.floor(loc.z)-5,11,11);
    }
-   if(debugHudOn)debugHud.textContent='REALITY ENGINE V4\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
+   if(debugHudOn)debugHud.textContent='REALITY ENGINE V4\nWORLD: '+SIZE+' x '+SIZE+' x '+Y+'\nCHUNKS: '+geoGroups.size+' / '+(SIZE/CHUNK)**2+'\nQUEUE: '+chunkQueue.length+'\nDRAW RADIUS: '+chunkRadius.value+'\nGPU DPR: '+renderer.getPixelRatio().toFixed(2)+'\nDRAWS: '+renderer.info.render.calls+' / '+renderer.info.render.triangles+' TRI'+'\nMODE: '+(riding?vehicleType:'ON FOOT')+'\nWEATHER: '+weather.toUpperCase();
  }
 
  directorPanel.addEventListener('click',e=>{
@@ -1425,13 +1448,26 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
  q('vxReset').onclick=()=>{if(riding)endFlight();if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);else loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
+ q('vxWeather').insertAdjacentHTML('beforeend','<option value="sunset">🌇 Golden hour</option>');
  q('vxWeather').onchange=e=>{
-  weather=e.target.value;const storm=weather==='rain',night=weather==='night';
-  sun.intensity=night?.12:storm?.85:2.6;hemi.intensity=night?.7:storm?1.3:2;
-  skyMat.uniforms.top.value.set(night?'#07182e':storm?'#40566f':'#347fba');
-  skyMat.uniforms.horizon.value.set(night?'#29364d':storm?'#7e919a':'#bfdfea');
-  skyMat.uniforms.night.value=night?1:0;sunDisk.visible=!night&&!storm;scene.fog.color.set(night?0x1e3548:storm?0x748e9b:0x9abbd1);
-  cloudMat.opacity=night?.15:storm?.95:.8;
+  weather=e.target.value;
+  const storm=weather==='rain',night=weather==='night',sunset=weather==='sunset';
+  sun.intensity=night?.09:storm?.75:sunset?1.65:2.6;
+  sun.color.set(sunset?0xffb67f:night?0xa5c2ef:storm?0xd5e1ff:0xffe2b0);
+  sun.position.set(sunset?-67:-38,sunset?16:70,26);
+  hemi.intensity=night?.67:storm?1.23:sunset?1.56:2;
+  skyMat.uniforms.top.value.set(night?'#07182e':storm?'#40566f':sunset?'#315678':'#347fba');
+  skyMat.uniforms.horizon.value.set(night?'#29364d':storm?'#7e919a':sunset?'#edaf8b':'#bfdfea');
+  skyMat.uniforms.haze.value=sunset?.62:storm?.65:.28;
+  skyMat.uniforms.night.value=night?1:0;sunDisk.visible=!night&&!storm;
+  oceanMat.uniforms.night.value=night?1:0;oceanMat.uniforms.storm.value=storm?1:0;
+  oceanMat.uniforms.deep.value.set(night?'#061d39':storm?'#123049':sunset?'#1f5b75':'#123d5e');
+  oceanMat.uniforms.shallow.value.set(night?'#174969':storm?'#416578':sunset?'#679ca0':'#3ea7a4');
+  scene.fog.color.set(night?0x1e3548:storm?0x748e9b:sunset?0xcb9b8c:0x9abbd1);
+  scene.fog.density=storm?.0092:night?.0076:.0065;
+  scene.environmentIntensity=night?.4:storm?.7:sunset?.96:.81;
+  renderer.toneMappingExposure=night?.91:storm?.95:sunset?1.09:1.07;
+  cloudMat.opacity=night?.15:storm?.95:sunset?.6:.8;
  };
  function setQuality(v){
   quality=v;maxDpr=v==='low'?.75:v==='medium'?1:v==='high'?Math.min(devicePixelRatio||1,1.7):(mobile?1.1:1.4);
@@ -1498,7 +1534,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   }
   if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;
+  wetness=T.MathUtils.damp(wetness,weather==='rain'?1:0,weather==='rain'?.7:.045,dt);
+  asphalt.roughness=.8-wetness*.51;asphalt.envMapIntensity=.64+wetness*.63;
+  puddles.visible=newMapActive&&wetness>.025;puddleMat.opacity=wetness*.78;
+  landscapeMat.roughness=.94-wetness*.1;oceanMat.uniforms.time.value=t;advanceDirector(dt,t);updateVfx(dt,t);if(newMapActive)animateCoast(dt,t);else animateTraffic(dt,t);
   for(const a of animals){
     a.g.visible=!newMapActive;
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
