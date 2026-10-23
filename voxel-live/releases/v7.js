@@ -1,0 +1,1 @@
+export const release={version:7,engineCommit:'b5003e995ce7644bb312fc0aa4c75e4dd57bce6c',engineFile:'engine-v7.js',message:'V7 VISTA REMASTER: lighthouse with sweeping beacon, coastal rock formations, animated waterfall, glass skyline tower, road furniture, cinematic golden hour and one-tap SHOWCASE'};
