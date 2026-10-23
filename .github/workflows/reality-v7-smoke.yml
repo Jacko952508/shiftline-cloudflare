@@ -38,7 +38,8 @@ jobs:
           await browser.close();
           NODE
           python3 -m http.server 9988 >/tmp/reality-http.log 2>&1 &
-          node /tmp/reality-test.mjs
+          cp /tmp/reality-test.mjs ./test-v7-smoke.mjs
+          node ./test-v7-smoke.mjs
       - name: Commit smoke-test result
         if: always()
         run: |
