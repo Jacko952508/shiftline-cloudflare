@@ -2530,33 +2530,41 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const overdrive={
    enabled:directorState.overdrivePost!==false,
    failed:false,mode:directorState.overdriveQuality||'adaptive',
-   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,renderPasses:0
+   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,blur2:null,renderPasses:0
  };
  const postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
  const postTriangle=new T.BufferGeometry();
  postTriangle.setAttribute('position',new T.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
  const postUvVertex=`varying vec2 uv;void main(){uv=position.xy*.5+.5;gl_Position=vec4(position.xy,0.,1.);}`;
+
+ // One threshold/downsample pass, then two true separable Gaussian blurs.
+ // This replaces V12's near-pixel-size extraction, which could not produce broad bloom.
  const bloomExtract=new T.ShaderMaterial({
    depthTest:false,depthWrite:false,toneMapped:false,
-   uniforms:{source:{value:null},texel:{value:new T.Vector2(1/720,1/480)},threshold:{value:.56},spread:{value:1.9}},
+   uniforms:{source:{value:null},texel:{value:new T.Vector2(1/720,1/480)},threshold:{value:.48}},
    vertexShader:postUvVertex,
-   fragmentShader:`varying vec2 uv;
-    uniform sampler2D source;uniform vec2 texel;uniform float threshold,spread;
-    vec3 pick(vec2 offset){
-      vec3 c=texture2D(source,uv+offset*texel*spread).rgb;
-      float light=max(max(c.r,c.g),c.b);
-      float mask=smoothstep(threshold-.12,threshold+.25,light);
-      return c*mask;
-    }
+   fragmentShader:`varying vec2 uv;uniform sampler2D source;uniform vec2 texel;uniform float threshold;
+    vec3 tap(vec2 delta){vec3 c=texture2D(source,uv+delta*texel).rgb;
+      float l=max(c.r,max(c.g,c.b));return c*smoothstep(threshold-.19,threshold+.23,l);}
     void main(){
-      vec3 sum=pick(vec2(0.,0.))*.2;
-      sum+=pick(vec2(1.,0.))*.10+pick(vec2(-1.,0.))*.10;
-      sum+=pick(vec2(0.,1.))*.10+pick(vec2(0.,-1.))*.10;
-      sum+=pick(vec2(1.,1.))*.075+pick(vec2(-1.,-1.))*.075;
-      sum+=pick(vec2(-1.,1.))*.075+pick(vec2(1.,-1.))*.075;
-      sum+=pick(vec2(2.,0.))*.025+pick(vec2(-2.,0.))*.025;
-      sum+=pick(vec2(0.,2.))*.025+pick(vec2(0.,-2.))*.025;
-      gl_FragColor=vec4(sum,1.);
+      vec3 sum=tap(vec2(-.5,-.5))+tap(vec2(.5,-.5))+tap(vec2(-.5,.5))+tap(vec2(.5,.5));
+      gl_FragColor=vec4(sum*.25,1.);
+    }`
+ });
+ const bloomGaussian=new T.ShaderMaterial({
+   depthTest:false,depthWrite:false,toneMapped:false,
+   uniforms:{source:{value:null},direction:{value:new T.Vector2(1,0)},texel:{value:new T.Vector2(.004,.004)}},
+   vertexShader:postUvVertex,
+   fragmentShader:`varying vec2 uv;uniform sampler2D source;
+    uniform vec2 direction,texel;
+    void main(){
+      vec2 d=direction*texel;
+      vec3 col=texture2D(source,uv).rgb*.227027;
+      col+=texture2D(source,uv+d*1.384615).rgb*.316216;
+      col+=texture2D(source,uv-d*1.384615).rgb*.316216;
+      col+=texture2D(source,uv+d*3.230769).rgb*.070270;
+      col+=texture2D(source,uv-d*3.230769).rgb*.070270;
+      gl_FragColor=vec4(col,1.);
     }`
  });
  const spaceFinalMat=new T.ShaderMaterial({
@@ -2597,15 +2605,16 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
       #include <colorspace_fragment>
     }`
  });
- const postQuadExtract=new T.Mesh(postTriangle,bloomExtract),postQuadFinal=new T.Mesh(postTriangle,spaceFinalMat);
- const postStage1=new T.Scene(),postStage2=new T.Scene();
- postStage1.add(postQuadExtract);postStage2.add(postQuadFinal);
+ const postQuadExtract=new T.Mesh(postTriangle,bloomExtract),postQuadBlur=new T.Mesh(postTriangle,bloomGaussian),
+       postQuadFinal=new T.Mesh(postTriangle,spaceFinalMat);
+ const postStage1=new T.Scene(),postStageBlur=new T.Scene(),postStage2=new T.Scene();
+ postStage1.add(postQuadExtract);postStageBlur.add(postQuadBlur);postStage2.add(postQuadFinal);
  function setupSpacePost(){
    if(overdrive.failed||!overdrive.enabled)return false;
    const size=renderer.getDrawingBufferSize(new T.Vector2());
    const w=Math.max(16,Math.min(2048,Math.floor(size.x))),h=Math.max(16,Math.min(2048,Math.floor(size.y)));
    if(overdrive.beauty&&overdrive.w===w&&overdrive.h===h)return true;
-   overdrive.beauty?.dispose();overdrive.blur?.dispose();
+   overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
    overdrive.w=w;overdrive.h=h;
    try{
      const supportFloat=renderer.capabilities.isWebGL2&&renderer.extensions.has('EXT_color_buffer_float');
@@ -2615,15 +2624,17 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      const glowW=Math.max(36,Math.round(w*overdrive.bloomScale));
      const glowH=Math.max(36,Math.round(h*overdrive.bloomScale));
      overdrive.blur=new T.WebGLRenderTarget(glowW,glowH,{depthBuffer:false,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:outputType});
+     overdrive.blur2=new T.WebGLRenderTarget(glowW,glowH,{depthBuffer:false,magFilter:T.LinearFilter,minFilter:T.LinearFilter,format:T.RGBAFormat,type:outputType});
      bloomExtract.uniforms.source.value=overdrive.beauty.texture;
      bloomExtract.uniforms.texel.value.set(1/w,1/h);
+     bloomGaussian.uniforms.texel.value.set(1/glowW,1/glowH);
      spaceFinalMat.uniforms.beauty.value=overdrive.beauty.texture;
      spaceFinalMat.uniforms.glow.value=overdrive.blur.texture;
      spaceFinalMat.uniforms.viewport.value.set(w,h);
      return true;
    }catch(e){
      console.warn('V12 bloom target allocation fallback',e);
-     overdrive.failed=true;overdrive.beauty?.dispose();overdrive.blur?.dispose();return false;
+     overdrive.failed=true;overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();return false;
    }
  }
  function spaceRenderOverdrive(t){
@@ -2632,9 +2643,16 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    try{
      renderer.setRenderTarget(overdrive.beauty);
      renderer.clear();renderer.render(scene,camera);
-     bloomExtract.uniforms.spread.value=2.15;
      renderer.setRenderTarget(overdrive.blur);
      renderer.clear();renderer.render(postStage1,postCamera);
+     bloomGaussian.uniforms.source.value=overdrive.blur.texture;
+     bloomGaussian.uniforms.direction.value.set(1,0);
+     renderer.setRenderTarget(overdrive.blur2);
+     renderer.clear();renderer.render(postStageBlur,postCamera);
+     bloomGaussian.uniforms.source.value=overdrive.blur2.texture;
+     bloomGaussian.uniforms.direction.value.set(0,1);
+     renderer.setRenderTarget(overdrive.blur);
+     renderer.clear();renderer.render(postStageBlur,postCamera);
      renderer.setRenderTarget(original);
      spaceFinalMat.uniforms.time.value=t;
      renderer.render(postStage2,postCamera);
@@ -2651,8 +2669,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    if(!['adaptive','cinema','battery'].includes(mode))return;
    overdrive.mode=mode;directorState.overdriveQuality=mode;
    overdrive.bloomScale=mode==='cinema'?(mobile?.36:.5):mode==='battery'?.14:(mobile?.22:.37);
-   overdrive.beauty?.dispose();overdrive.blur?.dispose();
-   overdrive.beauty=null;overdrive.blur=null;overdrive.w=0;
+   overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
+   overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
    spaceFinalMat.uniforms.intensity.value=mode==='cinema'?1.32:mode==='battery'?.76:1.02;
    spaceNotify('V12 RENDERER · '+mode.toUpperCase()+' · BLOOM + FILMIC TONING',3);
  }
@@ -3366,7 +3384,7 @@ directorPanel.addEventListener('click',e=>{
  return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
-        overdrive.beauty?.dispose();overdrive.blur?.dispose();postTriangle.dispose();bloomExtract.dispose();spaceFinalMat.dispose();
+        overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
         ionGeometry.dispose();ionShader.dispose();
         for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
         warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();
