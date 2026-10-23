@@ -560,7 +560,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    updateDirectorStats();persist();
  });
  flightButtons();
-
+ if(riding){craftGroup.visible=true;loc.set(craftState.x,craftState.y+1.8,craftState.z)}
+ 
  function editBlock(place){
   if(riding)return;
   const target=castBlock();if(!target){notify('Aim at a block within 7 metres');return}
@@ -605,7 +606,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const stopStick=e=>{if(e.pointerId!==stickPointer)return;stickPointer=null;move.x=move.y=0;touchNub.style.transform='translate(0,0)'};
  for(const ev of ['pointerup','pointercancel','lostpointercapture'])touchPad.addEventListener(ev,stopStick);
  canvas.addEventListener('pointerdown',e=>{lookPointer=e.pointerId;lookOld=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)});
- canvas.addEventListener('pointermove',e=>{if(e.pointerId!==lookPointer||!lookOld)return;yaw-=(e.clientX-lookOld[0])*.0045;pitch=T.MathUtils.clamp(pitch+(e.clientY-lookOld[1])*.0042,-1.45,1.45);lookOld=[e.clientX,e.clientY]});
+ canvas.addEventListener('pointermove',e=>{if(e.pointerId!==lookPointer||!lookOld)return;const dx=e.clientX-lookOld[0],dy=e.clientY-lookOld[1];if(riding){flightOrbit-=dx*.0045;flightPitch=T.MathUtils.clamp(flightPitch+dy*.003,-.28,.8)}else{yaw-=dx*.0045;pitch=T.MathUtils.clamp(pitch+dy*.0042,-1.45,1.45)}lookOld=[e.clientX,e.clientY]});
  for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{if(e.pointerId===lookPointer){lookPointer=null;lookOld=null}});
  const keys=new Set();
  const kd=e=>{const t=e.target;if(t&&/INPUT|TEXTAREA|SELECT/.test(t.tagName))return;keys.add(e.key.toLowerCase());if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault()};
@@ -620,14 +621,19 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  rainGeo.setAttribute('position',new T.BufferAttribute(rainPos,3));
  const rainMat=new T.PointsMaterial({color:0xb3e0fa,size:.08,transparent:true,opacity:.65});
  const rain=new T.Points(rainGeo,rainMat);scene.add(rain);
- let last=performance.now(),fpsAt=last,frames=0,saveAt=last,adaptAt=last;
+ let last=performance.now(),fpsAt=last,frames=0,saveAt=last,adaptAt=last,lastCivilWork=last;
  const stat=()=>({x:loc.x,y:loc.y,z:loc.z,yaw});
  function persist(){
-  try{localStorage.setItem(saveKey,JSON.stringify({player:stat(),changes:Object.fromEntries(changes)}))}catch(e){}
+  try{localStorage.setItem(saveKey,JSON.stringify({player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}))}catch(e){}
  }
  function frame(){
   if(!alive||!root.isConnected)return;requestAnimationFrame(frame);
   const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
+  if(riding){
+   if(keys.has(' '))flightLift=1;else if(keys.has('q'))flightLift=-1;
+   else if(!q('vxMine').matches(':active')&&!q('vxPlace').matches(':active'))flightLift=0;
+   flightTick(dt,clock.getElapsedTime());
+  }else{
   const fwd=move.y+(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
   const side=move.x+(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
   let vx=0,vz=0;
@@ -643,8 +649,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   else{if(velY<=0)grounded=true;velY=0}
   if(loc.y<2){loc.set(32.5,ground(32,32)+3,32.5);velY=0}
   camera.position.copy(loc);camera.rotation.order='YXZ';camera.rotation.y=-yaw;camera.rotation.x=pitch;
+
+  }
+  if(quake>0){camera.position.x+=(Math.random()-.5)*quake*.55;camera.position.y+=(Math.random()-.5)*quake*.35}
   sky.position.copy(loc);
-  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;
+  const t=clock.getElapsedTime();skyMat.uniforms.time.value=t;advanceDirector(dt,t);
   for(const a of animals){
     const xx=a.origin[0]+Math.sin(t*.21+a.phase)*3.4,zz=a.origin[1]+Math.cos(t*.19+a.phase)*2.4;
     a.g.position.set(xx,ground(Math.round(xx),Math.round(zz))+1,zz);
@@ -656,7 +665,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   for(const cloud of clouds)if(cloud.position.x>140)cloud.position.x=-40;
   rain.visible=weather==='rain';rain.position.set(loc.x,loc.y+1,loc.z);
   if(weather==='rain'){const a=rainGeo.attributes.position;for(let i=0;i<rainCount;i++){let y=a.array[3*i+1]-dt*25;if(y<0)y+=30;a.array[3*i+1]=y}a.needsUpdate=true}
-  currentTarget=castBlock();
+  currentTarget=riding?null:castBlock();
   reticle.visible=!!currentTarget;
   if(currentTarget)reticle.position.set(currentTarget.pos[0]+.5,currentTarget.pos[1]+.5,currentTarget.pos[2]+.5);
   renderer.render(scene,camera);
@@ -665,12 +674,13 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
     const rate=Math.round(frames*1000/(now-fpsAt));frames=0;fpsAt=now;
     text('vxFps',rate+' FPS · '+quality.toUpperCase());
     text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z));
-    text('vxTarget',currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):'Explore · Mine · Build');
+    text('vxTarget',riding?'SKYRIDER · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
     if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.75){renderer.setPixelRatio(Math.max(.75,renderer.getPixelRatio()-.1));resize();adaptAt=now}
   }
+  if(now-lastCivilWork>7500){lastCivilWork=now;buildersProgress();updateDirectorStats()}
   if(now-saveAt>5000){saveAt=now;persist()}
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
  requestAnimationFrame(frame);
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes)}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);renderer.dispose();for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);renderer.dispose();for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());tex.dispose();opaqueMat.dispose();}};
 }
