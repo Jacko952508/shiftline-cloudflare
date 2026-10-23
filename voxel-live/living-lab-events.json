@@ -1,0 +1,6 @@
+{
+  "schema": "reality.living-lab/events/1",
+  "revision": 1,
+  "events": [],
+  "comment": "Add events with a unique id, action (energy,rains,mineral,disaster,migration,peace,fertility,isolation) and sector 0-7. Running V16 Living Lab widgets poll this file. Do not add duplicates."
+}
