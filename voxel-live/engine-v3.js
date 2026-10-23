@@ -519,7 +519,50 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  function notify(message){
   text('vxToast',message);q('vxToast').style.opacity='1';tipUntil=performance.now()+1700;
  }
+
+ // DIRECTOR MODE is a native part of the live in-chat game window.
+ const topOptions=root.querySelector('.vxTopOptions');
+ const directorButton=document.createElement('button');
+ directorButton.textContent='✦ DIRECTOR';directorButton.style.cssText='background:#23645b;color:#e2fff3;font-weight:800;border-color:#94f5d7';
+ topOptions?.appendChild(directorButton);
+ const directorPanel=document.createElement('div');
+ directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ stage.appendChild(directorPanel);
+ directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
+ function updateDirectorStats(){
+   const stats=directorPanel.querySelector('#realityStats');
+   if(stats)stats.textContent='POPULATION '+citizens.length+' • DISTRICTS '+Number(directorState.town)+' • BUILDINGS '+directorState.structures+' • CRATERS '+directorState.craters+' • WORLD EVENTS '+directorState.events;
+ }
+ directorPanel.addEventListener('click',e=>{
+   const button=e.target.closest('button[data-action]');if(!button)return;
+   const action=button.dataset.action;
+   if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='town'){
+     if(makeSettlement()){notify('Settlement constructed! Inhabitants will begin developing it.');loc.set(19.5,surfaceAt(19,40)+3,39.5)}
+     else notify('Your settlement is already developing.');
+   }
+   if(action==='meteor'){if(startMeteor())notify('Meteor inbound! Watch the sky ahead.');else notify('Meteor already incoming.')}
+   if(action==='fly'){directorPanel.style.display='none';beginFlight()}
+   if(action==='storm'||action==='day'){
+     const select=q('vxWeather');select.value=action==='day'?'clear':weather==='rain'?'clear':'rain';
+     select.dispatchEvent(new Event('change'));notify(action==='day'?'Daylight restored':'Atmosphere changed');
+   }
+   if(action==='visit'){
+     if(!directorState.town)makeSettlement();
+     if(riding)endFlight();
+     loc.set(18.5,surfaceAt(18,40)+3,39.5);yaw=-.2;notify('Transported to the settlement');
+   }
+   if(action==='relic'){
+     if(riding)endFlight();loc.set(37.5,ground(37,21)+3,21.5);yaw=0;notify('You have arrived at the ancient anomaly');
+   }
+   if(action==='stats')notify(citizens.length+' active inhabitants · '+directorState.structures+' buildings · '+directorState.craters+' craters');
+   updateDirectorStats();persist();
+ });
+ flightButtons();
+
  function editBlock(place){
+  if(riding)return;
   const target=castBlock();if(!target){notify('Aim at a block within 7 metres');return}
   const [x,y,z]=place?(target.adj||[]):target.pos;
   if(x===undefined||!inb(x,y,z)){notify('Cannot place here');return}
@@ -535,10 +578,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  }
  q('vxMine').onclick=()=>editBlock(false);
  q('vxPlace').onclick=()=>editBlock(true);
- q('vxJump').onclick=()=>{if(grounded){velY=6.8;grounded=false}};
- q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed)};
+ q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=6.8;grounded=false}};
+ q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
- q('vxReset').onclick=()=>{loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
+ q('vxReset').onclick=()=>{if(riding)endFlight();loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
  q('vxWeather').onchange=e=>{
   weather=e.target.value;const storm=weather==='rain',night=weather==='night';
   sun.intensity=night?.12:storm?.85:2.6;hemi.intensity=night?.7:storm?1.3:2;
