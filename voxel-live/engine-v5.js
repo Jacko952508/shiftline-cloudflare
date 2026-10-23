@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='LIVING WORLD · DIRECTOR MODE · SEED 91245';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='CRESCENT COAST · SMOOTH ROADS · NEW VEHICLES';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -174,6 +174,7 @@ export async function mount(root,resume=null){
 const smoothWorld=new T.Group();scene.add(smoothWorld);
 let newMapActive=directorState.activeMap!=='voxel';
 const legacyPos=new T.Vector3().copy(loc);
+const coastCraters=Array.isArray(directorState.coastCraters)?directorState.coastCraters:[];
 const coastH=(x,z)=>{
  const seaSlope=T.MathUtils.smoothstep(z,43,112);
  const hills=6.5*Math.sin(x*.025+.7)*Math.cos(z*.031)
@@ -183,7 +184,9 @@ const coastH=(x,z)=>{
  const residential=Math.max(0,1-Math.max(Math.abs(x-170)/59,Math.abs(z-164)/51));
  const flatten=T.MathUtils.smoothstep(residential,.05,.7);
  const result=3.1+seaSlope*(plateau+hills);
- return T.MathUtils.lerp(result,17.5,flatten*.83);
+ let height=T.MathUtils.lerp(result,17.5,flatten*.83);
+ for(const c of coastCraters){const r=Math.hypot(x-c.x,z-c.z);if(r<c.radius){const w=1-r/c.radius;height-=c.depth*w*w}}
+ return height;
 };
 const coastMaterial=(base,roughness=.86,metalness=0)=>new T.MeshStandardMaterial({color:base,roughness,metalness});
 const soilCanvas=document.createElement('canvas');soilCanvas.width=soilCanvas.height=256;
@@ -366,7 +369,8 @@ function setMap(mode,initial=false){
   velY=0;requestChunks(loc.x,loc.z);streamChunks(coast?0:3);
   notify(coast?'CRESCENT COAST · smooth terrain & scenic roads':'VOXEL LEGACY · mining restored');
  }else if(coast){loc.set(45,coastH(45,113)+2.4,113)}
- const name=root.querySelector('.vxSub');if(name)name.textContent=coast?'CRESCENT COAST · PHOTOREAL MATERIALS · TOURING':'LEGACY VOXEL WORLD · MINING · BUILDING';
+ const name=root.querySelector('.vxSub');if(name)name.textContent=coast?'CRESCENT COAST · CURVED ROADS · REALISTIC MATERIALS':'LEGACY VOXEL WORLD · MINING · BUILDING';
+ if(typeof flightButtons==='function')flightButtons();
 }
 smoothWorld.visible=newMapActive;
 if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
@@ -618,9 +622,9 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  let meteor=null,impactAge=0,panicPoint=null,quake=0,daytime=0;
  function startMeteor(){
    if(meteor){return false}
-   const tx=T.MathUtils.clamp(Math.floor(loc.x+Math.sin(yaw)*12),8,55);
-   const tz=T.MathUtils.clamp(Math.floor(loc.z-Math.cos(yaw)*12),8,55);
-   const ty=surfaceAt(tx,tz);
+   const tx=T.MathUtils.clamp(Math.floor(loc.x+Math.sin(yaw)*12),8,SIZE-9);
+   const tz=T.MathUtils.clamp(Math.floor(loc.z-Math.cos(yaw)*12),8,SIZE-9);
+   const ty=newMapActive?coastH(tx,tz):surfaceAt(tx,tz);
    meteor={x:tx,z:tz,y:ty+1,age:0};
    meteorGroup.visible=true;
    meteorGroup.position.set(tx-24,ty+65,tz-19);directorState.events++;return true;
@@ -628,6 +632,17 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  function impact(){
    if(!meteor)return;
    const {x:cx,z:cz,y:cy}=meteor;
+   if(newMapActive){
+     const crater={x:cx,z:cz,radius:10,depth:6};
+     coastCraters.push(crater);directorState.coastCraters=coastCraters;
+     for(let j=0;j<coords.count;j++){const x=coords.getX(j),z=coords.getZ(j);if(Math.hypot(x-cx,z-cz)<12)coords.setY(j,coastH(x,z))}
+     coords.needsUpdate=true;terrainGeom.computeVertexNormals();
+     meteorGroup.visible=false;meteor=null;impactAge=0;impactFx.visible=true;impactFx.position.set(cx,cy+.2,cz);
+     impactRing.scale.setScalar(.2);panicPoint={x:cx,z:cz};quake=1;
+     directorState.craters++;directorState.events++;for(const c of citizens)c.panic=12;
+     return;
+   }
+
    for(let x=cx-7;x<=cx+7;x++)for(let z=cz-7;z<=cz+7;z++){
      const rad=Math.hypot(x-cx,z-cz);
      if(rad>7||x<1||z<1||x>=SIZE-1||z>=SIZE-1)continue;
@@ -860,7 +875,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;
 
  function flightButtons(){
-   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
+   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):newMapActive?['🗺 MAP','🏎 DRIVE','↑ JUMP','» RUN']:['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
    for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
    q('vxInventory').style.opacity=riding?'.45':'1';
  }
@@ -1039,6 +1054,16 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  stage.appendChild(mapCanvas);
  const mapctx=mapCanvas.getContext('2d');
  const mapImg=mapctx.createImageData(256,256);
+ const coastMapImg=mapctx.createImageData(256,256);
+ for(let z=0;z<256;z++)for(let x=0;x<256;x++){
+   const h=coastH(x,z),p=(z*256+x)*4;
+   const col=h<=8.7?[48,139,174]:h<12?[215,190,144]:h>28?[118,126,116]:[104,141,92];
+   const road=mainRoads.some(c=>{const nearest=c.curve.getPoint((x+z)/512);return Math.hypot(nearest.x-x,nearest.z-z)<2.1});
+   const color=road?[76,81,85]:col;
+   for(let k=0;k<3;k++)coastMapImg.data[p+k]=color[k];
+   coastMapImg.data[p+3]=255;
+ }
+
  for(let z=0;z<256;z++)for(let x=0;x<256;x++){
    const id=get(x,ground(x,z),z),h=ground(x,z),k=(z*256+x)*4;
    const col=(x>=111&&x<=209&&z>=111&&z<=209)?(id===3?[59,68,79]:id===8?[180,163,145]:[120,140,164]):h<=SEA?[43,117,155]:h>27?[147,150,148]:h>17?[74,123,79]:[86,146,93];
@@ -1048,7 +1073,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  mapCanvas.addEventListener('click',e=>{
    const r=mapCanvas.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*256),z=Math.floor((e.clientY-r.top)/r.height*256);
    if(riding)endFlight();
-   loc.set(T.MathUtils.clamp(x+.5,3,253),ground(x,z)+3,T.MathUtils.clamp(z+.5,3,253));
+   loc.set(T.MathUtils.clamp(x+.5,3,253),(newMapActive?coastH(x,z):ground(x,z))+3,T.MathUtils.clamp(z+.5,3,253));
    velY=0;showMap=false;mapCanvas.style.display='none';notify('Developer teleport · '+x+' / '+z);
    requestChunks(loc.x,loc.z);streamChunks(3);
  });
@@ -1084,6 +1109,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    directorState.events++;
  }
  function terraformBrush(){
+   if(newMapActive){notify('Smooth coast terrain brush arrives in the next editor pass · switch to VOXEL for block terraforming');return}
    const tx=Math.round(loc.x+Math.sin(yaw)*7),tz=Math.round(loc.z-Math.cos(yaw)*7);
    if(tx<3||tz<3||tx>=SIZE-3||tz>=SIZE-3)return;
    const sy=surfaceAt(tx,tz);
@@ -1098,6 +1124,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    flushWorld();notify('Flattened a 9×9 terrain brush near you');directorState.events++;
  }
  function customTower(){
+   if(newMapActive){notify('Tower tool currently edits voxel world · switch maps to build');return}
    const x=Math.floor(loc.x+Math.sin(yaw)*11),z=Math.floor(loc.z-Math.cos(yaw)*11);
    if(x<5||z<5||x>SIZE-6||z>SIZE-6)return;
    const y=Math.max(SEA+2,Math.min(Y-30,ground(x,z)+1));
@@ -1132,7 +1159,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      if(thunderAge>.5){thunderAge=-1;lightningGroup.visible=false}
    }
    if(showMap){
-     mapctx.putImageData(mapImg,0,0);
+     mapctx.putImageData(newMapActive?coastMapImg:mapImg,0,0);
      mapctx.fillStyle='#ff5e48';mapctx.fillRect(Math.floor(loc.x)-2,Math.floor(loc.z)-2,5,5);
      mapctx.strokeStyle='#fff';mapctx.strokeRect(Math.floor(loc.x)-5,Math.floor(loc.z)-5,11,11);
    }
@@ -1196,8 +1223,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   changes.set([x,y,z].join(','),place?selected:0);updateAt(x,z);
   if(changes.size>12000)notify('World edit memory limit approaching');
  }
- q('vxMine').onclick=()=>editBlock(false);
- q('vxPlace').onclick=()=>editBlock(true);
+ q('vxMine').onclick=()=>{if(newMapActive&&!riding){showMap=!showMap;mapCanvas.style.display=showMap?'block':'none';notify('Tap the world map to teleport')}else editBlock(false)};
+ q('vxPlace').onclick=()=>{if(newMapActive&&!riding)selectVehicle('supercar');else editBlock(true)};
  q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=6.8;grounded=false}};
  q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
