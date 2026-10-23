@@ -1,0 +1,1 @@
+export const release={version:5,engineCommit:'b8f1e23b85fa47ade7a293dcf57d95bcff3db6ad',engineFile:'engine-v5.js',message:'CRESCENT COAST: new smooth 3D map, scenic winding roads, marina, forest, luxury buildings, sports car, 6x6 truck, seaplane and preserved voxel world'};
