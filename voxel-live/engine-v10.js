@@ -736,6 +736,137 @@ for(let i=0;i<11;i++){
    }
  }
 
+
+ // V10 REALITY EXPERIMENTS: low-cost portal camera, weather front and a fractureable pavilion.
+ let portalCooldown=0,portalFrames=0,insideFront=false;
+ const portalRT=new T.WebGLRenderTarget(mobile?192:320,mobile?256:420,{depthBuffer:true});
+ portalRT.texture.colorSpace=T.SRGBColorSpace;
+ const portalCamera=new T.PerspectiveCamera(57,(mobile?192:320)/(mobile?256:420),.2,250);
+ const portalGlass=new T.MeshBasicMaterial({map:portalRT.texture,side:T.DoubleSide,toneMapped:false});
+ const portalEdge=new T.MeshBasicMaterial({color:0x8ff3ed,toneMapped:false});
+ const portalFrameMat=new T.MeshPhysicalMaterial({color:0x326e89,metalness:.88,roughness:.17,clearcoat:1});
+ function portalGate(x,z,withView){
+   const y=coastH(x,z),gate=new T.Group();gate.position.set(x,y,z);smoothWorld.add(gate);
+   const pad=new T.Mesh(new T.CylinderGeometry(4.5,4.7,.44,24),portalFrameMat);
+   pad.position.y=.22;gate.add(pad);
+   const ring=new T.Mesh(new T.TorusGeometry(1,.115,9,64),portalEdge);
+   ring.scale.set(3.5,4.9,1);ring.position.y=5;gate.add(ring);
+   const outer=new T.Mesh(new T.TorusGeometry(1,.28,10,64),portalFrameMat);
+   outer.scale.set(3.8,5.15,1);outer.position.y=5;gate.add(outer);
+   const pane=new T.Mesh(new T.PlaneGeometry(6.5,9),withView?portalGlass:
+     new T.MeshBasicMaterial({color:0x2a8294,transparent:true,opacity:.79,side:T.DoubleSide}));
+   pane.position.y=5;gate.add(pane);
+   for(const side of [-3.8,3.8]){
+     const post=new T.Mesh(new T.BoxGeometry(.52,9,.66),portalFrameMat);
+     post.position.set(side,4.5,.1);gate.add(post);
+   }
+   return {gate,x,z,pane};
+ }
+ const portalA=portalGate(94,138,true);
+ const portalB=portalGate(192,161,false);
+ const portalTarget={x:192,z:173};
+ function teleportPortal(dest){
+   if(riding)endFlight();
+   const y=coastH(dest.x,dest.z);
+   loc.set(dest.x,y+2.2,dest.z);
+   yaw=dest.x>120?.15:0;pitch=0;velY=0;portalCooldown=5;
+   directorState.portalTrips=(directorState.portalTrips||0)+1;
+   notify('SPACE FOLDED · destination '+Math.round(dest.x)+' / '+Math.round(dest.z));
+ }
+ function renderPortalView(){
+   if(!newMapActive||!alive)return;
+   const d=Math.hypot(loc.x-portalA.x,loc.z-portalA.z);
+   if(d>75||++portalFrames%11!==0)return;
+   portalCamera.position.set(portalTarget.x,coastH(portalTarget.x,portalTarget.z)+8,portalTarget.z);
+   portalCamera.lookAt(172,coastH(172,160)+12,160);
+   portalA.gate.visible=portalB.gate.visible=false;
+   renderer.setRenderTarget(portalRT);
+   renderer.clear();renderer.render(scene,portalCamera);
+   renderer.setRenderTarget(null);
+   portalA.gate.visible=portalB.gate.visible=true;
+ }
+ const fractureRoot=new T.Group();smoothWorld.add(fractureRoot);
+ const pavilion={x:117,z:145,y:coastH(117,145),pieces:[],collapsed:!!directorState.demolished,age:0};
+ const intact=new T.Group();intact.position.set(pavilion.x,pavilion.y,pavilion.z);fractureRoot.add(intact);
+ const fractureStone=new T.MeshStandardMaterial({color:0xc9bdb0,roughness:.82}),
+       fractureGlass=new T.MeshPhysicalMaterial({color:0x6ea5b8,roughness:.15,metalness:.24,transparent:true,opacity:.7,depthWrite:false});
+ const fbox=(w,h,d,mat,x,y,z)=>{
+   const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);intact.add(m);return m;
+ };
+ fbox(11,.7,9,fractureStone,0,.35,0);
+ fbox(11,.6,9,fractureStone,0,9,0);
+ for(const xx of [-5,5])for(const zz of [-4,4])fbox(.7,8,.7,fractureStone,xx,4.8,zz);
+ for(const xx of [-2.8,0,2.8]){
+  fbox(2.1,6.7,.15,fractureGlass,xx,4.55,-4);
+  fbox(2.1,6.7,.15,fractureGlass,xx,4.55,4);
+ }
+ for(const xx of [-4,4])fbox(.15,6.6,5.5,fractureGlass,xx,4.5,0);
+ if(pavilion.collapsed)intact.visible=false;
+ function fracturePavilion(){
+   if(pavilion.collapsed){notify('This pavilion is already demolished');return}
+   pavilion.collapsed=true;intact.visible=false;pavilion.age=0;
+   directorState.demolished=true;directorState.events=(directorState.events||0)+1;
+   for(let i=0;i<30;i++){
+     const base=intact.children[i%intact.children.length],part=new T.Mesh(
+       new T.BoxGeometry(.75+hash(i,11)*1.7,.5+hash(i,33)*1.15,.8+hash(i,55)*1.35),
+       i%4===0?fractureGlass:fractureStone);
+     part.position.set(pavilion.x+(hash(i*3,7)-.5)*10,pavilion.y+4+hash(i,99)*7,
+                       pavilion.z+(hash(i*4,81)-.5)*8);
+     fractureRoot.add(part);
+     const a=i*2.39996;
+     pavilion.pieces.push({mesh:part,v:new T.Vector3(Math.cos(a)*2.3,1.4+hash(i,75)*3.4,Math.sin(a)*2.3),rotation:hash(i,78)*3});
+   }
+   physicsImpulse(pavilion.x,pavilion.z,12);
+   notify('Pavilion structure fractured · debris persists this session');
+ }
+ function resetPavilion(){
+   for(const p of pavilion.pieces)fractureRoot.remove(p.mesh);
+   pavilion.pieces=[];intact.visible=true;pavilion.collapsed=false;
+   directorState.demolished=false;notify('Pavilion rebuilt');
+ }
+ // Spatial weather systems: moving rain cell with visible low cloud mass.
+ let stormFrontEnabled=directorState.stormFrontEnabled!==false;
+ const frontCloudTexture=document.createElement('canvas');
+ frontCloudTexture.width=frontCloudTexture.height=64;
+ const fctx=frontCloudTexture.getContext('2d'),grad=fctx.createRadialGradient(32,32,1,32,32,30);
+ grad.addColorStop(0,'rgba(98,125,143,.85)');grad.addColorStop(.56,'rgba(91,113,129,.5)');
+ grad.addColorStop(1,'rgba(60,82,106,0)');
+ fctx.fillStyle=grad;fctx.fillRect(0,0,64,64);
+ const frontTex=new T.CanvasTexture(frontCloudTexture);
+ const frontMat=new T.SpriteMaterial({map:frontTex,transparent:true,depthWrite:false,color:0xc4dce2});
+ const frontClouds=[];
+ for(let i=0;i<18;i++){
+   const sp=new T.Sprite(frontMat);sp.scale.set(28+hash(i,19)*21,13,1);smoothWorld.add(sp);frontClouds.push(sp);
+ }
+ let frontX=40,frontZ=152;
+ function experimentTick(dt,t){
+   portalCooldown=Math.max(0,portalCooldown-dt);
+   if(newMapActive&&!riding&&portalCooldown<=0){
+     if(Math.hypot(loc.x-portalA.x,loc.z-portalA.z)<3.5)teleportPortal(portalTarget);
+     else if(Math.hypot(loc.x-portalB.x,loc.z-portalB.z)<3.5)teleportPortal({x:94,z:150});
+   }
+   frontX=125+Math.sin(t*.009)*111;frontZ=145+Math.cos(t*.008)*54;
+   for(let i=0;i<frontClouds.length;i++){
+     const c=frontClouds[i],a=i*2.39996,r=11+hash(i,13)*43;
+     const xx=frontX+Math.cos(a)*r,zz=frontZ+Math.sin(a)*r;
+     c.position.set(xx,43+hash(i,44)*13,zz);
+     c.visible=newMapActive&&stormFrontEnabled;
+   }
+   insideFront=newMapActive&&stormFrontEnabled&&Math.hypot(loc.x-frontX,loc.z-frontZ)<45;
+   if(insideFront){rain.visible=true;rainMat.opacity=.9;oceanMat.uniforms.storm.value=1}
+   else if(weather!=='rain')oceanMat.uniforms.storm.value=0;
+   if(pavilion.pieces.length){
+     pavilion.age+=dt;
+     for(const p of pavilion.pieces){
+       if(p.mesh.position.y>pavilion.y+.3){
+         p.v.y-=9.81*dt;p.mesh.position.addScaledVector(p.v,dt);
+         if(p.mesh.position.y<pavilion.y+.3){p.mesh.position.y=pavilion.y+.3;p.v.multiplyScalar(.17)}
+       }
+       p.mesh.rotation.x+=dt*p.rotation;p.mesh.rotation.z+=dt*p.rotation*.7;
+     }
+   }
+ }
+
 const coastHeadlight=new T.PointLight(0xffdaa3,4,36);coastHeadlight.position.set(163,24,173);smoothWorld.add(coastHeadlight);
 const coastMeshes=smoothWorld.children.length;
 function animateCoast(dt,t){
@@ -1742,7 +1873,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="portal">🌀 VISIT PORTAL</button><button data-action="collapse">💥 DEMOLISH PAVILION</button><button data-action="rebuild">🏗 REBUILD PAVILION</button><button data-action="gravity">🌙 LOW GRAVITY</button><button data-action="front">⛈ STORM FRONTS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1896,6 +2027,18 @@ directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+
+   if(action==='portal'){
+     if(!newMapActive)setMap('crescent');
+     if(riding)endFlight();
+     loc.set(94,coastH(94,151)+2.3,151);yaw=0;pitch=-.04;
+     directorPanel.style.display='none';notify('Approach the glowing portal to travel');
+   }
+   if(action==='collapse'){fracturePavilion();directorPanel.style.display='none'}
+   if(action==='rebuild'){resetPavilion()}
+   if(action==='gravity'){directorState.lowGravity=!directorState.lowGravity;notify(directorState.lowGravity?'LOW GRAVITY ON · moon jumps':'Gravity restored')}
+   if(action==='front'){stormFrontEnabled=!stormFrontEnabled;directorState.stormFrontEnabled=stormFrontEnabled;notify(stormFrontEnabled?'Dynamic storm cell enabled':'Dynamic storm cell disabled')}
+
    if(action==='protocol'){if(!mutationConsole)mutationConsole=createMutationPanel();mutationConsole.style.display='block';directorPanel.style.display='none'}
    if(action==='supply'){try{notify(applyWorldMutation({protocol:mutationProtocol,id:'restock-'+Date.now(),op:'city.supply',args:{resource:'food',amount:180}}))}catch(err){notify(String(err.message||err))}}
    if(action==='physicsdrop'){physicsDrop();directorPanel.style.display='none'}
@@ -1972,7 +2115,7 @@ directorPanel.addEventListener('click',e=>{
  }
  q('vxMine').onclick=()=>{if(newMapActive&&!riding){showMap=!showMap;mapCanvas.style.display=showMap?'block':'none';notify('Tap the world map to teleport')}else editBlock(false)};
  q('vxPlace').onclick=()=>{if(newMapActive&&!riding)selectVehicle('supercar');else editBlock(true)};
- q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=6.8;grounded=false}};
+ q('vxJump').onclick=()=>{if(riding){endFlight();return}if(grounded){velY=directorState.lowGravity?8.6:6.8;grounded=false}};
  q('vxRun').onclick=()=>{runPressed=!runPressed;q('vxRun').classList.toggle('active',runPressed);if(riding)notify(runPressed?'Skyrider boost engaged':'Skyrider boost disengaged')};
  q('vxInventory').onclick=()=>{q('vxHotbar').classList.toggle('expanded');q('vxInventory').classList.toggle('active')};
  q('vxReset').onclick=()=>{if(riding)endFlight();if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);else loc.set(32.5,ground(32,32)+3,32.5);yaw=.5;pitch=.05;notify('Returned to spawn')};
@@ -2053,11 +2196,11 @@ directorPanel.addEventListener('click',e=>{
   const magnitude=Math.max(1,Math.hypot(fwd,side)),speed=(runPressed||keys.has('shift')?8.6:5.2);
   vx=(Math.sin(yaw)*fwd+Math.cos(yaw)*side)/magnitude*speed*dt;
   vz=(-Math.cos(yaw)*fwd+Math.sin(yaw)*side)/magnitude*speed*dt;
-  if(keys.has(' ')&&grounded){velY=6.8;grounded=false}
+  if(keys.has(' ')&&grounded){velY=directorState.lowGravity?8.6:6.8;grounded=false}
   const ox=loc.x,oz=loc.z;
   if(canOccupy(loc.x+vx,loc.y,loc.z))loc.x+=vx;else if(canOccupy(loc.x+vx,loc.y+1.01,loc.z)){loc.x+=vx;loc.y+=1}
   if(canOccupy(loc.x,loc.y,loc.z+vz))loc.z+=vz;else if(canOccupy(loc.x,loc.y+1.01,loc.z+vz)){loc.z+=vz;loc.y+=1}
-  velY=Math.max(-24,velY-18.8*dt);
+  velY=Math.max(-24,velY-(directorState.lowGravity?6.5:18.8)*dt);
   if(canOccupy(loc.x,loc.y+velY*dt,loc.z)){loc.y+=velY*dt;grounded=false}
   else{if(velY<=0)grounded=true;velY=0}
   if(newMapActive){
@@ -2087,10 +2230,12 @@ directorPanel.addEventListener('click',e=>{
   for(const c of softClouds){c.visible=newMapActive;c.position.x+=dt*.72;if(c.position.x>325)c.position.x=-45}
   for(const g of clouds)g.visible=!newMapActive;
   rain.visible=weather==='rain';rain.position.set(loc.x,loc.y+1,loc.z);
+  experimentTick(dt,t);
   if(weather==='rain'){const a=rainGeo.attributes.position;for(let i=0;i<rainCount;i++){let y=a.array[3*i+1]-dt*25;if(y<0)y+=30;a.array[3*i+1]=y}a.needsUpdate=true}
   currentTarget=riding||newMapActive?null:castBlock();
   reticle.visible=!!currentTarget;
   if(currentTarget)reticle.position.set(currentTarget.pos[0]+.5,currentTarget.pos[1]+.5,currentTarget.pos[2]+.5);
+  renderPortalView();
   renderer.render(scene,camera);
   frames++;
   if(now-fpsAt>1350){
@@ -2120,5 +2265,5 @@ directorPanel.addEventListener('click',e=>{
  requestAnimationFrame(frame);
  mutationTimer=setInterval(pollWorldMutations,30000);
  pollWorldMutations();
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
