@@ -125,6 +125,29 @@ export async function mount(root,resume=null){
  const camera=new T.PerspectiveCamera(73,1,.07,420);
  const hemi=new T.HemisphereLight(0xe5f5ff,0x566858,2.0);scene.add(hemi);
  const sun=new T.DirectionalLight(0xffe2b0,2.6);sun.position.set(-38,70,26);scene.add(sun);
+ 
+ // V6: one-time local environment map — gives vehicle clearcoat, glass and metal realistic reflections.
+ // Pre-filter exactly once: no costly live cubemap redraws on iPhone.
+ const envCanvas=document.createElement('canvas');envCanvas.width=512;envCanvas.height=256;
+ const ectx=envCanvas.getContext('2d'),eg=ectx.createLinearGradient(0,0,0,256);
+ eg.addColorStop(0,'#174565');eg.addColorStop(.34,'#70a8ba');eg.addColorStop(.48,'#e9d8b6');
+ eg.addColorStop(.54,'#8babb5');eg.addColorStop(.67,'#4b6476');eg.addColorStop(1,'#102e47');
+ ectx.fillStyle=eg;ectx.fillRect(0,0,512,256);
+ const skylight=ectx.createRadialGradient(105,115,5,105,115,68);
+ skylight.addColorStop(0,'rgba(255,253,226,1)');skylight.addColorStop(.17,'rgba(255,230,184,.84)');
+ skylight.addColorStop(.52,'rgba(254,225,190,.29)');skylight.addColorStop(1,'rgba(255,224,186,0)');
+ ectx.fillStyle=skylight;ectx.fillRect(36,43,140,140);
+ const envTexture=new T.CanvasTexture(envCanvas);
+ envTexture.mapping=T.EquirectangularReflectionMapping;envTexture.colorSpace=T.SRGBColorSpace;
+ let reflectionTarget=null;
+ try{
+   const prefilter=new T.PMREMGenerator(renderer);
+   reflectionTarget=prefilter.fromEquirectangular(envTexture);
+   scene.environment=reflectionTarget.texture;
+   scene.environmentIntensity=.77;
+   prefilter.dispose();
+ }catch(e){console.warn('V6 environment lighting fallback',e);scene.environment=null}
+
  const clock=new T.Clock();
  let period='day',weather='clear',quality='auto',maxDpr=mobile?1.1:1.5,loc,velY=0,grounded=false;
  const savedPosition=resume?.player??(()=>{try{return JSON.parse(localStorage.getItem(saveKey)||'{}').player}catch(e){return null}})();
@@ -205,7 +228,32 @@ soilCtx.putImageData(soilImg,0,0);
 const soilTex=new T.CanvasTexture(soilCanvas);
 soilTex.colorSpace=T.SRGBColorSpace;soilTex.wrapS=soilTex.wrapT=T.RepeatWrapping;soilTex.repeat.set(36,36);
 soilTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const landscapeMat=new T.MeshStandardMaterial({map:soilTex,vertexColors:true,roughness:1,metalness:0});
+
+ // Texture-space terrain normal map: preserves micro-relief on flat geometry without extra polygons.
+ const groundNormalCanvas=document.createElement('canvas');
+ groundNormalCanvas.width=groundNormalCanvas.height=256;
+ const gn=groundNormalCanvas.getContext('2d'),mapData=gn.createImageData(256,256);
+ const altitude=new Float32Array(256*256);
+ for(let i=0;i<altitude.length;i++){
+   const x=i%256,y=(i/256)|0;
+   altitude[i]=.57*hash(x*1.89+39,y*3.29+51)+.3*hash(x*.28+7,y*.28+9)+.13*Math.sin(x*.17)*Math.cos(y*.19);
+ }
+ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+   const offset=(xx,yy)=>altitude[((yy+256)%256)*256+((xx+256)%256)];
+   const dx=offset(x+1,y)-offset(x-1,y),dy=offset(x,y+1)-offset(x,y-1);
+   const scale=2.1,inv=1/Math.hypot(dx*scale,dy*scale,1),j=(y*256+x)*4;
+   mapData.data[j]=Math.round((-.5*dx*scale*inv+.5)*255);
+   mapData.data[j+1]=Math.round((-.5*dy*scale*inv+.5)*255);
+   mapData.data[j+2]=Math.round((.5*inv+.5)*255);
+   mapData.data[j+3]=255;
+ }
+ gn.putImageData(mapData,0,0);
+ const groundNormal=new T.CanvasTexture(groundNormalCanvas);
+ groundNormal.wrapS=groundNormal.wrapT=T.RepeatWrapping;
+ groundNormal.repeat.copy(soilTex.repeat);
+ groundNormal.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+
+const landscapeMat=new T.MeshStandardMaterial({map:soilTex,normalMap:groundNormal,normalScale:new T.Vector2(.48,.48),vertexColors:true,roughness:.94,metalness:0,envMapIntensity:.2});
 const terrainGeom=new T.PlaneGeometry(256,256,128,128);
 terrainGeom.rotateX(-Math.PI/2);terrainGeom.translate(128,0,128);
 const coords=terrainGeom.attributes.position,terrainColors=[];
@@ -233,7 +281,21 @@ for(let i=0;i<8000;i++){
 }
 const asphaltTex=new T.CanvasTexture(asphaltCanvas);asphaltTex.colorSpace=T.SRGBColorSpace;
 asphaltTex.wrapS=asphaltTex.wrapT=T.RepeatWrapping;asphaltTex.repeat.set(1,14);
-const asphalt=new T.MeshStandardMaterial({map:asphaltTex,color:0xd3d5d9,roughness:.88,metalness:.08,side:T.DoubleSide});
+
+ const roadNormalCanvas=document.createElement('canvas');roadNormalCanvas.width=roadNormalCanvas.height=128;
+ const anc=roadNormalCanvas.getContext('2d'),nd=anc.createImageData(128,128);
+ for(let y=0;y<128;y++)for(let x=0;x<128;x++){
+   const a=(dx,dy)=>hash((x+dx+128)*11+2,(y+dy+128)*7+19);
+   const nx=a(1,0)-a(-1,0),ny=a(0,1)-a(0,-1),sz=.42;
+   const z=1/Math.hypot(nx*sz,ny*sz,1),i=(y*128+x)*4;
+   nd.data[i]=(128-nx*sz*z*127)|0;nd.data[i+1]=(128-ny*sz*z*127)|0;
+   nd.data[i+2]=(128+z*127)|0;nd.data[i+3]=255;
+ }
+ anc.putImageData(nd,0,0);
+ const roadNormal=new T.CanvasTexture(roadNormalCanvas);
+ roadNormal.wrapS=roadNormal.wrapT=T.RepeatWrapping;roadNormal.repeat.copy(asphaltTex.repeat);
+
+const asphalt=new T.MeshStandardMaterial({map:asphaltTex,normalMap:roadNormal,normalScale:new T.Vector2(.34,.34),color:0xd3d5d9,roughness:.8,metalness:.12,envMapIntensity:.64,side:T.DoubleSide});
 const marking=new T.MeshBasicMaterial({color:0xffe8aa,side:T.DoubleSide});
 const curb=coastMaterial(0xd1c7b4,.83,.05);
 const pathLines=[
@@ -274,7 +336,7 @@ const placeBox=(group,w,h,d,mat,x,y,z)=>{
  const m=new T.Mesh(baseBox,mat);m.position.set(x,y,z);m.scale.set(w,h,d);group.add(m);return m;
 };
 // Premium coastal village, glass-front apartments, architecture and covered terraces.
-const glassFront=new T.MeshPhysicalMaterial({color:0x9fd5e5,roughness:.07,metalness:.16,transparent:true,opacity:.66,depthWrite:false});
+const glassFront=new T.MeshPhysicalMaterial({color:0xa2c7db,roughness:.09,metalness:.15,transparent:true,opacity:.75,depthWrite:false,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.8});
 const whiteWalls=coastMaterial(0xece6da,.71),warmWalls=coastMaterial(0xb09d89,.84),roofMat=coastMaterial(0x42474f,.52,.2);
 const promenadeBuildings=[],coastWindowMatrices=[];
 for(let i=0;i<32;i++){
@@ -749,6 +811,7 @@ directorState.activeMap=newMapActive?'crescent':'voxel';
 
  // V4 vehicle garage — 5 distinct, flyable/drivable models in a shared controller.
  const vehicleModels={skyrider:craftBody};
+ // Reflected environment stays active across all visual quality levels.
  const vMats={
   blue:new T.MeshPhysicalMaterial({color:0x196986,metalness:.79,roughness:.21,clearcoat:1}),
   orange:new T.MeshPhysicalMaterial({color:0xf28d44,metalness:.56,roughness:.31,clearcoat:1}),
