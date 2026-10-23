@@ -2305,12 +2305,12 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      blending:T.AdditiveBlending,
      uniforms:{
        time:{value:0},center:{value:new T.Vector3(...center)},radius:{value:radius},
-       density:{value:density},cold:{value:new T.Color(cold)},hot:{value:new T.Color(hot)}
+       density:{value:density},steps:{value:mobile?6:8},cold:{value:new T.Color(cold)},hot:{value:new T.Color(hot)}
      },
      vertexShader:`varying vec3 vWorld;
        void main(){vec4 p=modelMatrix*vec4(position,1.);
          vWorld=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
-     fragmentShader:`varying vec3 vWorld;uniform float time,radius,density;
+     fragmentShader:`varying vec3 vWorld;uniform float time,radius,density,steps;
        uniform vec3 center,cold,hot;
        float hs(vec3 x){return fract(sin(dot(x,vec3(12.9898,78.233,45.164)))*43758.5453);}
        float n3(vec3 p){
@@ -2333,10 +2333,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
          float root=sqrt(disc);
          float nearT=max(0.,-b-root),farT=-b+root;
          if(farT<=nearT)discard;
-         float stepLen=(farT-nearT)/8.;
+         float stepLen=(farT-nearT)/steps;
          float jitter=fract(sin(dot(gl_FragCoord.xy,vec2(12.98,78.23)))*46758.53);
          vec3 sum=vec3(0.);float trans=1.;
          for(int j=0;j<8;j++){
+           if(float(j)>=steps)break;
            float t=nearT+(float(j)+jitter)*stepLen;
            vec3 pos=(ro+dir*t)/radius;
            float body=1.-smoothstep(.38,1.,length(pos));
@@ -2977,7 +2978,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    }
    if(action==='effects'){
      overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
-     spaceNotify('V12 POST PROCESSING '+(overdrive.enabled?'ENABLED — multi-pass bloom':'OFF — direct renderer'),3.2);
+     spaceNotify('V13 GAUSSIAN BLOOM '+(overdrive.enabled?'ENABLED — threshold + H/V blur':'OFF — direct renderer'),3.2);
    }
    if(action==='graphics'){
      const modes=['adaptive','cinema','battery'];
@@ -3025,6 +3026,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    hemi.intensity=1.9;sun.intensity=1.5;
    yaw=directorState.v12Seen&&spaceCraftState.pos.z===-645?-.06:spaceCraftState.heading;
    pitch=directorState.v12Seen&&spaceCraftState.pos.z===-645?-.035:spaceCraftState.elevation;
+   camera.position.set(spaceCraftState.pos.x,spaceCraftState.pos.y+12,spaceCraftState.pos.z+36);
+   camera.lookAt(spaceCraftState.pos.x,spaceCraftState.pos.y,spaceCraftState.pos.z-50);
    spaceStatus.style.display='block';spaceControls.style.display='block';starNav.style.display='none';
    if(typeof showcaseButton!=='undefined')showcaseButton.style.display='none';
    q('vxHotbar').style.display='none';
@@ -3154,7 +3157,9 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    for(const n of volumetricClouds){
      n.shader.uniforms.time.value=t;
      const dist=shipLocation.distanceTo(n.center);
-     n.sphere.visible=dist<n.radius+1300&&overdrive.mode!=='battery';
+     n.sphere.visible=dist<n.radius+1150&&overdrive.mode!=='battery';
+     n.shader.uniforms.steps.value=adaptive.frameMs>35?4:adaptive.frameMs>27?5:mobile?6:8;
+     n.shader.uniforms.density.value=overdrive.mode==='cinema'?.91:overdrive.mode==='battery'?.3:.68;
    }
    for(const n of cathedralRings)n.ring.rotation.z+=dt*n.spin;
    cathedral.rotation.y=Math.sin(t*.006)*.05;
@@ -3628,7 +3633,7 @@ directorPanel.addEventListener('click',e=>{
         if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
         try{physicsWorld?.free?.()}catch(e){}
         overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();postTriangle.dispose();bloomExtract.dispose();bloomGaussian.dispose();spaceFinalMat.dispose();
-        mantaGeometry.dispose();mantaFinMat.dispose();for(const l of mantaTails){l.geometry.dispose();l.geometry.attributes.position.array=null}
+        mantaGeometry.dispose();mantaFinMat.dispose();for(const l of mantaTails){l.geometry.dispose()}
         ionGeometry.dispose();ionShader.dispose();
         for(const n of nebulaPopulations){n.pts.geometry.dispose();n.material.dispose()}
         for(const n of volumetricClouds){n.sphere.geometry.dispose();n.shader.dispose()}
