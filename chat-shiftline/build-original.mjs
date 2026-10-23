@@ -14,7 +14,8 @@ const files=scripts.map(x=>x[1].split('?')[0]).filter(x=>x.endsWith('.js')&&x!==
 await fs.writeFile(entry,files.map(f=>'import '+JSON.stringify(path.resolve(source,f).replaceAll('\\','/'))+';').join('\n'));
 const result=await build({entryPoints:[entry],bundle:true,write:false,format:'iife',platform:'browser',target:'es2020',loader:{'.png':'dataurl','.jpg':'dataurl','.svg':'dataurl'},alias:{three:path.resolve(source,'vendor/three.module.js')},logLevel:'warning'});
 await fs.unlink(entry);
-const js=result.outputFiles.find(f=>f.path.endsWith('.js')).text;
+const js=result.outputFiles.find(f=>f.path.endsWith('.js'))?.text ?? result.outputFiles[0]?.text;
+if(!js)throw new Error('esbuild returned no JavaScript output');
 let page=html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi,'').replace(/<script type="importmap">[\s\S]*?<\/script>/gi,'');
 const cssTags=[...page.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
 for(const m of cssTags){const file=m[0].match(/href=["']([^"']+)/)?.[1]?.split('?')[0];if(!file)continue;const css=await fs.readFile(path.join(source,file),'utf8');page=page.replace(m[0],'<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style>');}
