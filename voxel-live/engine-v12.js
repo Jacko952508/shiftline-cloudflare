@@ -2021,20 +2021,41 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
     vertexShader:`varying vec3 vObj,vNor,vWorld;void main(){vObj=position;vNor=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
     fragmentShader:`varying vec3 vObj,vNor,vWorld;
       uniform vec3 cA,cB,cC,illum;uniform float time,storminess;
-      float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+      float hash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
       float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-       return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
-        mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+        return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+                   mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+      float fBm(vec3 p){float sum=0.,amp=.5;for(int k=0;k<4;k++){sum+=amp*noise(p);p=p*2.12+12.4;amp*=.5;}return sum;}
       void main(){
         vec3 n=normalize(vObj),N=normalize(vNor),v=normalize(cameraPosition-vWorld);
-        float lat=n.y*22.+sin(n.x*18.+time*.12)*.57;
-        float whorl=noise(n*13.+vec3(time*.015,0.,0.));
-        float band=sin(lat*2.9+whorl*5.1*storminess+noise(n*32.)*1.8)*.5+.5;
-        vec3 col=mix(cA,cB,smoothstep(.17,.89,band));
-        col=mix(col,cC,pow(whorl,3.)*.81);
-        float ndl=max(.08,dot(N,illum)*.62+.42);
-        float fres=pow(1.-max(dot(N,v),0.),3.);
-        col=col*(.18+.82*ndl)+mix(cB,vec3(.45,.67,1.),.54)*fres*.58;
+        float giant=step(.8,storminess);
+        vec3 flow=n*4.4+vec3(time*.006,time*.001,.31);
+        float coarse=fBm(flow),mid=fBm(n*9.5+coarse*2.1);
+        float lat=n.y*37. +sin(n.x*31.+time*.027)*.37+sin(n.z*16.)*.27;
+        float curved=sin(lat+coarse*9.+mid*6.)*.5+.5;
+        float turbulence=pow(abs(sin(lat*2.2+mid*14.)),1.9);
+        float stripe=clamp(curved*.82+mid*.58+turbulence*.18,0.,1.);
+        vec3 gas=mix(cA,cB,smoothstep(.23,.86,stripe));
+        gas=mix(gas,cC,smoothstep(.48,.79,coarse+mid*.35));
+        // Jupiter-like thunder vortices within the upper troposphere.
+        float cyclone=sin(atan(n.z-.13,n.x+.3)*7.+mid*19.-time*.018)*.5+.5;
+        gas+=mix(cA,cC,.7)*pow(cyclone,13.)*pow(mid,2.)*.17;
+        // Icy/volcanic planets: fractured continents, impact scars and thermal veins.
+        float ridged=1.-abs(fBm(n*7.9)*2.-1.);
+        float land=smoothstep(.39,.59,fBm(n*5.5)+ridged*.22);
+        float cracks=pow(1.-abs(noise(n*71.)*2.-1.),9.);
+        vec3 solid=mix(cA,cB,land);
+        solid=mix(solid,cC,smoothstep(.55,.85,ridged));
+        solid+=cC*cracks*.55;
+        vec3 col=mix(solid,gas,giant);
+        float sun=dot(N,normalize(illum));
+        float lit=max(0.,sun);
+        float nightGlow=(1.-smoothstep(-.15,.23,sun))*cracks*(1.-giant)*.34;
+        float limb=pow(1.-max(0.,dot(N,v)),3.6);
+        float twilight=exp(-pow((sun+.1)*6.,2.))*limb;
+        col*=.05+.93*smoothstep(-.3,.5,sun);
+        col+=cC*nightGlow+mix(cB,vec3(.38,.73,1.),.38)*limb*.55;
+        col+=vec3(.34,.62,1.)*twilight*.48;
         gl_FragColor=vec4(col,1.);
       }`
    });
@@ -2045,7 +2066,31 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      fragmentShader:`varying vec3 N,V;uniform vec3 color;void main(){float f=pow(1.-abs(dot(normalize(N),normalize(V))),4.);gl_FragColor=vec4(color*f*2.3,f*.74);}`
    });
    const halo=spaceMesh(group,new T.SphereGeometry(radius*1.095,32,22),atmo);
-   const entry={name,group,sphere,material,atmo,halo,radius};
+   
+   // Animated, semi-transparent cloud decks on an independent slowly rotating shell.
+   const cloudMaterial=new T.ShaderMaterial({
+     transparent:true,depthWrite:false,side:T.FrontSide,
+     uniforms:{time:{value:0},shade:{value:new T.Color(palette[1])},density:{value:name==='AEON'?.35:.57}},
+     vertexShader:`varying vec3 normalObj,vWorld;
+     void main(){normalObj=position;vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+     fragmentShader:`varying vec3 normalObj,vWorld;
+     uniform float time,density;uniform vec3 shade;
+     float h(vec3 p){return fract(sin(dot(p,vec3(27.3,91.7,74.1)))*43758.5453);}
+     float n(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+       return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                  mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+     void main(){
+       vec3 p=normalize(normalObj)*8.9+vec3(time*.009,-time*.006,time*.003);
+       float w=n(p)*.58+n(p*2.7)*.27+n(p*6.)*.15;
+       float cloud=smoothstep(.46,.72,w)*density;
+       vec3 view=normalize(cameraPosition-vWorld);
+       float rim=pow(1.-abs(dot(view,normalize(vWorld))),2.);
+       gl_FragColor=vec4(mix(vec3(.76,.91,1.),shade,.4),cloud*(.65+rim*.35));
+     }`
+   });
+   const cloudShell=spaceMesh(group,new T.SphereGeometry(radius*1.024,mobile?40:66,mobile?25:42),cloudMaterial);
+
+   const entry={name,group,sphere,material,atmo,halo,radius,cloudShell,cloudMaterial};
    if(ringed){
      const ringsMat=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
       uniforms:{time:{value:0},inner:{value:radius*1.3},outer:{value:radius*2.06}},
@@ -2628,6 +2673,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    for(const p of spacePlanets){
      p.sphere.rotation.y+=dt*.018;
      p.material.uniforms.time.value=t;
+     p.cloudMaterial.uniforms.time.value=t;
+     p.cloudShell.rotation.y=t*.003;
      if(p.ringMat)p.ringMat.uniforms.time.value=t;
    }
    discMat.uniforms.time.value=t;accretion.rotation.z=t*.065;
