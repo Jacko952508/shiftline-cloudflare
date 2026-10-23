@@ -1,0 +1,1 @@
+export const release={version:15,engineCommit:'44824f16cf50e1e982e9a0da8e0351a7a7936a49',engineFile:'engine-v15.js',message:'ASTRAEUS iPhone direct-first WebGL and in-place rendering error recovery'};
