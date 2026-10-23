@@ -359,6 +359,84 @@ export async function mount(root,resume=null){
    if(Math.floor(daytime/100)+1!==directorState.day)directorState.day=Math.floor(daytime/100)+1;
  }
 
+
+ // SKYRIDER: a pilotable hybrid VTOL craft, rather than a decorative spawn.
+ const craftGroup=new T.Group();scene.add(craftGroup);
+ const craftBody=new T.Group();craftGroup.add(craftBody);
+ const alloy=new T.MeshPhysicalMaterial({color:0xd7e8e9,metalness:.7,roughness:.19,clearcoat:1});
+ const midnight=new T.MeshPhysicalMaterial({color:0x1c364b,metalness:.81,roughness:.19,clearcoat:1});
+ const luminous=new T.MeshBasicMaterial({color:0x68f0ff,toneMapped:false});
+ const glassCab=new T.MeshPhysicalMaterial({color:0x56b9d9,transparent:true,opacity:.67,metalness:.28,roughness:.09,depthWrite:false,clearcoat:1});
+ const craftMesh=(g,m,x,y,z)=>{const a=new T.Mesh(g,m);a.position.set(x,y,z);craftBody.add(a);return a};
+ const craftBox=(w,h,d,m,x,y,z)=>craftMesh(new T.BoxGeometry(w,h,d),m,x,y,z);
+ const hull=craftMesh(new T.SphereGeometry(1,20,14),alloy,0,0,0);hull.scale.set(1.15,.55,2.85);
+ const nose=craftMesh(new T.SphereGeometry(1,20,12),midnight,0,.36,-.8);nose.scale.set(.88,.52,1.15);
+ const roof=craftMesh(new T.SphereGeometry(1,20,12),glassCab,0,.53,-.98);roof.scale.set(.83,.46,.92);
+ for(const xx of [-1,1]){
+   const wing=craftBox(2.35,.17,1.9,alloy,xx*2,-.08,.15);wing.rotation.y=xx*.13;
+   const pod=craftMesh(new T.CylinderGeometry(.37,.45,2.25,16),midnight,xx*2.7,-.07,.33);pod.rotation.x=Math.PI/2;
+   const exhaust=craftMesh(new T.CylinderGeometry(.3,.3,.045,16),luminous,xx*2.7,-.07,1.46);exhaust.rotation.x=Math.PI/2;
+   const beacon=craftMesh(new T.SphereGeometry(.1,8,7),luminous,xx*2.95,.09,-.52);
+ }
+ craftBox(.19,.88,1.25,midnight,0,.52,2.2);
+ craftBox(3,.09,.48,alloy,0,.36,2.27);
+ const thruster=new T.PointLight(0x3ffff2,2,11);craftBody.add(thruster);thruster.position.set(0,-.15,1.8);
+ const craftState={x:loc.x,y:loc.y+7,z:loc.z,heading:yaw,speed:0,climb:0,bank:0};
+ let riding=!!directorState.riding,flightLift=0,flightOrbit=0,flightPitch=.12;
+ if(directorState.flight&&riding){const f=directorState.flight;for(const k of ['x','y','z','heading','speed'])if(Number.isFinite(f[k]))craftState[k]=f[k]}
+ craftGroup.visible=!!directorState.hasVehicle||riding;
+ craftGroup.position.set(craftState.x,craftState.y,craftState.z);
+ function flightButtons(){
+   const labels=riding?['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']:['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
+   for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
+   q('vxInventory').style.opacity=riding?'.45':'1';
+ }
+ function beginFlight(){
+   directorState.hasVehicle=true;directorState.riding=true;riding=true;
+   craftState.x=T.MathUtils.clamp(loc.x,3,61);craftState.z=T.MathUtils.clamp(loc.z,3,61);
+   craftState.y=Math.max(loc.y+6,surfaceAt(craftState.x,craftState.z)+9);
+   craftState.heading=yaw;craftState.speed=0;
+   craftGroup.visible=true;
+   flightOrbit=0;flightPitch=.17;flightButtons();
+   notify('SKYRIDER online · joystick to steer · UP/DOWN to fly');
+ }
+ function endFlight(){
+   riding=false;directorState.riding=false;flightLift=0;
+   loc.set(craftState.x,Math.max(ground(Math.floor(craftState.x),Math.floor(craftState.z))+3,SEA+3),craftState.z);
+   yaw=craftState.heading;pitch=.04;velY=0;
+   flightButtons();notify('Exited SKYRIDER · craft remains in the world');
+ }
+ function flightTick(dt,t){
+   if(!riding)return;
+   const inputF=T.MathUtils.clamp(move.y,-1,1),inputX=T.MathUtils.clamp(move.x,-1,1);
+   craftState.heading+=inputX*dt*1.6;
+   const desired=inputF*(runPressed?28:17);
+   craftState.speed=T.MathUtils.damp(craftState.speed,desired,1.7,dt);
+   craftState.climb=T.MathUtils.damp(craftState.climb,flightLift*9,2.1,dt);
+   craftState.x=T.MathUtils.clamp(craftState.x-Math.sin(craftState.heading)*craftState.speed*dt,2,62);
+   craftState.z=T.MathUtils.clamp(craftState.z-Math.cos(craftState.heading)*craftState.speed*dt,2,62);
+   craftState.y+=craftState.climb*dt;
+   const floor=surfaceAt(craftState.x,craftState.z)+3.5;
+   craftState.y=T.MathUtils.clamp(craftState.y,floor,64);
+   craftState.bank=T.MathUtils.damp(craftState.bank,inputX*.22,4,dt);
+   craftGroup.position.set(craftState.x,craftState.y+Math.sin(t*4)*.09,craftState.z);
+   craftGroup.rotation.y=craftState.heading;
+   craftBody.rotation.z=craftState.bank;craftBody.rotation.x=T.MathUtils.damp(craftBody.rotation.x,-inputF*.13,4,dt);
+   thruster.intensity=2+Math.abs(craftState.speed)*.15;
+   loc.set(craftState.x,craftState.y+1.8,craftState.z);velY=0;
+   const eyeYaw=craftState.heading+flightOrbit;
+   const wanted=new T.Vector3(craftState.x+Math.sin(eyeYaw)*10,craftState.y+3.3+Math.sin(flightPitch)*6,craftState.z+Math.cos(eyeYaw)*10);
+   camera.position.lerp(wanted,1-Math.exp(-dt*6));
+   camera.lookAt(craftState.x,craftState.y+.4,craftState.z);
+ }
+ // Hold down the mining/placement buttons in flight to control collective lift.
+ function flightHold(id,v){
+   const b=q(id);
+   b.addEventListener('pointerdown',e=>{if(!riding)return;e.stopPropagation();e.preventDefault();flightLift=v;b.setPointerCapture(e.pointerId)});
+   for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>{if(flightLift===v)flightLift=0});
+ }
+ flightHold('vxMine',-1);flightHold('vxPlace',1);
+
  const skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,uniforms:{top:{value:new T.Color('#347fba')},horizon:{value:new T.Color('#bfdfea')},night:{value:0},time:{value:0}},
   vertexShader:'varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:'uniform vec3 top,horizon;uniform float night,time;varying vec3 v;void main(){vec3 d=normalize(v);float h=smoothstep(-.21,.82,d.y);vec3 c=mix(horizon,top,h);float s=pow(max(dot(d,normalize(vec3(-.55,.48,.55))),0.),600.);c+=vec3(1.,.8,.53)*s*1.9*(1.-night);gl_FragColor=vec4(c,1.);}'
