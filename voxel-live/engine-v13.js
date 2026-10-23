@@ -2759,7 +2759,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const overdrive={
    enabled:directorState.overdrivePost!==false,
    failed:false,mode:directorState.overdriveQuality||'adaptive',
-   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,blur2:null,renderPasses:0,lastSceneDraws:0,lastPassCount:0
+   bloomScale:mobile?.22:.37,w:0,h:0,beauty:null,blur:null,blur2:null,renderPasses:0,lastSceneDraws:0,lastPassCount:0,reportedFailure:false
  };
  const postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
  const postTriangle=new T.BufferGeometry();
@@ -2890,7 +2890,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      overdrive.lastPassCount=5;
    }catch(e){
      overdrive.failed=true;
-     console.warn('V12 post-processing disabled after render error',e);
+     console.warn('V13 post-processing fallback after GPU render error',e);
+     if(!overdrive.reportedFailure){overdrive.reportedFailure=true;spaceNotify('POST FX FALLBACK · Direct renderer active · try SYSTEMS → POST FX to retry',6)}
      renderer.setRenderTarget(original);renderer.render(scene,camera);
      overdrive.lastSceneDraws=renderer.info.render.calls;overdrive.lastPassCount=1;
    }finally{
@@ -2900,6 +2901,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  function setOverdriveQuality(mode){
    if(!['adaptive','cinema','battery'].includes(mode))return;
    overdrive.mode=mode;directorState.overdriveQuality=mode;
+   overdrive.failed=false;overdrive.reportedFailure=false;
    overdrive.bloomScale=mode==='cinema'?(mobile?.36:.5):mode==='battery'?.14:(mobile?.22:.37);
    overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
    overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
@@ -3026,7 +3028,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
      overdrive.enabled=!overdrive.enabled;directorState.overdrivePost=overdrive.enabled;
      if(overdrive.enabled){
        // Retry any previously failed GPU effect using newly allocated targets.
-       overdrive.failed=false;overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
+       overdrive.failed=false;overdrive.reportedFailure=false;overdrive.beauty?.dispose();overdrive.blur?.dispose();overdrive.blur2?.dispose();
        overdrive.beauty=null;overdrive.blur=null;overdrive.blur2=null;overdrive.w=0;
      }
      spaceNotify('V13 GAUSSIAN BLOOM '+(overdrive.enabled?'ENABLED — threshold + H/V blur':'OFF — direct renderer'),3.2);
