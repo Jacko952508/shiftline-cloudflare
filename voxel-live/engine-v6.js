@@ -830,9 +830,20 @@ void main(){
 
 
  // SKYRIDER: a pilotable hybrid VTOL craft, rather than a decorative spawn.
+ 
+ // Cheap grounded contact shadow under the player's vehicle (no mobile shadow-map cost).
+ const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;
+ const shctx=shadowCanvas.getContext('2d'),shg=shctx.createRadialGradient(64,64,0,64,64,62);
+ shg.addColorStop(0,'rgba(13,20,26,.62)');shg.addColorStop(.55,'rgba(13,20,26,.25)');
+ shg.addColorStop(1,'rgba(13,20,26,0)');shctx.fillStyle=shg;shctx.fillRect(0,0,128,128);
+ const shadowTexture=new T.CanvasTexture(shadowCanvas);
+ const contactShadowMaterial=new T.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false,opacity:.4,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+ const vehicleShadow=new T.Mesh(new T.PlaneGeometry(10.5,6.5),contactShadowMaterial);
+ vehicleShadow.rotation.x=-Math.PI/2;vehicleShadow.visible=false;scene.add(vehicleShadow);
+
  const craftGroup=new T.Group();scene.add(craftGroup);
  const craftBody=new T.Group();craftGroup.add(craftBody);
- const alloy=new T.MeshPhysicalMaterial({color:0xd7e8e9,metalness:.7,roughness:.19,clearcoat:1});
+ const alloy=new T.MeshPhysicalMaterial({color:0xd7e8e9,metalness:.77,roughness:.19,clearcoat:1,clearcoatRoughness:.1,envMapIntensity:1.5});
  const midnight=new T.MeshPhysicalMaterial({color:0x1c364b,metalness:.81,roughness:.19,clearcoat:1});
  const luminous=new T.MeshBasicMaterial({color:0x68f0ff,toneMapped:false});
  const glassCab=new T.MeshPhysicalMaterial({color:0x56b9d9,transparent:true,opacity:.67,metalness:.28,roughness:.09,depthWrite:false,clearcoat:1});
@@ -931,10 +942,10 @@ void main(){
  sp(.44,.33,.9,vMats.black,0,-.04,2.75,boat);
  
  // V5 premium additions: touring supercar, six-wheel expedition truck and twin-float seaplane.
- const chrome=new T.MeshPhysicalMaterial({color:0xc2cdd0,metalness:.98,roughness:.14,clearcoat:1});
- const racing=new T.MeshPhysicalMaterial({color:0x155e82,metalness:.72,roughness:.15,clearcoat:1,clearcoatRoughness:.09});
- const camel=new T.MeshPhysicalMaterial({color:0xa89873,metalness:.43,roughness:.38,clearcoat:.5});
- const smoked=new T.MeshPhysicalMaterial({color:0x162d40,metalness:.24,roughness:.07,transparent:true,opacity:.83,depthWrite:false,clearcoat:1});
+ const chrome=new T.MeshPhysicalMaterial({color:0xc2cdd0,metalness:.97,roughness:.12,clearcoat:1,clearcoatRoughness:.06,envMapIntensity:2.35});
+ const racing=new T.MeshPhysicalMaterial({color:0x155e82,metalness:.72,roughness:.13,clearcoat:1,clearcoatRoughness:.07,iridescence:.38,iridescenceIOR:1.32,iridescenceThicknessRange:[180,420],envMapIntensity:2});
+ const camel=new T.MeshPhysicalMaterial({color:0xa89873,metalness:.49,roughness:.29,clearcoat:.93,clearcoatRoughness:.14,envMapIntensity:1.2});
+ const smoked=new T.MeshPhysicalMaterial({color:0x162d40,metalness:.2,roughness:.055,transparent:true,opacity:.84,depthWrite:false,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:2.1});
  const rubber=new T.MeshStandardMaterial({color:0x1c2026,roughness:.91});
  function rimWheel(parent,x,y,z,r=.48){
   const o=new T.Mesh(new T.CylinderGeometry(r,r,.24,16),rubber);o.rotation.z=Math.PI/2;o.position.set(x,y,z);parent.add(o);
@@ -1014,14 +1025,14 @@ void main(){
    notify(vehicleData[vehicleType].name+' online · steer with joystick');
  }
  function endFlight(){
-   riding=false;directorState.riding=false;flightLift=0;
+   riding=false;directorState.riding=false;flightLift=0;vehicleShadow.visible=false;
    loc.set(craftState.x,(newMapActive?coastH(craftState.x,craftState.z):Math.max(ground(Math.floor(craftState.x),Math.floor(craftState.z)),SEA))+2.3,craftState.z);
    yaw=craftState.heading;pitch=.04;velY=0;
    flightButtons();notify('Exited '+vehicleData[vehicleType].name+' · craft remains in the world');
  }
 
  function flightTick(dt,t){
-  if(!riding)return;
+  if(!riding){vehicleShadow.visible=false;return;}
   const inputF=T.MathUtils.clamp(move.y,-1,1),inputX=T.MathUtils.clamp(move.x,-1,1);
   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';
   const vessel=vehicleType==='boat',jetMode=vehicleType==='jet'||vehicleType==='seaplane';
@@ -1048,6 +1059,13 @@ void main(){
   }
   craftState.bank=T.MathUtils.damp(craftState.bank,inputX*(jetMode?.27:land?.13:.2),4,dt);
   craftGroup.position.set(craftState.x,craftState.y+(land?.02:Math.sin(t*4)*.09),craftState.z);
+  const floorY=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);
+  const floorGap=Math.max(0,craftState.y-floorY);
+  vehicleShadow.position.set(craftState.x,floorY+.08,craftState.z);
+  vehicleShadow.rotation.z=-craftState.heading;
+  vehicleShadow.scale.setScalar(1+Math.min(2.2,floorGap*.029));
+  vehicleShadow.visible=newMapActive&&floorGap<75&&vehicleType!=='boat';
+  contactShadowMaterial.opacity=Math.max(.045,.41-floorGap*.005);
   craftGroup.rotation.y=craftState.heading;
   const model=vehicleModels[vehicleType];
   model.rotation.z=craftState.bank;
