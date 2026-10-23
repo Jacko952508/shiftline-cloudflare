@@ -789,13 +789,66 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  bx(1.6,1.05,1.35,vMats.glass,0,.8,-.3,boat);
  bx(1.95,.16,1.75,vMats.black,0,1.34,-.3,boat);
  sp(.44,.33,.9,vMats.black,0,-.04,2.75,boat);
+ 
+ // V5 premium additions: touring supercar, six-wheel expedition truck and twin-float seaplane.
+ const chrome=new T.MeshPhysicalMaterial({color:0xc2cdd0,metalness:.98,roughness:.14,clearcoat:1});
+ const racing=new T.MeshPhysicalMaterial({color:0x155e82,metalness:.72,roughness:.15,clearcoat:1,clearcoatRoughness:.09});
+ const camel=new T.MeshPhysicalMaterial({color:0xa89873,metalness:.43,roughness:.38,clearcoat:.5});
+ const smoked=new T.MeshPhysicalMaterial({color:0x162d40,metalness:.24,roughness:.07,transparent:true,opacity:.83,depthWrite:false,clearcoat:1});
+ const rubber=new T.MeshStandardMaterial({color:0x1c2026,roughness:.91});
+ function rimWheel(parent,x,y,z,r=.48){
+  const o=new T.Mesh(new T.CylinderGeometry(r,r,.24,16),rubber);o.rotation.z=Math.PI/2;o.position.set(x,y,z);parent.add(o);
+  const disc=new T.Mesh(new T.CylinderGeometry(r*.55,r*.55,.252,12),chrome);disc.rotation.z=Math.PI/2;disc.position.set(x,y,z);parent.add(disc);
+  return o
+ }
+ const coupe=new T.Group();craftGroup.add(coupe);vehicleModels.supercar=coupe;
+ const coupeShape=sp(.98,.3,2.2,racing,0,.46,.1,coupe);
+ bx(1.9,.3,4.2,racing,0,.48,0,coupe);
+ const coupeCabin=sp(.79,.42,1.13,smoked,0,.94,-.45,coupe);
+ bx(1.85,.09,.46,chrome,0,.72,1.93,coupe);
+ for(const x of [-.88,.88]){
+  rimWheel(coupe,x,.38,-1.38,.43);rimWheel(coupe,x,.38,1.21,.43);
+  sp(.26,.12,.12,vMats.glow,x*.63,.54,-2.18,coupe);
+  bx(.14,.13,.3,vMats.red,x,.56,2.13,coupe);
+ }
+ // Long-wheelbase expedition six-wheeler with cargo rack and reinforced wheel arches.
+ const truck=new T.Group();craftGroup.add(truck);vehicleModels.expedition=truck;
+ bx(2.15,.52,5.2,camel,0,.88,0,truck);
+ bx(2.08,1.04,2.2,camel,0,1.69,-1.33,truck);
+ bx(1.98,.63,.07,smoked,0,1.84,-2.46,truck);
+ for(const x of [-1.1,1.1]){
+   for(const z of [-1.75,.12,1.76])rimWheel(truck,x,.55,z,.6);
+   bx(.13,.9,1.95,chrome,x,2.2,.65,truck);
+   bx(.09,.12,4.5,rubber,x,1.03,0,truck);
+ }
+ bx(1.95,.13,2.5,rubber,0,2.59,.65,truck);
+ for(const xx of [-.76,.76])sp(.25,.2,.08,vMats.glow,xx,1.16,-2.68,truck);
+ const plane=new T.Group();craftGroup.add(plane);vehicleModels.seaplane=plane;
+ sp(.9,.78,3.65,alloy,0,.38,0,plane);
+ sp(.78,.45,1.45,smoked,0,.87,-1.35,plane);
+ const highWing=bx(11.8,.21,1.7,alloy,0,1.64,-.18,plane);highWing.rotation.z=.016;
+ bx(4.1,.15,.98,alloy,0,.81,3.18,plane);
+ bx(.15,1.45,1.3,racing,0,1.58,3.19,plane);
+ for(const x of [-1.8,1.8]){
+  sp(.42,.33,2.4,racing,x,-.8,.4,plane);
+  bx(.1,1.18,.12,chrome,x,-.06,-.8,plane);
+  bx(.1,1.18,.12,chrome,x,-.06,1.4,plane);
+ }
+ const propeller=new T.Group();propeller.position.set(0,.48,-3.55);plane.add(propeller);
+ for(const r of [0,Math.PI/2]){
+   const blade=bx(.16,3.55,.1,rubber,0,0,0,propeller);blade.rotation.z=r;
+ }
+
  const vehicleData={
   skyrider:{name:'SKYRIDER VTOL',speed:33,lift:9},
   helicopter:{name:'HAWK H-21',speed:27,lift:10},
   jet:{name:'STRIKE JET',speed:68,lift:16},
   buggy:{name:'DUNE BUGGY',speed:32,lift:0},
   hoverbike:{name:'HOVERBIKE',speed:48,lift:2},
-  boat:{name:'HYDROFOIL',speed:29,lift:0}
+  boat:{name:'HYDROFOIL',speed:29,lift:0},
+  supercar:{name:'ASTRA GT',speed:74,lift:0},
+  expedition:{name:'ATLAS 6x6',speed:41,lift:0},
+  seaplane:{name:'COAST GUARD SEAPLANE',speed:55,lift:13}
  };
  let vehicleType=vehicleData[directorState.vehicleType]?directorState.vehicleType:'skyrider',hopTime=0;
  function selectVehicle(type){
@@ -807,14 +860,14 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  for(const [key,model] of Object.entries(vehicleModels))model.visible=key===vehicleType;
 
  function flightButtons(){
-   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
+   const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';const labels=riding?(land?['◀ BRAKE','▲ HOP','✕ EXIT','⚡ BOOST']:['▼ DOWN','▲ UP','✕ EXIT','⚡ BOOST']):['⛏ MINE','▣ PLACE','↑ JUMP','» RUN'];
    for(const [i,id] of ['vxMine','vxPlace','vxJump','vxRun'].entries())q(id).textContent=labels[i];
    q('vxInventory').style.opacity=riding?'.45':'1';
  }
  function beginFlight(){
    directorState.hasVehicle=true;directorState.riding=true;riding=true;
    craftState.x=T.MathUtils.clamp(loc.x,3,SIZE-4);craftState.z=T.MathUtils.clamp(loc.z,3,SIZE-4);
-   const surface=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);craftState.y=vehicleType==='buggy'?surface+1.7:vehicleType==='hoverbike'?surface+2.3:vehicleType==='boat'?SEA+1.0:Math.max(loc.y+6,surface+9);
+   const surface=newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z);craftState.y=vehicleType==='buggy'||vehicleType==='supercar'||vehicleType==='expedition'?surface+1.7:vehicleType==='hoverbike'?surface+2.3:vehicleType==='boat'?SEA+1.0:Math.max(loc.y+6,surface+9);
    craftState.heading=yaw;craftState.speed=0;
    craftGroup.visible=true;
    flightOrbit=0;flightPitch=.17;flightButtons();
@@ -830,8 +883,8 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
  function flightTick(dt,t){
   if(!riding)return;
   const inputF=T.MathUtils.clamp(move.y,-1,1),inputX=T.MathUtils.clamp(move.x,-1,1);
-  const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat';
-  const vessel=vehicleType==='boat',jetMode=vehicleType==='jet';
+  const land=vehicleType==='buggy'||vehicleType==='hoverbike'||vehicleType==='boat'||vehicleType==='supercar'||vehicleType==='expedition';
+  const vessel=vehicleType==='boat',jetMode=vehicleType==='jet'||vehicleType==='seaplane';
   const vehicle=vehicleData[vehicleType];
   craftState.heading+=inputX*dt*(jetMode?1.1:land?1.8:1.48);
   const speedTarget=(jetMode?Math.max(8,inputF*vehicle.speed):(inputF*(runPressed?vehicle.speed*1.4:vehicle.speed)))*(flightLift<0&&land?.35:1);
@@ -843,7 +896,7 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
   const blocked=land&&!vessel&&blockAtFront!==0&&blockAtFront!==10&&blockAtFront!==9;
   if(!blocked){craftState.x=nx;craftState.z=nz}else craftState.speed*=.32;
   if(land){
-    const expected=vessel?SEA+1.3:(newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z))+(vehicleType==='buggy'?1.45:2.2);
+    const expected=vessel?SEA+1.3:(newMapActive?coastH(craftState.x,craftState.z):ground(craftState.x,craftState.z))+(vehicleType==='buggy'||vehicleType==='supercar'||vehicleType==='expedition'?1.45:2.2);
     if(vehicleType!=='boat'&&flightLift>0&&hopTime<=0)hopTime=1.1;
     hopTime=Math.max(0,hopTime-dt);
     const jump=hopTime>0?Math.sin((1.1-hopTime)/1.1*Math.PI)*(vehicleType==='buggy'?2.3:.9):0;
@@ -860,7 +913,9 @@ if(newMapActive)loc.set(45,coastH(45,113)+2.4,113);
   model.rotation.z=craftState.bank;
   model.rotation.x=T.MathUtils.damp(model.rotation.x,-inputF*(land?.05:.13),4,dt);
   if(vehicleType==='helicopter'){vehicleParts.mainRotor.rotation.y+=dt*33;vehicleParts.tailRotor.rotation.x+=dt*38}
+  if(vehicleType==='seaplane')propeller.rotation.z+=dt*44;
   if(vehicleType==='buggy')for(const w of vehicleParts.wheels)w.rotation.x+=craftState.speed*dt*.7;
+  if(vehicleType==='supercar'||vehicleType==='expedition'){for(const mesh of vehicleModels[vehicleType].children)if(mesh.geometry?.type==='CylinderGeometry')mesh.rotation.x+=craftState.speed*dt*.32;}
   for(const flame of vehicleParts.jetThrusters)flame.scale.z=.62+Math.sin(t*21)*.22;
   thruster.intensity=vehicleType==='skyrider'?2+Math.abs(craftState.speed)*.15:0;
   loc.set(craftState.x,craftState.y+1.8,craftState.z);velY=0;
@@ -969,7 +1024,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1088,9 +1143,11 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='coast'||action==='voxel'){directorPanel.style.display='none';setMap(action==='coast'?'crescent':'voxel');}
 
-   if(action==='city'){if(riding)endFlight();loc.set(160.5,ground(160,160)+3,160.5);yaw=0;velY=0;directorPanel.style.display='none';requestChunks(loc.x,loc.z);streamChunks(4);notify('Arrived in METROPOLIS DISTRICT · 256×256 world')}
-   if(['heli','jet','buggy','hoverbike','boat'].includes(action)){directorPanel.style.display='none';selectVehicle(action)}
+
+   if(action==='city'){if(newMapActive)setMap('voxel');if(riding)endFlight();loc.set(160.5,ground(160,160)+3,160.5);yaw=0;velY=0;directorPanel.style.display='none';requestChunks(loc.x,loc.z);streamChunks(4);notify('Arrived in METROPOLIS DISTRICT · 256×256 world')}
+   if(['heli','jet','buggy','hoverbike','boat','supercar','expedition','seaplane'].includes(action)){directorPanel.style.display='none';selectVehicle(action)}
    if(action==='worldmap'){showMap=!showMap;mapCanvas.style.display=showMap?'block':'none';directorPanel.style.display='none';notify('Tap a location on the atlas to teleport')}
    if(action==='night'){const el=q('vxWeather');el.value='night';el.dispatchEvent(new Event('change'))}
    if(action==='fireworks'){makeFireworks();directorPanel.style.display='none';notify('Fireworks display deployed')}
@@ -1239,7 +1296,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   if(now-fpsAt>1350){
     const rate=Math.round(frames*1000/(now-fpsAt));frames=0;fpsAt=now;
     text('vxFps',rate+' FPS · '+quality.toUpperCase());
-    text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z)+' · CH '+geoGroups.size);
+    text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z)+' · '+(newMapActive?'COAST':'CH '+geoGroups.size));
     text('vxTarget',riding?vehicleData[vehicleType].name+' · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':newMapActive?'CRESCENT COAST · Scenic roads · Open Director for vehicles':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
     if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.72){renderer.setPixelRatio(Math.max(.72,renderer.getPixelRatio()-.1));if(chunkRadius.value>2)chunkRadius.value--;resize();adaptAt=now}
   }
