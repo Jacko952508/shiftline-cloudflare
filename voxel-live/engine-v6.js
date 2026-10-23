@@ -1248,7 +1248,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  topOptions?.appendChild(directorButton);
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -1393,6 +1393,10 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
    if(['heli','jet','buggy','hoverbike','boat','supercar','expedition','seaplane'].includes(action)){directorPanel.style.display='none';selectVehicle(action)}
    if(action==='worldmap'){showMap=!showMap;mapCanvas.style.display=showMap?'block':'none';directorPanel.style.display='none';notify('Tap a location on the atlas to teleport')}
    if(action==='night'){const el=q('vxWeather');el.value='night';el.dispatchEvent(new Event('change'))}
+   if(action==='golden'){const el=q('vxWeather');el.value='sunset';el.dispatchEvent(new Event('change'));directorPanel.style.display='none';notify('Golden hour · warm directional lighting and reflections')}
+   if(action==='cinematic'){directorState.cinematic=!directorState.cinematic;camera.fov=directorState.cinematic?61:73;camera.updateProjectionMatrix();notify(directorState.cinematic?'Cinematic 61° lens engaged':'Wide 73° lens restored')}
+   if(action==='showcase'){if(!newMapActive)setMap('crescent');loc.set(74,coastH(74,130)+2.4,130);selectVehicle('supercar');directorPanel.style.display='none';notify('ASTRA GT · Crescent Coast test drive')}
+   if(action==='renderinfo'){debugHudOn=!debugHudOn;debugHud.style.display=debugHudOn?'block':'none';notify(debugHudOn?'GPU diagnostics visible':'GPU diagnostics hidden')}
    if(action==='fireworks'){makeFireworks();directorPanel.style.display='none';notify('Fireworks display deployed')}
    if(action==='terraform'){terraformBrush()}
    if(action==='tower'){customTower()}
@@ -1493,6 +1497,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const resizeObserver=new ResizeObserver(resize);
  function resize(){let w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
  setQuality('auto');resizeObserver.observe(stage);
+ if(directorState.cinematic){camera.fov=61;camera.updateProjectionMatrix()}
  q('vxLoad').style.opacity='0';setTimeout(()=>{if(alive&&q('vxLoad'))q('vxLoad').style.display='none'},750);
  const rainGeo=new T.BufferGeometry(),rainCount=mobile?250:600,rainPos=new Float32Array(rainCount*3);
  for(let i=0;i<rainCount;i++){rainPos[3*i]=(Math.random()-.5)*50;rainPos[3*i+1]=Math.random()*30;rainPos[3*i+2]=(Math.random()-.5)*50}
@@ -1500,13 +1505,16 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
  const rainMat=new T.PointsMaterial({color:0xb3e0fa,size:.08,transparent:true,opacity:.65});
  const rain=new T.Points(rainGeo,rainMat);scene.add(rain);
  let last=performance.now(),fpsAt=last,frames=0,saveAt=last,adaptAt=last,lastCivilWork=last;
+ const adaptive={frameMs:22,nextCheck:performance.now()+12000,high:mobile?1.44:1.85,min:.72};
+
  const stat=()=>({x:loc.x,y:loc.y,z:loc.z,yaw});
  function persist(){
   try{localStorage.setItem(saveKey,JSON.stringify({player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}))}catch(e){}
  }
  function frame(){
   if(!alive||!root.isConnected)return;requestAnimationFrame(frame);
-  const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
+  const now=performance.now(),elapsed=Math.max(.003,(now-last)/1000),dt=Math.min(.05,elapsed);last=now;
+  adaptive.frameMs+=(Math.min(100,elapsed*1000)-adaptive.frameMs)*.09;
   if(riding){
    if(keys.has(' '))flightLift=1;else if(keys.has('q'))flightLift=-1;
    else if(!q('vxMine').matches(':active')&&!q('vxPlace').matches(':active'))flightLift=0;
@@ -1560,10 +1568,22 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   frames++;
   if(now-fpsAt>1350){
     const rate=Math.round(frames*1000/(now-fpsAt));frames=0;fpsAt=now;
-    text('vxFps',rate+' FPS · '+quality.toUpperCase());
+    text('vxFps',rate+' FPS · '+quality.toUpperCase()+' · '+renderer.getPixelRatio().toFixed(2)+'x');
     text('vxLocation','XYZ '+Math.floor(loc.x)+' / '+Math.floor(loc.y)+' / '+Math.floor(loc.z)+' · '+(newMapActive?'COAST':'CH '+geoGroups.size));
     text('vxTarget',riding?vehicleData[vehicleType].name+' · '+Math.abs(craftState.speed*3.6).toFixed(0)+' km/h · ALT '+Math.floor(craftState.y)+' m':newMapActive?'CRESCENT COAST · Scenic roads · Open Director for vehicles':currentTarget?types[currentTarget.id]+' · '+currentTarget.pos.join(', '):citizens.length+' inhabitants · Director Mode ready');
-    if(quality==='auto'&&rate<27&&now-adaptAt>12000&&renderer.getPixelRatio()>.72){renderer.setPixelRatio(Math.max(.72,renderer.getPixelRatio()-.1));if(chunkRadius.value>2)chunkRadius.value--;resize();adaptAt=now}
+    if(quality==='auto'&&now>adaptive.nextCheck){
+      const ratio=renderer.getPixelRatio();
+      const smoothFPS=1000/Math.max(1,adaptive.frameMs);
+      if(smoothFPS<28&&(ratio>adaptive.min+.02||(!newMapActive&&chunkRadius.value>2))){
+        if(ratio>adaptive.min+.02)renderer.setPixelRatio(Math.max(adaptive.min,ratio-.085));
+        if(!newMapActive&&chunkRadius.value>2)chunkRadius.value--;
+        resize();
+      }else if(smoothFPS>48&&ratio<Math.min(devicePixelRatio||2,adaptive.high)-.02){
+        renderer.setPixelRatio(Math.min(Math.min(devicePixelRatio||2,adaptive.high),ratio+.055));
+        resize();
+      }
+      adaptive.nextCheck=now+12000;
+    }
   }
   if(now-lastCivilWork>7500){lastCivilWork=now;buildersProgress();updateDirectorStats()}
   if(now-saveAt>5000){saveAt=now;persist()}
@@ -1571,5 +1591,5 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
  requestAnimationFrame(frame);
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();asphaltTex.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
