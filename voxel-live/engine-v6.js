@@ -485,13 +485,60 @@ directorState.activeMap=newMapActive?'crescent':'voxel';
  const opaqueMat=new T.MeshStandardMaterial({map:tex,vertexColors:true,roughness:.88,metalness:0});
  const glassMat=new T.MeshPhysicalMaterial({color:0xa0d9e9,transparent:true,opacity:.38,metalness:.2,roughness:.12,side:T.DoubleSide,depthWrite:false});
  const waterMat=new T.MeshStandardMaterial({color:0x3f96c1,transparent:true,opacity:.7,metalness:.12,roughness:.3,side:T.DoubleSide,depthWrite:false});
+
+ // V6 layered Gerstner-inspired surface: vertex displacement + analytic normals,
+ // Fresnel, multi-lobe sun glints and crest foam — shader keeps running at every quality.
  const oceanMat=new T.ShaderMaterial({
- transparent:true,depthWrite:false,side:T.DoubleSide,
- uniforms:{time:{value:0},deep:{value:new T.Color('#125373')},shallow:{value:new T.Color('#4fb4b8')}},
- vertexShader:'varying vec3 wp;void main(){vec4 p=modelMatrix*vec4(position,1.);wp=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}',
- fragmentShader:'uniform vec3 deep,shallow;uniform float time;varying vec3 wp;void main(){float a=sin(wp.x*.14+time*.8+sin(wp.z*.05))*sin(wp.z*.12-time*.52);float b=sin(wp.z*.29+wp.x*.16+time*.62);float fres=.35+.25*sin(wp.x*.018+wp.z*.027);vec3 col=mix(deep,shallow,.32+.17*a+.1*b+fres*.2);float sparkle=pow(max(0.,a*.65+b*.3+.08),11.);col+=vec3(.5,.83,1.)*sparkle*.5;gl_FragColor=vec4(col,.93);}'
-});
+  transparent:false,depthWrite:true,side:T.DoubleSide,
+  uniforms:{
+   time:{value:0},deep:{value:new T.Color('#123d5e')},
+   shallow:{value:new T.Color('#3ea7a4')},storm:{value:0},
+   night:{value:0},lightDir:{value:new T.Vector3(-.52,.72,.55).normalize()}
+  },
+  vertexShader:`uniform float time,storm;
+varying vec3 wp,wn;
+varying float crest;
+void main(){
+ vec4 p=modelMatrix*vec4(position,1.);
+ float x=p.x,z=p.z;
+ float w1=x*.15+time*.86+sin(z*.093);
+ float w2=z*.32-time*.68+x*.04;
+ float w3=(x+z)*.53+time*1.36;
+ float h=sin(w1)*.23+sin(w2)*.13+sin(w3)*.05;
+ float dx=cos(w1)*.15*.23+cos(w2)*.04*.13+cos(w3)*.53*.05;
+ float dz=cos(w1)*cos(z*.093)*.093*.23+cos(w2)*.32*.13+cos(w3)*.53*.05;
+ float strength=1.+storm*.85;
+ p.y+=h*strength;
+ wn=normalize(vec3(-dx*strength,1.,-dz*strength));
+ wp=p.xyz;crest=smoothstep(.18,.37,h*strength);
+ gl_Position=projectionMatrix*viewMatrix*p;
+}`,
+  fragmentShader:`uniform vec3 deep,shallow,lightDir;
+uniform float time,storm,night;
+varying vec3 wp,wn;
+varying float crest;
+void main(){
+ vec3 n=normalize(wn),v=normalize(cameraPosition-wp);
+ float ndv=max(dot(n,v),0.);
+ float fres=pow(1.-ndv,4.);
+ float high=pow(max(dot(reflect(-lightDir,n),v),0.),115.);
+ float low=pow(max(dot(reflect(-lightDir,n),v),0.),22.);
+ float ripple=sin(wp.x*.88+time*2.1)*sin(wp.z*1.2-time*1.3)*.5+.5;
+ vec3 col=mix(deep,shallow,.22+fres*.55+ripple*.065);
+ col+=vec3(1.,.88,.68)*(high*1.65+low*.32)*(1.-night*.85);
+ float foam=crest*(.14+.24*ripple);
+ col+=vec3(.73,.95,1.)*foam*(.6+storm*.8);
+ col*=1.-night*.6;
+ gl_FragColor=vec4(col,1.);
+}`
+ });
  const distantWater=new T.Mesh(new T.PlaneGeometry(2000,2000,1,1),oceanMat);distantWater.rotation.x=-Math.PI/2;distantWater.position.set(32,SEA+.86,32);scene.add(distantWater);
+
+ // Fine grid only near the coast, large ocean beyond uses a single cheap quad.
+ const coastalWater=new T.Mesh(new T.PlaneGeometry(355,355,84,84),oceanMat);
+ coastalWater.rotation.x=-Math.PI/2;
+ coastalWater.position.set(127,SEA+.955,127);scene.add(coastalWater);
+
  const glowMat=new T.MeshStandardMaterial({color:0xffeac0,emissive:0xffb561,emissiveIntensity:1.7,roughness:.45});
  const geoGroups=new Map();
  const faces=[
@@ -1026,12 +1073,55 @@ directorState.activeMap=newMapActive?'crescent':'voxel';
  }
  flightHold('vxMine',-1);flightHold('vxPlace',1);
 
- const skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,uniforms:{top:{value:new T.Color('#347fba')},horizon:{value:new T.Color('#bfdfea')},night:{value:0},time:{value:0}},
-  vertexShader:'varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-  fragmentShader:'uniform vec3 top,horizon;uniform float night,time;varying vec3 v;void main(){vec3 d=normalize(v);float h=smoothstep(-.21,.82,d.y);vec3 c=mix(horizon,top,h);float s=pow(max(dot(d,normalize(vec3(-.55,.48,.55))),0.),600.);c+=vec3(1.,.8,.53)*s*1.9*(1.-night);gl_FragColor=vec4(c,1.);}'
+
+ // Filmic atmospheric sky: horizon aerosol scattering, warm sun halo and subtle stars.
+ const skyMat=new T.ShaderMaterial({
+  side:T.BackSide,depthWrite:false,
+  uniforms:{
+   top:{value:new T.Color('#347fba')},horizon:{value:new T.Color('#bfdfea')},
+   night:{value:0},time:{value:0},haze:{value:.28}
+  },
+  vertexShader:`varying vec3 v;
+void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform vec3 top,horizon;
+uniform float night,time,haze;
+varying vec3 v;
+float rnd(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,73.7)))*43758.5453);}
+void main(){
+ vec3 d=normalize(v);
+ float height=smoothstep(-.15,.86,d.y);
+ vec3 col=mix(horizon,top,pow(height,.82));
+ float air=exp(-abs(d.y)*9.);
+ col=mix(col,horizon,.12*air+haze*.22*air);
+ vec3 sunlight=normalize(vec3(-.63,.41,.64));
+ float angle=max(dot(d,sunlight),0.);
+ col+=vec3(1.,.67,.36)*pow(angle,24.)*.38*(1.-night);
+ col+=vec3(1.,.9,.67)*pow(angle,480.)*1.8*(1.-night);
+ float star=step(.9995,rnd(floor(d*1250.)));
+ col+=vec3(.7,.85,1.)*star*night*smoothstep(.08,.27,d.y);
+ gl_FragColor=vec4(col,1.);
+}`
  });
  const sky=new T.Mesh(new T.SphereGeometry(250,28,14),skyMat);scene.add(sky);
  const cloudMat=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,depthWrite:false});
+
+ // Soft billboard cloud banks with alpha falloff: cheaper and more natural than 3D box clouds.
+ const vaporCanvas=document.createElement('canvas');vaporCanvas.width=vaporCanvas.height=128;
+ const vapCtx=vaporCanvas.getContext('2d'),vapGrad=vapCtx.createRadialGradient(64,64,2,64,64,61);
+ vapGrad.addColorStop(0,'rgba(255,255,255,.91)');vapGrad.addColorStop(.36,'rgba(255,255,255,.65)');
+ vapGrad.addColorStop(.72,'rgba(255,255,255,.22)');vapGrad.addColorStop(1,'rgba(255,255,255,0)');
+ vapCtx.fillStyle=vapGrad;vapCtx.fillRect(0,0,128,128);
+ const vaporTexture=new T.CanvasTexture(vaporCanvas);vaporTexture.colorSpace=T.SRGBColorSpace;
+ const vaporMaterial=new T.SpriteMaterial({map:vaporTexture,transparent:true,opacity:.59,depthWrite:false,color:0xedf5fa});
+ const softClouds=[];
+ for(let i=0;i<(mobile?23:36);i++){
+  const c=new T.Sprite(vaporMaterial);
+  const x=hash(i+87,11)*370-55,z=hash(i+37,52)*380-55;
+  c.position.set(x,48+hash(i,12)*17,z);
+  c.scale.set(30+hash(i,25)*40,6+hash(i,42)*10,1);
+  scene.add(c);softClouds.push(c);
+ }
+
  const clouds=[];
  for(let i=0;i<38;i++){
   const g=new T.Group();scene.add(g);
@@ -1401,6 +1491,8 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
 
   for(let i=0;i<clouds.length;i++)clouds[i].position.x+=dt*(i%3+1)*.38;
   for(const cloud of clouds)if(cloud.position.x>285)cloud.position.x=-40;
+  for(const c of softClouds){c.visible=newMapActive;c.position.x+=dt*.72;if(c.position.x>325)c.position.x=-45}
+  for(const g of clouds)g.visible=!newMapActive;
   rain.visible=weather==='rain';rain.position.set(loc.x,loc.y+1,loc.z);
   if(weather==='rain'){const a=rainGeo.attributes.position;for(let i=0;i<rainCount;i++){let y=a.array[3*i+1]-dt*25;if(y<0)y+=30;a.array[3*i+1]=y}a.needsUpdate=true}
   currentTarget=riding||newMapActive?null:castBlock();
