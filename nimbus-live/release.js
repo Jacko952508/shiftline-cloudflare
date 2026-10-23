@@ -1,1 +1,1 @@
-export const release = {version:3,title:"NIMBUS LIVE v3", commit:"8c03cfdedc29da4f36ab088044f246f268e9dcd7", message:"Direct-renderer extension with ocean survey vessel, scanning ring and floating markers"};
+export const release={version:4,title:"NIMBUS LIVE v4",engineCommit:"8eb7c1effb690b60b0ea504a69058e380f1c81dd",message:"Fullscreen Three.js engine delivered as a hot-swappable ES module, without iframe or fetch()"};
