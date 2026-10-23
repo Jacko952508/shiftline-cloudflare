@@ -2,7 +2,7 @@
 export async function mount(root,resume=null){
  const q=id=>root.querySelector('#'+id),stage=q('vxStage'),canvas=q('vxCanvas');
  const branding=root.querySelector('.vxName');if(branding)branding.innerHTML='REALITY ENGINE <span style="color:#8ff1c8">LIVE</span>';
- const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V10 · REALITY EXPERIMENTS · PORTALS · SIMULATION';
+ const sub=root.querySelector('.vxSub');if(sub)sub.textContent='V11 · ASTRAEUS · SPACE EXPLORATION';
  const T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
  let alive=true;
  const mobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -901,6 +901,7 @@ function animateCoast(dt,t){
  coastHeadlight.intensity=weather==='night'?18:3;
 }
 function setMap(mode,initial=false){
+ if(spaceMode)leaveSpaceWorld(true);
  const coast=mode!=='voxel';newMapActive=coast;directorState.activeMap=coast?'crescent':'voxel';
  smoothWorld.visible=coast;
  if(typeof coastalWater!=='undefined')coastalWater.visible=coast;
@@ -2504,7 +2505,7 @@ const sunDisk=new T.Mesh(new T.SphereGeometry(4,16,10),new T.MeshBasicMaterial({
 
  const directorPanel=document.createElement('div');
  directorPanel.style.cssText='position:absolute;z-index:4;top:103px;left:9px;right:9px;max-height:49%;overflow-y:auto;overscroll-behavior:contain;display:none;background:linear-gradient(160deg,#082c38ef,#09202bf2);border:1px solid #8eead699;border-radius:12px;padding:12px;box-shadow:0 7px 24px #0019;backdrop-filter:blur(12px);color:#eaffff';
- directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="portal">🌀 VISIT PORTAL</button><button data-action="collapse">💥 DEMOLISH PAVILION</button><button data-action="rebuild">🏗 REBUILD PAVILION</button><button data-action="gravity">🌙 LOW GRAVITY</button><button data-action="front">⛈ STORM FRONTS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
+ directorPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="letter-spacing:2px">✦ REALITY DIRECTOR</b><button data-action="close">✕ CLOSE</button></div><p style="margin:7px 0 10px;font:11px/1.45 system-ui;color:#bfe0de">These events change the active world. For new features, describe what you want in this ChatGPT conversation and I can publish the next version.</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><button data-action="space">🚀 ASTRAEUS SPACE WORLD</button><button data-action="sights">✧ SPACE EXPLORATION LOG</button><button data-action="vista">📸 V7 SCENIC VISTA</button><button data-action="coast">🏝 CRESCENT COAST</button><button data-action="voxel">⛏ VOXEL WORLD</button><button data-action="supercar">🏎 ASTRA GT</button><button data-action="expedition">🚙 ATLAS 6×6</button><button data-action="seaplane">🛩 SEAPLANE</button><button data-action="city">🌆 GO TO MEGACITY</button><button data-action="worldmap">🗺 WORLD MAP</button><button data-action="heli">🚁 HAWK HELICOPTER</button><button data-action="jet">✈ STRIKE JET</button><button data-action="buggy">🏎 DUNE BUGGY</button><button data-action="hoverbike">🏍 HOVERBIKE</button><button data-action="boat">🚤 HYDROFOIL</button><button data-action="town">🏙 CREATE SETTLEMENT</button><button data-action="meteor">☄ METEOR IMPACT</button><button data-action="fly">✈ SPAWN SKYRIDER</button><button data-action="storm">⛈ TOGGLE STORM</button><button data-action="visit">🌆 VISIT SETTLEMENT</button><button data-action="relic">◇ VISIT ANOMALY</button><button data-action="stats">🧠 CIVILISATION STATUS</button><button data-action="day">☀ DAYLIGHT</button><button data-action="night">🌙 NIGHT MODE</button><button data-action="golden">🌇 GOLDEN HOUR</button><button data-action="cinematic">🎬 CINEMATIC LENS</button><button data-action="showcase">🏎 COAST SHOWCASE</button><button data-action="renderinfo">📊 GPU METRICS</button><button data-action="portal">🌀 VISIT PORTAL</button><button data-action="collapse">💥 DEMOLISH PAVILION</button><button data-action="rebuild">🏗 REBUILD PAVILION</button><button data-action="gravity">🌙 LOW GRAVITY</button><button data-action="front">⛈ STORM FRONTS</button><button data-action="protocol">🧬 WORLD MUTATIONS</button><button data-action="supply">🚛 RESTOCK CITY</button><button data-action="physicsdrop">📦 DROP CRATES</button><button data-action="impulse">💥 PHYSICS BLAST</button><button data-action="fireworks">🎆 FIREWORKS</button><button data-action="terraform">⛏ TERRAIN BRUSH</button><button data-action="tower">🏗 BUILD TOWER</button><button data-action="lightning">⚡ LIGHTNING STRIKE</button><button data-action="devhud">📊 DEBUG HUD</button><button data-action="distance">🔭 DRAW DISTANCE</button><button data-action="stats">🧠 CIVILISATION STATUS</button></div><div id="realityStats" style="margin-top:10px;border-top:1px solid #ffffff26;padding-top:9px;font:10px/1.65 ui-monospace,monospace;color:#a9e3d9"></div>';
  stage.appendChild(directorPanel);
  directorButton.onclick=()=>{const open=directorPanel.style.display!=='none';directorPanel.style.display=open?'none':'block';updateDirectorStats()};
  function updateDirectorStats(){
@@ -2658,6 +2659,8 @@ directorPanel.addEventListener('click',e=>{
    const button=e.target.closest('button[data-action]');if(!button)return;
    const action=button.dataset.action;
    if(action==='close'){directorPanel.style.display='none';return}
+   if(action==='space'){directorPanel.style.display='none';enterSpaceWorld(false);return}
+   if(action==='sights'){if(!spaceMode)enterSpaceWorld(false);directorPanel.style.display='none';updateNavigation();starNav.style.display='block';return}
 
    if(action==='portal'){
      if(!newMapActive)setMap('crescent');
@@ -2816,6 +2819,21 @@ directorPanel.addEventListener('click',e=>{
   if(!alive||!root.isConnected)return;requestAnimationFrame(frame);
   const now=performance.now(),elapsed=Math.max(.003,(now-last)/1000),dt=Math.min(.05,elapsed);last=now;
   adaptive.frameMs+=(Math.min(100,elapsed*1000)-adaptive.frameMs)*.09;
+  if(spaceMode){
+    try{spaceStep(dt,clock.getElapsedTime())}
+    catch(error){
+      console.warn('Space world runtime fallback',error);
+      leaveSpaceWorld(true);
+      notify('Space scene recovered to terrestrial world: '+String(error?.message||error).slice(0,60));
+    }
+    if(now-saveAt>6500){
+      saveAt=now;
+      directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
+      directorState.spaceDiscoveries=[...spaceDiscoveries];
+      persist();
+    }
+    return;
+  }
   if(riding){
    if(keys.has(' '))flightLift=1;else if(keys.has('q'))flightLift=-1;
    else if(!q('vxMine').matches(':active')&&!q('vxPlace').matches(':active'))flightLift=0;
@@ -2893,8 +2911,12 @@ directorPanel.addEventListener('click',e=>{
   if(!newMapActive){if(!frame.streamAt||now-frame.streamAt>400){frame.streamAt=now;requestChunks(loc.x,loc.z)}streamChunks(mobile?1:2)}
   if(now>tipUntil)q('vxToast').style.opacity='0';
  }
+ if(spaceAutoEnter)enterSpaceWorld(true);
  requestAnimationFrame(frame);
  mutationTimer=setInterval(pollWorldMutations,30000);
  pollWorldMutations();
- return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;try{physicsWorld?.free?.()}catch(e){}portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
+ return {snapshot(){return {player:stat(),changes:Object.fromEntries(changes),director:{...directorState,riding,flight:{...craftState}}}},dispose(){alive=false;
+        if(spaceMode)directorState.spacePosition={x:spaceCraftState.pos.x,y:spaceCraftState.pos.y,z:spaceCraftState.pos.z,heading:yaw,elevation:pitch};
+        try{physicsWorld?.free?.()}catch(e){}
+        warpGeometry.dispose();starsGeometry.dispose();coronaTex.dispose();portalRT.dispose();frontTex.dispose();if(mutationTimer)clearInterval(mutationTimer);persist();resizeObserver.disconnect();stage.removeEventListener('keydown',kd);stage.removeEventListener('keyup',ku);for(const m of geoGroups.values())m.traverse(o=>o.geometry?.dispose());const gset=new Set(),mset=new Set();smoothWorld.traverse(o=>{if(o.geometry)gset.add(o.geometry);if(o.material){if(Array.isArray(o.material))o.material.forEach(x=>mset.add(x));else mset.add(o.material)}});gset.forEach(g=>g.dispose?.());mset.forEach(m=>m.dispose?.());soilTex.dispose();groundNormal.dispose();asphaltTex.dispose();roadNormal.dispose();vaporTexture.dispose();puddleTexture.dispose();shadowTexture.dispose();envTexture.dispose();reflectionTarget?.dispose();renderer.dispose();tex.dispose();opaqueMat.dispose();}};
 }
