@@ -71,7 +71,7 @@ export async function mount(root,resume=null){
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
  renderer.shadowMap.enabled=false;
  const scene=new T.Scene();scene.background=new T.Color(0x82b6d4);scene.fog=new T.FogExp2(0x9abbd1,.017);
- const camera=new T.PerspectiveCamera(73,1,.07,155);
+ const camera=new T.PerspectiveCamera(73,1,.07,350);
  const hemi=new T.HemisphereLight(0xe5f5ff,0x566858,2.0);scene.add(hemi);
  const sun=new T.DirectionalLight(0xffe2b0,2.6);sun.position.set(-38,70,26);scene.add(sun);
  const clock=new T.Clock();
@@ -261,7 +261,7 @@ export async function mount(root,resume=null){
   sun.intensity=night?.12:storm?.85:2.6;hemi.intensity=night?.7:storm?1.3:2;
   skyMat.uniforms.top.value.set(night?'#07182e':storm?'#40566f':'#347fba');
   skyMat.uniforms.horizon.value.set(night?'#29364d':storm?'#7e919a':'#bfdfea');
-  skyMat.uniforms.night.value=night?1:0;scene.fog.color.set(night?0x1e3548:storm?0x748e9b:0x9abbd1);
+  skyMat.uniforms.night.value=night?1:0;sunDisk.visible=!night&&!storm;scene.fog.color.set(night?0x1e3548:storm?0x748e9b:0x9abbd1);
   cloudMat.opacity=night?.15:storm?.95:.8;
  };
  function setQuality(v){
