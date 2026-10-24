@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 18,
+  "latest": 19,
   "releases": [
     {
       "version": 11,
@@ -41,9 +41,14 @@
       "version": 18,
       "engineCommit": "28d8653af773e261ca35c037ed288bfc889529e8",
       "engineFile": "engine-v18.js"
+    },
+    {
+      "version": 19,
+      "engineCommit": "e12b6051b4dfe7384c0f6ab1210fc04dacc68f05",
+      "engineFile": "engine-v19.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
   "sourceDir": "voxel-live",
-  "notes": "V18 Living World is a dedicated 3D scene sharing Reality Engine's Three.js renderer. Animated experiment FX, persistent terrain modifications, mobile-friendly shader water, saved autonomous agents. V15 ASTRAEUS remains available. New in-chat viewer required."
+  "notes": "V19 proper stop/dispose/WEBGL_lose_context; ChatGPT widget must be cold-start and stop when offscreen or hidden. V18 FX/civilisation and all prior worlds preserved. Earlier chat widgets not controlled by new release."
 }
