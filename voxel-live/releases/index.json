@@ -1,6 +1,6 @@
 {
   "schema": "reality.engine/releases/1",
-  "latest": 17,
+  "latest": 18,
   "releases": [
     {
       "version": 11,
@@ -36,9 +36,14 @@
       "version": 17,
       "engineCommit": "c89311d5ab612a8496b08f998a0d0ad83517ad40",
       "engineFile": "engine-v17.js"
+    },
+    {
+      "version": 18,
+      "engineCommit": "6def71e8a0e6694c489ea682627c865fd4ced447",
+      "engineFile": "engine-v18.js"
     }
   ],
   "sourceBranch": "voxel-chat-live",
   "sourceDir": "voxel-live",
-  "notes": "V17 Living World 3D: exclusive Three.js terrain and autonomous civilisation on shared V15 WebGL renderer. Optional V16 atlas, old ASTRAEUS preserved. Existing chat widgets require V17-aware loader."
+  "notes": "V18 Living World is a dedicated 3D scene sharing Reality Engine's Three.js renderer. Animated experiment FX, persistent terrain modifications, mobile-friendly shader water, saved autonomous agents. V15 ASTRAEUS remains available. New in-chat viewer required."
 }
