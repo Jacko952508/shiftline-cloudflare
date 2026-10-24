@@ -1,0 +1,1 @@
+export const release={version:19,engineCommit:'e12b6051b4dfe7384c0f6ab1210fc04dacc68f05',engineFile:'engine-v19.js',message:'LIFECYCLE: explicit WebGL context release on dispose; cold-start ChatGPT player with real stop, auto-unload and single-active player design; V18 3D world and experiments preserved'};
