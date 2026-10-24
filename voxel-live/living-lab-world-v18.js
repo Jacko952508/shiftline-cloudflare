@@ -18,7 +18,7 @@ export function mountLivingWorld3D(root, sim) {
   };
   let active=false,disposed=false,mode='orbit',yaw=.55,pitch=.91,distance=158,zoomTarget=158,selected=sim.getSelected?.()||0;
   let panX=0,panZ=0,last=0,lastRefresh=0,lastDisplay=0,paused=false,interaction='navigate',initUI=false;
-  let msgUntil=0,messages=[],restoreViews=new Map(),renderFailures=0,frameCount=0,lastFrameAt=performance.now();
+  let msgUntil=0,messages=[],restoreViews=new Map(),renderFailures=0,frameCount=0,lifetimeFrames=0,lastFrameAt=performance.now();
   const world=new T.Scene();
   world.background=new T.Color('#a2c8d9');
   world.fog=new T.FogExp2(0xa2c8d9,.0033);
@@ -369,7 +369,7 @@ export function mountLivingWorld3D(root, sim) {
     renderer.toneMappingExposure=1.22;
     renderer.render(world,camera);
     renderer.toneMappingExposure=exposure;
-    frameCount++;
+    frameCount++;lifetimeFrames++;
     if(now-lastDisplay>1200){
       const fpsRate=Math.round(frameCount*1000/Math.max(1,now-lastFrameAt));
       frameCount=0;lastFrameAt=now;lastDisplay=now;
@@ -501,5 +501,5 @@ export function mountLivingWorld3D(root, sim) {
     for(const tex of textures)tex.dispose?.();
     if(root.__livingLab3D===hook)delete root.__livingLab3D;
   }
-  return {get active(){return active},get renderedFrames(){return frameCount},setActive,dispose,focusSector,overview};
+  return {get active(){return active},get renderedFrames(){return lifetimeFrames},setActive,dispose,focusSector,overview};
 }
