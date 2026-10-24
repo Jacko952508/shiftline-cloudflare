@@ -19,6 +19,15 @@ export async function mount(root,resume=null){
     throw new Error('V18 Cinematic Living World failed to mount: '+String(error?.stack||error));
   }
   return {
+    runExperiment(action,sector=null){
+      const allowed=['energy','rains','mineral','disaster','migration','peace','fertility','isolation'];
+      if(!allowed.includes(action))throw Error('Unknown experiment: '+action);
+      if(Number.isInteger(sector)&&sector>=0&&sector<8)sim.setSelected(sector);
+      world.setActive(true);
+      sim.experiment(action);
+      return {action,sector:sim.getSelected(),day:sim.getState().day};
+    },
+    getLivingState(){return {day:sim.getState().day,population:sim.getState().people.length,tech:sim.getState().sectors.reduce((a,s)=>a+s.tech,0)}},
     getRenderedFrames(){return world?.renderedFrames||0},
     snapshot(){
       const result=core.snapshot?.()||{};
