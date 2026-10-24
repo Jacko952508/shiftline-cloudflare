@@ -1,0 +1,1 @@
+export const release={version:18,engineCommit:'6def71e8a0e6694c489ea682627c865fd4ced447',engineFile:'engine-v18.js',message:'LIVING WORLD V18: fully animated 3D meteor impacts, rainfall, power surges, crystal formation, migrations, peace links, fertile growth, isolation domes; physical craters, denser terrain, shader water, glowing architecture'};
